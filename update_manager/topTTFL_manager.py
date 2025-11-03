@@ -1,0 +1,343 @@
+from datetime import datetime
+import pandas as pd
+import numpy as np
+import sqlite3
+import hashlib
+import pickle
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from streamlit_interface.plotting_utils import generate_all_plots
+from misc.misc import DB_PATH, CACHE_DIR_PATH
+from data.sql_functions import topTTFL_query
+
+def get_top_TTFL(game_date: str, preload: bool = False) -> pd.DataFrame:
+
+    db_hash = get_db_hash()
+    with_plots = False
+    
+    df = load_from_cache(game_date, db_hash)
+    if df is not None:
+        with_plots = True
+        return df, with_plots
+
+    with sqlite3.connect(DB_PATH) as conn:
+        df = topTTFL_query(conn, game_date)
+
+    prettydf = format_to_table(df)
+    if preload:
+        prettydf_with_plots = generate_all_plots(prettydf, game_date, parallelize=True)
+        db_hash = get_db_hash()
+        save_to_cache(prettydf_with_plots, game_date, db_hash)
+
+    return prettydf, with_plots
+
+def cleanup_cache():
+    current_hash = get_db_hash()
+    current_date = datetime.today().date()
+
+    for filename in os.listdir(CACHE_DIR_PATH):
+        if current_hash not in filename:
+            os.remove(os.path.join(CACHE_DIR_PATH, filename))
+            continue
+        
+        file_date = filename.split('_')[0]
+        file_date_dt = datetime.strptime(file_date, '%d-%m-%Y').date()
+        if file_date_dt < current_date:
+            os.remove(os.path.join(CACHE_DIR_PATH, filename))
+
+
+        
+    
+def get_db_hash() -> str:
+    """Compute a hash representing the current state of the tables."""
+    m = hashlib.md5()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        for table in ["boxscores", "rosters", "injury_report"]: 
+            cursor.execute(f"SELECT * FROM {table}")
+            for row in cursor.fetchall():
+                m.update(str(row).encode())
+    return m.hexdigest()
+
+def save_to_cache(df, game_date: str, db_hash: str):
+    game_date = game_date.replace("/", "-")
+    os.makedirs(CACHE_DIR_PATH, exist_ok=True)
+    path = os.path.join(CACHE_DIR_PATH, f"{game_date}_{db_hash}.pkl")
+    with open(path, "wb") as f:
+        pickle.dump(df, f)
+
+def load_from_cache(game_date: str, db_hash: str):
+    game_date = game_date.replace("/", "-")
+    path = os.path.join(CACHE_DIR_PATH, f"{game_date}_{db_hash}.pkl")
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    return None
+
+def format_to_table(df) :
+    if df.empty :
+        return df
+
+    prettydf = pd.DataFrame()
+
+    # ----------------------------------------- Regular player info -------------------------------------------------
+
+    prettydf['Joueur'] = df['playerName']
+    prettydf['Poste'] = df['pos']
+    prettydf['Lieu'] = df['team'].where(df['isHome'] == 1, df['opponent'])
+    prettydf['Équipe'] = df['team'] + ' (' + df['teamWins'].astype(str) + 'W-' + df['teamLosses'].astype(str) + 'L)'
+    prettydf['Adversaire'] = df['opponent'] + ' (' + df['oppWins'].astype(str) + 'W-' + df['oppLosses'].astype(str) + 'L)'
+    prettydf['TTFL'] = df['avg_TTFL'].round(1).fillna('N/A')
+    prettydf['Statut'] = df['injury_status'].fillna('')
+    prettydf['details'] = df['details'].fillna('')
+    prettydf['opp'] = df['opponent']
+
+    # -------------------------------------------- Graph stuff -------------------------------------------------
+
+    prettydf['graph_dates'] = df['graph_dates']
+    prettydf['graph_opps'] = df['graph_opps']
+    prettydf['graph_TTFLs'] = df['graph_TTFLs']
+
+    # ------------------------------------------ Relative stuff ------------------------------------------------
+
+    df['pos_rel_TTFL_v_team'] = pd.to_numeric(df['pos_rel_TTFL_v_team'], errors='coerce')
+    df['rel_TTFL_v_opp'] = pd.to_numeric(df['rel_TTFL_v_opp'], errors='coerce')
+    df['ha_rel_TTFL'] = pd.to_numeric(df['ha_rel_TTFL'], errors='coerce')
+
+    prettydf['pos_rel_TTFL_v_team'] = np.select([df['pos_rel_TTFL_v_team'].isna(),           df['pos_rel_TTFL_v_team'] >=0], 
+                            [       'N/A',                        '+' + df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%'],
+                            df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%')
+
+    prettydf['ha_rel_TTFL'] = df['playerName'] + np.where(df['isHome'] == 1, ' à la maison : ', ' à l\'extérieur : ') + \
+                            np.select([df['ha_rel_TTFL'].isna(),           df['ha_rel_TTFL'] >=0], 
+                            [       'N/A',                        '+' + df['ha_rel_TTFL'].round(1).astype(str) + '%'],
+                            df['ha_rel_TTFL'].round(1).astype(str) + '%')
+
+    prettydf['rel_TTFL_v_opp'] = df['playerName'] + ' contre ' + df['opponent'] + ' : ' + \
+                            np.select([df['rel_TTFL_v_opp'].isna(),           df['rel_TTFL_v_opp'] >=0], 
+                            [       'N/A',                        '+' + df['rel_TTFL_v_opp'].round(1).astype(str) + '%'],
+                            df['rel_TTFL_v_opp'].round(1).astype(str) + '%')
+
+    # -------------------------------------------- Team injury status ------------------------------------------------
+
+    df['inj_team_split'] = df['injured_teammates'].str.split(",")
+    df['inj_team_simp_split'] = df['simp_statuses'].str.split(",")
+    df['inj_team_TTFL_split'] = df['inj_teammates_TTFLs'].str.split(",")
+    df['inj_team_rel_abs'] = df['rel_TTFL_inj_teammate_abs'].str.split(",")
+    df['inj_team_n_abs_split'] = df['inj_teammates_abs_count'].str.split(",")
+
+    df_inj_teammates = df.explode(['inj_team_split', 'inj_team_simp_split', 
+                                'inj_team_TTFL_split', 'inj_team_rel_abs',
+                                'inj_team_n_abs_split'])
+
+    df_inj_teammates = df_inj_teammates.drop_duplicates(
+            subset=[
+                "playerName",
+                "pos",
+                "inj_team_split",
+                "inj_team_simp_split",
+                "inj_team_TTFL_split",
+                "inj_team_rel_abs",
+                "inj_team_n_abs_split",
+            ]
+        )
+
+    df_inj_teammates["inj_team_TTFL_split"] = pd.to_numeric(
+            df_inj_teammates["inj_team_TTFL_split"], errors="coerce"
+        )
+    df_inj_teammates["inj_team_rel_abs"] = pd.to_numeric(
+        df_inj_teammates["inj_team_rel_abs"], errors="coerce"
+    )
+
+    df_inj_teammates = df_inj_teammates.sort_values(
+            by="inj_team_TTFL_split", ascending=False
+        )
+
+    df_inj_teammates["inj_team_rel_abs"] = np.select([
+                df_inj_teammates["inj_team_rel_abs"].isna(),
+                df_inj_teammates["inj_team_rel_abs"] >= 0,
+            ],
+            [
+                "N/A",
+                "+" + df_inj_teammates["inj_team_rel_abs"].round(1).astype(str),
+            ],
+            default=df_inj_teammates["inj_team_rel_abs"].round(1).astype(str),
+        )
+
+    df_inj_teammates["team_injury_status"] = np.select(
+            [
+                df_inj_teammates["inj_team_TTFL_split"].isna()
+            ],
+            [
+                ''
+            ],
+            default=  '- ' + df_inj_teammates['inj_team_split'] + ' (' + \
+                    df_inj_teammates['inj_team_simp_split'] + ')' + \
+                    ' - TTFL : ' + df_inj_teammates['inj_team_TTFL_split'].fillna('N/A').astype(str) + \
+                    ' - Absent : ' + df_inj_teammates['inj_team_rel_abs'].astype(str) + \
+                    '% (' + df_inj_teammates['inj_team_n_abs_split'] + ' matchs)'
+        )
+
+    prettydf['team_injury_status'] = df_inj_teammates.groupby(level=0)['team_injury_status'].agg(lambda x: '<br>'.join(v for v in x if v != ''))
+
+    prettydf["team_injury_status"] = np.select(
+        [
+            prettydf["team_injury_status"] == ''
+        ],
+        [
+            'Pas de joueurs blessés chez ' + df['team']
+        ],
+        default='Joueurs blessés chez ' + df['team'] + ' :<hr style="margin:3px 0;">' + prettydf["team_injury_status"]
+    )
+
+    # -------------------------------------------- Opponent team injury status ------------------------------------------------
+
+    df['opp_inj_split'] = df['inj_opponents'].str.split(",")
+    df['opp_simp_split'] = df['inj_opponents_simp_statuses'].str.split(",")
+    df['opp_TTFL_split'] = df['inj_opponents_TTFLs'].str.split(",")
+    df['rel_opp_pos_split'] = df['pos_rel_TTFL_when_inj_opp'].str.split(",")
+
+    df_inj_opp = df.explode(['opp_inj_split', 'opp_simp_split', 
+                            'opp_TTFL_split', 'rel_opp_pos_split'])
+
+    df_inj_opp = df_inj_opp.drop_duplicates(
+        subset=[
+            "playerName",
+            "pos",
+            "opp_inj_split",
+            "opp_simp_split",
+            "opp_TTFL_split",
+            "rel_opp_pos_split",
+        ]
+    )
+
+    df_inj_opp["opp_TTFL_split"] = pd.to_numeric(
+            df_inj_opp["opp_TTFL_split"], errors="coerce"
+        )
+
+    df_inj_opp["rel_opp_pos_split"] = pd.to_numeric(
+            df_inj_opp["rel_opp_pos_split"], errors="coerce"
+        )
+
+    df_inj_opp = df_inj_opp.sort_values(
+            by="opp_TTFL_split", ascending=False
+        )
+
+    df_inj_opp["opp_team_injury_status_no_rel"] = np.select(
+            [
+                df_inj_opp["opp_TTFL_split"].isna()
+            ],
+            [
+                ''
+            ],
+            default=  '- ' + df_inj_opp['opp_inj_split'] + ' (' + \
+                    df_inj_opp['opp_simp_split'] + ')' + \
+                    ' - TTFL : ' + df_inj_opp['opp_TTFL_split'].fillna('N/A').astype(str)# + \
+        )
+
+    df_inj_opp["opp_team_rel_opp_pos"] = np.select(
+            [
+                df_inj_opp["opp_TTFL_split"].isna()
+            ],
+            [
+                ''
+            ],
+            default = df_inj_opp['rel_opp_pos_split']
+        )
+
+    prettydf['opp_team_injury_status_no_rel'] = df_inj_opp.groupby(level=0)['opp_team_injury_status_no_rel'].agg(lambda x: ','.join(v for v in x if v != ''))
+    prettydf['opp_team_rel_opp_pos'] = df_inj_opp.groupby(level=0)['opp_team_rel_opp_pos'].agg(lambda x: ','.join(v for v in x if v != ''))
+
+    grouped = prettydf.groupby(['Joueur', 'opp_team_injury_status_no_rel'])
+    result = []
+    for (name, opp), group in grouped:
+        positions = group['Poste'].tolist()
+        rels = group['opp_team_rel_opp_pos'].tolist()
+
+        opps = opp.split(',')
+        if opps == [''] :
+            result.append({
+                'Joueur': name,
+                'pos': '-'.join(sorted(set(positions))),
+                'opp_inj_status': ''
+            })
+            continue
+        rels_split = [r.split(',') for r in rels]
+        
+        opp_strings = []
+        for i, o in enumerate(opps):
+            pos_rel_pairs = []
+            for j, pos in enumerate(positions):
+                rel = rels_split[j][i] if len(rels_split[j]) > i else ''
+                pos_rel_pairs.append(f"{pos} : {float(rel):+.1f}%")
+
+            opp_string = f"{o} : {' - '.join(pos_rel_pairs)}"
+            opp_strings.append(opp_string)
+
+        inj_summary = '<br>'.join(opp_strings)
+        unique_pos = '-'.join(sorted(set(positions)))
+
+        result.append({
+            'Joueur': name,
+            'pos': unique_pos,
+            'opp_inj_status': inj_summary
+        })
+
+    result_df = pd.DataFrame(result)
+
+    prettydf = prettydf.groupby('Joueur', as_index=False).agg({
+        col: (lambda x: list(set(x))) if col in ['Poste', 'pos_rel_TTFL_v_team'] else 'first'
+                for col in prettydf.columns if col not in ['Joueur', 'opp_team_injury_status_no_rel', 'opp_team_rel_opp_pos']})
+        
+    prettydf = prettydf.merge(result_df, on='Joueur', how='left')
+
+    prettydf["opp_inj_status"] = np.select(
+        [
+            prettydf["opp_inj_status"] == ''
+        ],
+        [
+            'Pas de joueurs blessés chez ' + prettydf['opp']
+        ],
+        default='Joueurs blessés chez ' + prettydf['opp'] + ' :<hr style="margin:3px 0;">' + prettydf["opp_inj_status"]
+    )
+
+    # -------------------------------------------- Clean graph data stuff ----------------------------------
+
+    prettydf['graph_dates_split'] = prettydf['graph_dates'].str.split(',')
+    prettydf['graph_opps_split'] = prettydf['graph_opps'].str.split(',')
+    prettydf['graph_TTFLs_split'] = prettydf['graph_TTFLs'].str.split(',')
+
+    exploded_graph_df = prettydf[['graph_dates_split', 'graph_opps_split', 'graph_TTFLs_split']].explode(
+        ['graph_dates_split', 'graph_opps_split', 'graph_TTFLs_split'])
+
+    exploded_graph_df['graph_dates_split'] = pd.to_datetime(exploded_graph_df['graph_dates_split'],
+                                                            dayfirst=True)
+    exploded_graph_df['orig_index'] = exploded_graph_df.index
+    exploded_graph_df = exploded_graph_df.sort_values(['orig_index', 'graph_dates_split'])
+
+    graph_df_sorted = (
+    exploded_graph_df
+    .groupby(level=0, sort=False)
+    .agg({
+        'graph_dates_split': lambda x: ','.join(x.dt.strftime('%d/%m/%Y')),
+        'graph_opps_split': lambda x: ','.join(x),
+        'graph_TTFLs_split': lambda x: ','.join(x)
+    })
+    )
+    prettydf[['graph_dates', 'graph_opps', 'graph_TTFLs']] = graph_df_sorted
+
+    # ------------------------------------------------- Final cleanup ---------------------------------------
+
+    prettydf['pos_v_team'] = prettydf.apply(lambda r:"Postes contre " + r['opp'] + ' : ' + " - ".join([f"{a} : {b}" for a, b in zip(r['Poste'], r['pos_rel_TTFL_v_team'])]), axis=1)
+    prettydf['allrel'] = prettydf['ha_rel_TTFL'] + '<br>' + prettydf['rel_TTFL_v_opp'] + '<br>' + prettydf['pos_v_team']
+    prettydf = prettydf.sort_values(by='TTFL', ascending=False)
+    prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
+    prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
+    prettydf = prettydf.reset_index(drop=True)
+
+
+
+    return prettydf

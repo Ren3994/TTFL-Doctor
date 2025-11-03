@@ -1,0 +1,213 @@
+from datetime import datetime, timedelta
+import streamlit as st
+import pandas as pd
+import base64
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from data.sql_functions import run_sql_query
+
+def get_joueurs_pas_dispo(date) :
+
+    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    limite = date_dt - timedelta(days=30)
+
+    JDP = run_sql_query(table="joueurs_deja_pick")
+    JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
+    joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
+
+    return joueurs_pas_dispo
+
+def get_joueurs_blesses():
+    injury_report = run_sql_query(table="injury_report", 
+                                  select='player_name', 
+                                  filters="""simplified_status != 'Probable'""")
+    
+    return injury_report['player_name'].tolist()
+
+def get_low_game_count(date) :
+
+    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    limite = date_dt + timedelta(days=30)
+
+    games_per_day = run_sql_query(table="schedule", select=['gameDate', 'COUNT(*) AS n_games'], group_by='gameDate')
+    games_per_day['gameDate'] = pd.to_datetime(games_per_day['gameDate'], errors='coerce', dayfirst=True)
+    games_per_day = games_per_day.sort_values(by='gameDate')
+    
+    mask_date = (games_per_day['gameDate'] >= date_dt) & (games_per_day['gameDate'] <= limite)
+    games_in_mask = games_per_day[mask_date]
+    
+    low_games_count = games_in_mask[games_in_mask['n_games'] <= 3].reset_index(drop=True)
+
+    result_str = '<br>'.join(
+        f"{row['gameDate'].strftime('%d/%m')} : {row['n_games']} matchs"
+        for _, row in low_games_count.iterrows()
+    )
+
+    return result_str
+
+def df_to_html(
+    df,
+    show_cols=['Joueur', 'Poste', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
+    tooltips={
+            'Statut' : 'details',
+            'Équipe' : 'team_injury_status',
+            'Adversaire' : 'opp_inj_status',
+            'TTFL' : 'allrel'
+            },
+    image_tooltips={'Joueur' : 'plots'},
+    show_index=True,
+    zebra_stripes=True,
+    hover_highlight=True,
+    hover_color="#1e2a3b",
+    bold_headers=True,
+    shadow_table=False,
+    padding=10,
+    text_color="#C5C5C5",
+    header_text_color="#CAC8C8",
+    center_table=True,
+):
+    """Render a dark-mode HTML table with centered, custom tooltips."""
+    
+    header_bkg_color = "#252b32"
+    zebra_even_color, zebra_odd_color = "#222222", "#111111"
+    shadow_color = "rgba(28,41,54,0.6)"
+
+    css = f"""
+    <style>
+    .custom-table-dark {{
+        border-collapse: collapse;
+        text-align: center;
+        width: 100%;
+        margin: {'0 auto' if center_table else '0'};
+        {'box-shadow: 2px 2px 8px ' + shadow_color + ';' if shadow_table else ''}
+    }}
+    .custom-table-dark th {{
+        {'font-weight: bold;' if bold_headers else ''}
+        {'background-color: ' + header_bkg_color + ';' if bold_headers else ''}
+        color: {header_text_color} !important;
+        padding: {padding}px;
+        text-align: center;
+        border: none;
+    }}
+    .custom-table-dark td {{
+        padding: {padding}px;
+        text-align: center;
+        color: {text_color} !important;
+        border: none;
+        position: relative;
+    }}
+    {" .custom-table-dark tr:nth-child(even) { background-color: " + zebra_even_color + "; }" if zebra_stripes else ""}
+    {" .custom-table-dark tr:nth-child(odd)  { background-color: " + zebra_odd_color + "; }" if zebra_stripes else ""}
+    {(".custom-table-dark tr:hover { background-color: " + hover_color + " !important; }") if hover_highlight else ""}
+
+    /* Custom tooltip styling */
+    .tooltip {{
+        position: relative;
+        display: inline-block;
+        cursor: help;
+    }}
+    .tooltip .tooltiptext {{
+        visibility: hidden;
+        width: max-content;
+        max-width: 500px;
+        background-color: #2b2b2b;
+        color: #e0e0e0;
+        text-align: center;
+        border-radius: 6px;
+        padding: 6px 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        font-size: 13px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.4);
+        white-space: normal;
+    }}
+    .tooltip:hover .tooltiptext {{
+        visibility: visible;
+        opacity: 1;
+    }}
+    .tooltip .tooltiptext img {{
+        max-width: 700;
+        max-height: 466px;
+        border-radius: 4px;
+        z-index: 0;
+    }}
+    </style>
+    """
+
+    # Build HTML table
+    html = css + '<table class="custom-table-dark">'
+    html += "<thead><tr>"
+    if show_index:
+        html += "<th>Classement</th>"
+    for col in show_cols:
+        html += f"<th>{col}</th>"
+    html += "</tr></thead><tbody>"
+
+    for i, row in enumerate(df.itertuples(index=False), start=1):
+        html += "<tr>"
+        if show_index:
+            html += f"<td>{i}</td>"
+        for col in show_cols:
+            cell_value = getattr(row, col)
+
+            if image_tooltips and col in image_tooltips:
+                img_col = image_tooltips[col]
+                img_src = getattr(row, img_col)
+                html += (
+                    f'<td><div class="tooltip">{cell_value}'
+                    f'<span class="tooltiptext"><img src="{img_src}"></span>'
+                    "</div></td>"
+                )
+
+            elif tooltips and col in tooltips:
+                tooltip_value = getattr(row, tooltips[col])
+                html += (
+                    '<td><div class="tooltip">'
+                    f"{cell_value}"
+                    f'<span class="tooltiptext">{tooltip_value}</span>'
+                    "</div></td>"
+                )
+            else:
+                html += f"<td>{cell_value}</td>"
+        html += "</tr>"
+    html += "</tbody></table>"
+    return html
+
+def st_image_crisp(path, width=40):
+    with open(path, "rb") as f:
+        data = f.read()
+    encoded = base64.b64encode(data).decode()
+    st.markdown(
+        f"""
+        <img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>
+        """,
+        unsafe_allow_html=True
+    )
+
+def on_text_change():
+    """Parse text input into a date object."""
+    text_value = st.session_state.date_text.strip()
+    try:
+        new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
+        st.session_state.selected_date = new_date
+        st.session_state.text_parse_error = False
+    except ValueError:
+        st.session_state.text_parse_error = True
+
+def prev_date():
+    """Go to previous date."""
+    st.session_state.selected_date -= timedelta(days=1)
+    st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+
+def next_date():
+    """Go to next date."""
+    st.session_state.selected_date += timedelta(days=1)
+    st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")

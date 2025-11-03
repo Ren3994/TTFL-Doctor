@@ -1,0 +1,51 @@
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
+from tqdm import tqdm
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from update_manager.injury_report_manager import update_injury_report
+from update_manager.nba_api_manager import update_nba_data
+from update_manager.topTTFL_manager import get_top_TTFL, cleanup_cache
+from streamlit_interface.streamlit_utils import launch_GUI
+from data.sql_functions import update_tables
+
+def run_TTFL_Doctor():
+
+    # --- Téléchargement des nouveaux matchs, mise à jour des rosters, et téléchargement du injury report
+
+    tqdm.write('Mise à jour des données...')
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        nba_api_future = executor.submit(update_nba_data)
+        espn_future = executor.submit(update_injury_report)
+
+        new_games_found = nba_api_future.result()
+        espn_future.result()
+    
+    # --- Mise à jour des tables SQL à partir des nouvelles données
+
+    if new_games_found:
+        update_tables()
+
+    # --- Nettoyage du cache
+
+    cleanup_cache()
+            
+    # --- Construction du df pour aujourd'hui
+
+    date_dt = datetime.now()
+
+    for i in range(1):
+        date = datetime.strftime(date_dt, '%d/%m/%Y')
+        get_top_TTFL(date, preload=True)
+        date_dt += timedelta(days=1)
+
+    # --- Lance le GUI Streamlit
+
+    launch_GUI()
+    
+if __name__ == "__main__":
+    run_TTFL_Doctor()
