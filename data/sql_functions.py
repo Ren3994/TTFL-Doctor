@@ -98,6 +98,17 @@ def update_helper_tables(conn):
         output_table="player_avg_TTFL"
     )
 
+    run_sql_query(table="boxscores", 
+                  select=[
+                      'teamTricode',
+                      'AVG(opponentTTFL) AS avg_opp_TTFL', 
+                      'AVG(AVG(opponentTTFL)) OVER () AS overall_avg_opp_TTFL',
+                      '100 * (AVG(opponentTTFL) - AVG(AVG(opponentTTFL)) OVER ()) / AVG(AVG(opponentTTFL)) OVER () AS rel_opp_avg_TTFL'
+                      ],
+                  group_by='teamTricode', 
+                  order_by='avg_opp_TTFL', 
+                  output_table='rel_avg_opp_TTFL')
+
     cur = conn.cursor()
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_player_avg_TTFL_player ON player_avg_TTFL(playerName);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_team_games_team ON team_games(teamTricode);""")
@@ -463,6 +474,17 @@ def topTTFL_query(conn, game_date):
     FROM home_away_rel_TTFL
     ),
 
+    rel_avg_opp_TTFL2 AS (
+    ----- Variation de la moyenne des scores TTFL de l'équipe adverse (total tous les joueurs) relatif à la moyenne globale
+    --  teamTricode    |    rel_opp_avg_TTFL
+    --      HOU        |         -11.8
+    --      OKC        |         -11.8
+    --      SAS        |         -11.5
+
+    SELECT teamTricode, rel_opp_avg_TTFL
+    FROM rel_avg_opp_TTFL
+    ),
+
     pos_avg_TTFL AS (
     ------------------------ Moyenne TTFL globale par poste (avec postes séparés) ---------------------------------
     -- position  |  avg_TTFL
@@ -647,13 +669,14 @@ def topTTFL_query(conn, game_date):
     -- Player injury status
     ir.injury_status, ir.details,
 
-    -- Relative player info (player position vs opp team, player vs opp team, player home/away)
+    -- Relative info (player position vs opp team, player vs opp team, player home/away, all teams vs that opp)
     prtvt.pos_rel_TTFL_v_team,
     rpatop.rel_TTFL_v_opp,
     CASE 
         WHEN ap.isHome = 1 THEN hart.home_rel_TTFL
         ELSE hart.away_rel_TTFL
     END AS ha_rel_TTFL,
+    raot.rel_opp_avg_TTFL,
 
     -- Concatenated injured teammates info
     GROUP_CONCAT(itri.injured_player) AS injured_teammates,
@@ -693,6 +716,8 @@ def topTTFL_query(conn, game_date):
         AND ap.pos = prtvt.pos
     LEFT JOIN graph_data gd
       ON ap.playerName = gd.playerName
+    JOIN rel_avg_opp_TTFL2 raot
+        ON ap.opponent = raot.teamTricode
     GROUP BY ap.playerName, ap.team, ap.pos
     --ORDER BY ap.playerName
     ORDER BY pat.avg_TTFL DESC

@@ -2,15 +2,14 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 import sqlite3
-import hashlib
-import pickle
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.plotting_utils import generate_all_plots
-from misc.misc import DB_PATH, CACHE_DIR_PATH
+from update_manager.file_manager import get_db_hash, load_from_cache, save_to_cache
+from misc.misc import DB_PATH
 from data.sql_functions import topTTFL_query
 
 def get_top_TTFL(game_date: str, preload: bool = False) -> pd.DataFrame:
@@ -33,49 +32,6 @@ def get_top_TTFL(game_date: str, preload: bool = False) -> pd.DataFrame:
         save_to_cache(prettydf_with_plots, game_date, db_hash)
 
     return prettydf, with_plots
-
-def cleanup_cache():
-    current_hash = get_db_hash()
-    current_date = datetime.today().date()
-
-    for filename in os.listdir(CACHE_DIR_PATH):
-        if current_hash not in filename:
-            os.remove(os.path.join(CACHE_DIR_PATH, filename))
-            continue
-        
-        file_date = filename.split('_')[0]
-        file_date_dt = datetime.strptime(file_date, '%d-%m-%Y').date()
-        if file_date_dt < current_date:
-            os.remove(os.path.join(CACHE_DIR_PATH, filename))
-
-
-        
-    
-def get_db_hash() -> str:
-    """Compute a hash representing the current state of the tables."""
-    m = hashlib.md5()
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        for table in ["boxscores", "rosters", "injury_report"]: 
-            cursor.execute(f"SELECT * FROM {table}")
-            for row in cursor.fetchall():
-                m.update(str(row).encode())
-    return m.hexdigest()
-
-def save_to_cache(df, game_date: str, db_hash: str):
-    game_date = game_date.replace("/", "-")
-    os.makedirs(CACHE_DIR_PATH, exist_ok=True)
-    path = os.path.join(CACHE_DIR_PATH, f"{game_date}_{db_hash}.pkl")
-    with open(path, "wb") as f:
-        pickle.dump(df, f)
-
-def load_from_cache(game_date: str, db_hash: str):
-    game_date = game_date.replace("/", "-")
-    path = os.path.join(CACHE_DIR_PATH, f"{game_date}_{db_hash}.pkl")
-    if os.path.exists(path):
-        with open(path, "rb") as f:
-            return pickle.load(f)
-    return None
 
 def format_to_table(df) :
     if df.empty :
@@ -120,6 +76,11 @@ def format_to_table(df) :
                             np.select([df['rel_TTFL_v_opp'].isna(),           df['rel_TTFL_v_opp'] >=0], 
                             [       'N/A',                        '+' + df['rel_TTFL_v_opp'].round(1).astype(str) + '%'],
                             df['rel_TTFL_v_opp'].round(1).astype(str) + '%')
+    
+    prettydf['rel_opp_avg_TTFL'] = 'Toutes les équipes contre ' + df['opponent'] + ' : ' + \
+                                np.select([df['rel_opp_avg_TTFL'].isna(),      df['rel_opp_avg_TTFL'] >=0],
+                                [           'N/A',           '+' + df['rel_opp_avg_TTFL'].round(1).astype(str) + '%'],
+                                df['rel_opp_avg_TTFL'].round(1).astype(str) + '%')
 
     # -------------------------------------------- Team injury status ------------------------------------------------
 
@@ -332,7 +293,7 @@ def format_to_table(df) :
     # ------------------------------------------------- Final cleanup ---------------------------------------
 
     prettydf['pos_v_team'] = prettydf.apply(lambda r:"Postes contre " + r['opp'] + ' : ' + " - ".join([f"{a} : {b}" for a, b in zip(r['Poste'], r['pos_rel_TTFL_v_team'])]), axis=1)
-    prettydf['allrel'] = prettydf['ha_rel_TTFL'] + '<br>' + prettydf['rel_TTFL_v_opp'] + '<br>' + prettydf['pos_v_team']
+    prettydf['allrel'] = prettydf['rel_opp_avg_TTFL'] + '<br>' + prettydf['ha_rel_TTFL'] + '<br>' + prettydf['rel_TTFL_v_opp'] + '<br>' + prettydf['pos_v_team']
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)

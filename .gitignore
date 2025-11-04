@@ -1,5 +1,11 @@
-auto_picker/
-
 __pycache__/
 *.pyc
 
+data/team_logos/
+data/cache
+data_2024-25.db
+
+test.py
+
+*.db-shm
+*.db-wal

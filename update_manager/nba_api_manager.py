@@ -77,5 +77,6 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_game_player ON boxscores(gameId, playerName);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_opponent_player ON boxscores(opponent, playerName);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, gameId);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, opponentTTFL);")
 
     return new_games_found

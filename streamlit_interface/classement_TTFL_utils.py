@@ -4,10 +4,48 @@ import pandas as pd
 import base64
 import sys
 import os
+import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import run_sql_query
+
+def accentuate_pct(text: str) -> str:
+    def color_for_value(value: float) -> str:
+        # Extremes
+        if value >= 10:
+            return "#FFD700"  # gold
+        if value <= -10:
+            return "#1E90FF"  # blue
+        if value == 0:
+            return "gray"
+
+        # Normalize magnitude between 0 and 1 relative to 10%
+        magnitude = min(abs(value), 10) / 10.0
+
+        if value > 0:
+            # Gradient: light green → rich mid green (better contrast)
+            r1, g1, b1 = (182, 242, 182)  # #b6f2b6
+            r2, g2, b2 = (0, 204, 102)    # #00cc66
+        else:
+            # Gradient: light red → bright red (better contrast)
+            r1, g1, b1 = (246, 176, 176)  # #f6b0b0
+            r2, g2, b2 = (255, 77, 77)    # #ff4d4d
+
+        # Linear interpolation between RGB values
+        r = int(r1 + (r2 - r1) * magnitude)
+        g = int(g1 + (g2 - g1) * magnitude)
+        b = int(b1 + (b2 - b1) * magnitude)
+
+        return f"rgb({r},{g},{b})"
+
+    def replacer(match):
+        value = float(match.group(1))
+        color = color_for_value(value)
+        # return f'<span style="color:{color}; font-weight:bold;">{match.group(0)}</span>'
+        return f'<span style="color:{color}">{match.group(0)}</span>'
+
+    return re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
 
 def get_joueurs_pas_dispo(date) :
 
@@ -172,7 +210,7 @@ def df_to_html(
                 html += (
                     '<td><div class="tooltip">'
                     f"{cell_value}"
-                    f'<span class="tooltiptext">{tooltip_value}</span>'
+                    f'<span class="tooltiptext">{accentuate_pct(tooltip_value)}</span>'
                     "</div></td>"
                 )
             else:

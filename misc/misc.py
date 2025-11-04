@@ -9,6 +9,7 @@ DB_PATH = os.path.join(BASE_DIR, "..", "data", f"data_{SEASON}.db")
 DB_PATH_LAST_SEASON = os.path.join(BASE_DIR, "..", "data", f"data_{LAST_SEASON}.db")
 
 CACHE_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "cache")
+BACKUP_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "backups")
 PLOT_GEN_WORKER_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "plotting_worker.py")
 
 FAILED_LOG_PATH = os.path.join(BASE_DIR, "..", "data", "failed_games.log")

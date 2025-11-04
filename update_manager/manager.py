@@ -8,7 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
-from update_manager.topTTFL_manager import get_top_TTFL, cleanup_cache
+from update_manager.topTTFL_manager import get_top_TTFL
+from update_manager.file_manager import manage_files
 from streamlit_interface.streamlit_utils import launch_GUI
 from data.sql_functions import update_tables
 
@@ -30,15 +31,16 @@ def run_TTFL_Doctor():
     if new_games_found:
         update_tables()
 
-    # --- Nettoyage du cache
+    # --- Nettoyage des vieux fichiers cache et mise à jour des backups
 
-    cleanup_cache()
+    manage_files()
             
     # --- Construction du df pour aujourd'hui
 
     date_dt = datetime.now()
+    days2calc = 14
 
-    for i in range(1):
+    for _ in tqdm(range(days2calc), desc=f'Creation des classements pour {days2calc} jours...'):
         date = datetime.strftime(date_dt, '%d/%m/%Y')
         get_top_TTFL(date, preload=True)
         date_dt += timedelta(days=1)
