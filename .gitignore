@@ -3,9 +3,11 @@ __pycache__/
 
 data/team_logos/
 data/cache
-data_2024-25.db
+*.db
+*.db-shm
+*.db-wal
+
+player_clustering/
 
 test.py
 
-*.db-shm
-*.db-wal
