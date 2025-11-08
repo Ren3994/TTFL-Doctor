@@ -37,3 +37,24 @@ Les données sont stockées dans des bases de données SQL pour que les calculs 
 Possibilité de précalculer les classements TTFL de plusieurs jours (car la génération des graphes peut prendre quelques secondes) en avance dans manager.py.
 
 Une fois que les données sont mises à jour, un GUI Streamlit se lancera directement dans le navigateur. Le bandeau sur la gauche permet de naviguer entre les différentes pages.
+
+## Mentions légales
+
+Ce projet est publié sous la Licence Publique Générale GNU Non-Commerciale (NC-GPL).
+
+Vous êtes libre de consulter, utiliser, modifier et partager le code à des fins personnelles, éducatives ou non commerciales.
+
+Toute utilisation commerciale nécessite une autorisation écrite explicite de l’auteur.
+
+Ce projet utilise des api open-source, notamment :
+
+- **nba_api** (Licence MIT)
+  Copyright (c) 2018 Swar Patel
+
+Plus d'informations : [nba_api](https://github.com/swar/nba_api).
+
+## Auteur
+
+Ce projet est développé et maintenu par Renaud Génin
+
+© 2025 — Tous droits réservés le cas échéant.
