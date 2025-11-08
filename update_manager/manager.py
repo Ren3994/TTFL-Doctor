@@ -43,7 +43,7 @@ def run_TTFL_Doctor():
         date_dt += timedelta(days=1)
 
     # --- Lance le GUI Streamlit
-    launch_GUI()
+    # launch_GUI()
     
 if __name__ == "__main__":
     run_TTFL_Doctor()

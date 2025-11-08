@@ -1,7 +1,5 @@
 from datetime import date
 import streamlit as st
-import sqlite3
-import time
 import sys
 import os
 
@@ -15,6 +13,7 @@ from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
 from data.sql_functions import get_games_for_date
 
 TITLE = "Classement TTFL"
+ORDER = 2
 
 def run():
 
