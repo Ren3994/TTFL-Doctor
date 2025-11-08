@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 
+db_visualizer.py
+
 data/team_logos/
 data/cache
 *.db
