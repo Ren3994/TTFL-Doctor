@@ -2,7 +2,7 @@
 
 Application python pour aider à faire des choix sur la TrashTalk Fantasy League (TTFL) : https://fantasy.trashtalk.co
 
-Disclaimer 1 : Ce projet est 100% personnel réalisé dans le but d'apprendre des techniques et de faire des best picks et n'est pas affilié à l'équipe de TrashTalk.
+Disclaimer : Ce projet est 100% personnel réalisé dans le but d'apprendre des techniques et de faire des best picks mais n'est pas affilié à l'équipe de TrashTalk.
 
 ## Pages disponibles : 
 
