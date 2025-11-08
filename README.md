@@ -28,6 +28,21 @@ Les initiales des joueurs (SGA, KAT, ...), juste prénom/nom quand ils sont uniq
 
 <img width="1364" height="739" alt="JDP" src="https://github.com/user-attachments/assets/ec3cc5f5-e094-4cf5-a469-26d0c58a5bbb" /><br><br>
 
+## Installation (pas testée)
+
+App développée avec python 3.13.3
+
+### Clonage
+```bash
+git clone https://github.com/Ren3994/TTFL-Doctor.git
+cd TTFL-Doctor
+```
+
+### Installation des librairies
+```bash
+pip install -r requirements.txt
+```
+
 ## Utilisation
 
 lancer main.py. La première fois, toutes les données seront téléchargées (peut prendre un peu de temps). Pour les fois d'après, ça ne devrait prendre que quelques secondes.
@@ -37,6 +52,8 @@ Les données sont stockées dans des bases de données SQL pour que les calculs 
 Possibilité de précalculer les classements TTFL de plusieurs jours (car la génération des graphes peut prendre quelques secondes) en avance dans manager.py.
 
 Une fois que les données sont mises à jour, un GUI Streamlit se lancera directement dans le navigateur. Le bandeau sur la gauche permet de naviguer entre les différentes pages.
+
+Note : Ce setup marche pour lancer à partir de VS Code
 
 ## Mentions légales
 
