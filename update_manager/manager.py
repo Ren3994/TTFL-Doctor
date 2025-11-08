@@ -6,6 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from update_manager.connection_manager import check_internet_connection
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
 from update_manager.topTTFL_manager import get_top_TTFL
@@ -14,6 +15,10 @@ from streamlit_interface.streamlit_utils import launch_GUI
 from data.sql_functions import update_tables
 
 def run_TTFL_Doctor():
+
+    if not check_internet_connection():
+        tqdm.write('Pas de connection internet')
+        return
 
     # --- Téléchargement des nouveaux matchs, mise à jour des rosters, et téléchargement du injury report
     tqdm.write('Mise à jour des données...')

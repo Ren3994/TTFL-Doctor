@@ -12,7 +12,7 @@ from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 def get_schedule():
 
     schedule_reg_season = None
-    for attempt in range(3):
+    for attempt in range(5):
         try :
             full_schedule = ScheduleLeagueV2(
                 league_id=LEAGUE_ID,
@@ -51,12 +51,12 @@ def get_schedule():
             break
 
         except Exception as e:
-            tqdm.write(f'Error fetching roster : {e}. Retrying in 30s')
-            time.wait(30)
+            tqdm.write(f'Erreur lors du téléchargement du calendrier : {e}. Nouvel essai dans {3 * (attempt + 1)}s')
+            time.sleep(3 * (attempt + 1))
             continue
         
     if schedule_reg_season is None:
-        tqdm.write('Could not update schedule')
+        tqdm.write('Impossible de télécharger le calendrier')
         return
 
     return schedule_reg_season

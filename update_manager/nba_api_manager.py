@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import init_db, save_to_db, get_missing_gameids
-from fetchers.utils import get_boxscores, log_failure
+from update_manager.boxscores_manager import get_boxscores, log_failure
 from misc.misc import DB_PATH
 
 def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database = True):
@@ -29,6 +29,8 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     
     # tqdm.write(f"{len(missing_gameIds_df)} matchs manquants.")
     missing_gameIds_list = missing_gameIds_df.to_dict(orient="records")
+    if len(missing_gameIds_df) < 5:
+        lower_bound, upper_bound = 0.2, 0.5
     if len(missing_gameIds_df) < 15:
         lower_bound, upper_bound = 0.6, 1
     elif len(missing_gameIds_df) > 100:
@@ -52,7 +54,7 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
                 break  # Exit the retry loop if successful
 
             except Exception as e:
-                tqdm.write(f"Error fetching game {game_id}: {e}")
+                tqdm.write(f"Erreur lors du téléchargement du match avec id {game_id}: {e}")
                 time.sleep(30 * (attempt + 1))
                 if attempt == 4:  # 5th failure
                     log_failure(game_date, game_id, str(e))
@@ -78,5 +80,6 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_opponent_player ON boxscores(opponent, playerName);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, gameId);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, opponentTTFL);")
+    conn.close()
 
     return new_games_found

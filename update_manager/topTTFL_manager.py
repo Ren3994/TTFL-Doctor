@@ -301,6 +301,4 @@ def format_to_table(df) :
     prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + ' ± ' + prettydf['stdTTFL'].round(1).fillna('N/A').astype(str)
     prettydf = prettydf.reset_index(drop=True)
 
-
-
     return prettydf

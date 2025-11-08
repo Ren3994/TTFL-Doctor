@@ -7,9 +7,8 @@ import time
 
 def get_injury_report() -> pd.DataFrame:
     df = None
-    for attempt in range(3) :
+    for attempt in range(5) :
         try :
-
             url = "https://www.espn.com/nba/injuries"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
@@ -18,7 +17,6 @@ def get_injury_report() -> pd.DataFrame:
             r = requests.get(url, headers=headers)
             r.raise_for_status()
             soup = BeautifulSoup(r.text, "lxml")
-
             records = []
 
             for table in soup.find_all("table"):
@@ -43,7 +41,23 @@ def get_injury_report() -> pd.DataFrame:
                     text_lower = info.lower()
                     simplified = status
                     if status.lower() == "day-to-day":
-                        if any(x in text_lower for x in ["will not suit up", "won't suit up", "isn't warming up", "is not warming up", "not participating", "will be rested", "ruled out", "won't play", "will not play", "is out", "personal", "is not starting", "is not in the starting", "no timetable", "will not be available", "won't be available"]):
+                        if any(x in text_lower for x in ["will not suit up", 
+                                                         "won't suit up", 
+                                                         "isn't warming up", 
+                                                         "is not warming up", 
+                                                         "not participating", 
+                                                         "will be rested", 
+                                                         "ruled out", 
+                                                         "won't play", 
+                                                         "will not play",
+                                                         "will not return",
+                                                         "is out", 
+                                                         "personal", 
+                                                         "is not starting", 
+                                                         "is not in the starting", 
+                                                         "no timetable", 
+                                                         "will not be available", 
+                                                         "won't be available"]):
                             simplified = "Out"
                         elif "questionable" in text_lower:
                             simplified = "Questionable"
@@ -65,15 +79,15 @@ def get_injury_report() -> pd.DataFrame:
                     })
 
             df = pd.DataFrame(records)
-            break
+            return df
 
         except Exception as e:
-            tqdm.write(f'Error fetching injury report : {e}. Retrying in 5s')
-            time.wait(5)
+            tqdm.write(f'Erreur lors du téléchargement du injury report : {e}. Nouvel essai dans {3 * (attempt + 1)}s')
+            time.sleep(3 * (attempt + 1))
             continue
         
     if df is None:
-        tqdm.write('Could not fetch injury report')
+        tqdm.write('Impossible de télécharger le injury report (espn.com)')
         return df
 
     return df

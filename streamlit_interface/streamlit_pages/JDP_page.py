@@ -1,9 +1,6 @@
 import streamlit as st
-import pandas as pd
-import sqlite3
 import sys
 import os
-import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -38,5 +35,5 @@ def run():
 
     if st.button("💾 Sauvegarder"):
         st.session_state.jdp_df = st.session_state.JDP.saveJDP(edited_df)
-        st.success("Changes processed and saved!")
+        st.success("Modifications sauvegardées")
         st.rerun()
