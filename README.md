@@ -13,7 +13,7 @@ Donne le classement des joueurs TTFL jouant ce soir avec des informations sur le
 
 <img width="1367" height="1003" alt="Classement" src="https://github.com/user-attachments/assets/b78e8c48-4ac5-4654-b594-eb8c98004469" /><br><br>
 
-Cliquer sur les flèches à droite de la date, ou simplement rentrer une nouvelle date dans la case permet de naviguer entre les différentes journées de matchs.
+Cliquer sur les flèches à droite et à gauche de la date, ou simplement rentrer une nouvelle date dans la case permet de naviguer entre les différentes journées de matchs.
 
 Survoler certaines colonnes des joueurs fait apparaître des statistiques plus avancées (évolution des scores, stats par poste, maison/extérieur, influence des blessures des coéquipiers et des adversaires, ...)
 
@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 ## Utilisation
 
-lancer main.py. La première fois, toutes les données seront téléchargées (peut prendre un peu de temps). Pour les fois d'après, ça ne devrait prendre que quelques secondes.
+lancer main.py. Les données se mettront à jour. Selon la dernière fois où la base de donnée a été mise à jour, cela peut prendre quelques minutes. Si le script est lancé régulièrement, voire tous les jours, cela ne prend que quelques secondes.
 
 Les données sont stockées dans des bases de données SQL pour que les calculs soient relativement rapides.
 
