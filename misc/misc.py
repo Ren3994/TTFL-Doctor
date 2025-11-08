@@ -75,3 +75,27 @@ CHAR_MAP = {
     "ü": "u",
     "Đ": "D"
 }
+
+NICKNAMES = {'KD' : 'Kevin Durant',
+             'KING' : 'LeBron James',
+             'LBJ' : 'LeBron James',
+             'BEARD' : 'James Harden',
+             'BRODIE' : 'Russel Westbrook',
+             'CHEF' : 'Stephen Curry',
+             'STEPH' : 'Stephen Curry',
+             'CP3' : 'Chris Paul',
+             'AD' : 'Anthony Davis',
+             'DAME' : 'Damian Lillard',
+             'JOKER' : 'Nikola Jokic',
+             'PROCESS' : 'Joel Embiid',
+             'BOOK' : 'Devin Booker',
+             'SPIDA' : 'Donovan Mitchell',
+             'ANTMAN' : 'Anthony Edwards',
+             'ANT' : 'Anthony Edwards',
+             'WEMBY' : 'Victor Wembanyama',
+             'ALIEN' : 'Victor Wembanyama',
+             'HALI' : 'Tyrese Haliburton',
+             'AR15' : 'Austin Reaves',
+             'AR-15' : 'Austin Reaves',
+             'FVV' : 'Fred VanVleet'
+             }

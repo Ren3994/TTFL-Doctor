@@ -16,37 +16,29 @@ from data.sql_functions import update_tables
 def run_TTFL_Doctor():
 
     # --- Téléchargement des nouveaux matchs, mise à jour des rosters, et téléchargement du injury report
-
     tqdm.write('Mise à jour des données...')
-
     with ThreadPoolExecutor(max_workers=2) as executor:
         nba_api_future = executor.submit(update_nba_data)
         espn_future = executor.submit(update_injury_report)
-
         new_games_found = nba_api_future.result()
         espn_future.result()
     
     # --- Mise à jour des tables SQL à partir des nouvelles données
-
     if new_games_found:
         update_tables()
 
-    # --- Nettoyage des vieux fichiers cache et mise à jour des backups
-
+    # # --- Nettoyage des vieux fichiers cache et mise à jour des backups
     manage_files()
             
-    # --- Construction du df pour aujourd'hui
-
+    # --- Construction du df pour un ou plusieurs jours
     date_dt = datetime.now()
-    days2calc = 14
-
-    for _ in tqdm(range(days2calc), desc=f'Creation des classements pour {days2calc} jours...'):
+    days2calc = 1
+    for _ in tqdm(range(days2calc), desc=f'Création des classements pour {days2calc} jours...'):
         date = datetime.strftime(date_dt, '%d/%m/%Y')
         get_top_TTFL(date, preload=True)
         date_dt += timedelta(days=1)
 
     # --- Lance le GUI Streamlit
-
     launch_GUI()
     
 if __name__ == "__main__":

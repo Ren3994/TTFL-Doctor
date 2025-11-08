@@ -20,7 +20,7 @@ def run():
 
     st.set_page_config(page_title="Joueurs déjà pick", layout="wide")
     
-    st.write("### Edit the table below")
+    st.write("### Historique des picks")
     edited_df = st.data_editor(st.session_state.jdp_df,
                                key="jdp_editor",
                                num_rows="dynamic",

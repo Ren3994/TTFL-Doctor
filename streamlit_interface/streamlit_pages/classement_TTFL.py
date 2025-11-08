@@ -40,7 +40,7 @@ def run():
     st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
     # Text field with buttons on the sides
-    col_spacer1, col_prev, col_padL, col_input, col_padR, col_next, col_spacer2, col_spacer3 = st.columns([4, 1, 0.01, 1.4, 0.4, 1, 1, 3], gap="small")
+    col_spacer1, col_prev, col_padL, col_input, col_padR, col_next, col_spacer2, col_spacer3 = st.columns([4, 1, 0.01, 1.4, 0.4, 1, 0.5, 3], gap="small")
 
     with col_prev:
         st.button("◀️", on_click=prev_date)

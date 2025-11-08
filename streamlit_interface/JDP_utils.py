@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import run_sql_query
+from misc.misc import NICKNAMES
 
 class JoueursDejaPick():
     def __init__(self, db_path: str):
@@ -145,16 +146,17 @@ def match_player(input_name, names_list):
     if input_name in names_list:
         return input_name
     
-    abbv_map, splits = generate_dicts(names_list)
     input_upper = input_name.upper().replace('.', '')
-    
+    abbv_map, splits = generate_dicts(names_list)
+
+    if input_upper in NICKNAMES:
+        return NICKNAMES[input_upper]
     if input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
         return abbv_map[input_upper][0]
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]
     
     match, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
-    
     return match
 
 def generate_dicts(names_list):

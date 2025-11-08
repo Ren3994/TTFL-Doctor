@@ -78,23 +78,30 @@ def get_low_game_count(date) :
     games_in_mask = games_per_day[mask_date]
     
     low_games_count = games_in_mask[games_in_mask['n_games'] <= 3].reset_index(drop=True)
-
-    result_str = '<br>'.join(
-        f"{row['gameDate'].strftime('%d/%m')} : {row['n_games']} matchs"
-        for _, row in low_games_count.iterrows()
-    )
+    if len(low_games_count) > 0:
+        result_str = 'Jours avec peu de matchs :<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;' + '<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;'.join(
+            f"{row['gameDate'].strftime('%d/%m')} : {row['n_games']} matchs"
+            for _, row in low_games_count.iterrows()
+        )
+    else:
+        result_str = ''
 
     return result_str
 
 def df_to_html(
     df,
-    show_cols=['Joueur', 'Poste', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
+    show_cols=['Joueur', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
     tooltips={
             'Statut' : 'details',
             'Équipe' : 'team_injury_status',
             'Adversaire' : 'opp_inj_status',
             'TTFL' : 'allrel'
             },
+    col_header_tooltips = {'Joueur' : 'Survoler pour voir le graphe d\'évolution des scores TTFL',
+                          'TTFL' : 'Toutes les équipes contre : scores TTFL relatifs des équipes adverses contre cette équipe' + \
+                          '<br>Postes contre : scores TTFL relatifs des joueurs de ce poste contre cette équipe',
+                          'Adversaire' : 'Score TTFL relatif des joueurs adverses de ce poste quand ils sont blessés',
+                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé'},
     image_tooltips={'Joueur' : 'plots'},
     show_index=True,
     zebra_stripes=True,
@@ -123,12 +130,15 @@ def df_to_html(
         {'box-shadow: 2px 2px 8px ' + shadow_color + ';' if shadow_table else ''}
     }}
     .custom-table-dark th {{
-        {'font-weight: bold;' if bold_headers else ''}
+        
         {'background-color: ' + header_bkg_color + ';' if bold_headers else ''}
         color: {header_text_color} !important;
         padding: {padding}px;
         text-align: center;
         border: none;
+    }}
+    .custom-table-dark th .header-text {{
+        font-weight: bold;
     }}
     .custom-table-dark td {{
         padding: {padding}px;
@@ -154,6 +164,7 @@ def df_to_html(
         background-color: #2b2b2b;
         color: #e0e0e0;
         text-align: center;
+        font-weight: normal !important;
         border-radius: 6px;
         padding: 6px 10px;
         position: absolute;
@@ -185,8 +196,19 @@ def df_to_html(
     html += "<thead><tr>"
     if show_index:
         html += "<th>Classement</th>"
+
+
     for col in show_cols:
-        html += f"<th>{col}</th>"
+        if col in col_header_tooltips:
+            html += (
+                '<th>'
+                f'<div class="tooltip"><span class="header-text">{col}<sup>?</sup></span>'
+                f'<span class="tooltiptext">{col_header_tooltips[col]}</span></div>'
+                '</th>'
+            )
+        else:
+            html += f'<th><span class="header-text">{col}</span></th>'
+
     html += "</tr></thead><tbody>"
 
     for i, row in enumerate(df.itertuples(index=False), start=1):
