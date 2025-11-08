@@ -9,6 +9,7 @@ data/cache
 *.db
 *.db-shm
 *.db-wal
+!data/data_2025-26.db
 
 player_clustering/
 

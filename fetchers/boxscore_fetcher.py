@@ -32,8 +32,8 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
             return boxscore_df
     
         except Exception as e:
-            tqdm.write(f'Erreur lors du téléchargement du boxscore de {home_team}-{visitor_team} du {game_date} : {e}. Nouvel essai dans {3 * (attempt + 1)}s')
-            time.sleep(3 * (attempt + 1))
+            tqdm.write(f'Erreur lors du téléchargement du boxscore de {home_team}-{visitor_team} du {game_date} : {e}. Nouvel essai dans {30 * (attempt + 1)}s')
+            time.sleep(30 * (attempt + 1))
             continue
 
     return boxscore_df

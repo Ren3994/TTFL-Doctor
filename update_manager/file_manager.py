@@ -18,6 +18,12 @@ def manage_files():
     manage_cache(current_hash, current_date)
     manage_backups(current_hash)
 
+def cleanup_db():
+    for table in ['team_games', 'played', 'teammate_played', 'player_avg_TTFL', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game', 'injury_report', 'schedule', 'rosters']:
+            drop_table(table)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""VACUUM;""")
+
 def manage_backups(db_hash):
     for filename in os.listdir(BACKUP_DIR_PATH):
         if SEASON in filename and db_hash not in filename:
@@ -63,5 +69,22 @@ def load_from_cache(game_date: str, db_hash: str):
             return pickle.load(f)
     return None
 
+def drop_table(table_name: str, db_path=DB_PATH):
+    if not table_name:
+        print("No table name provided.")
+        return
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(f"DROP TABLE IF EXISTS {table_name};")
+        conn.commit()
+    except Exception as e:
+        print(f"Error deleting table '{table_name}': {e}")
+    finally:
+        conn.close()
+
 if __name__ == "__main__":
-    manage_files()
+    # manage_files()
+    cleanup_db()

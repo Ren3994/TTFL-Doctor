@@ -17,7 +17,7 @@ def fetch_player_positions():
     player_ids = [player['id'] for player in active_players]
 
     player_positions = {}
-    for player_id in tqdm(player_ids, desc = 'Téléchargement des postes des joueurs', ncols = 100) :
+    for player_id in tqdm(player_ids, desc = 'Téléchargement des postes des joueurs (une seule fois)', ncols = 100) :
         for attempt in range(5):
                 try:
                     player_info = commonplayerinfo.CommonPlayerInfo(player_id).get_data_frames()[0]
@@ -26,8 +26,8 @@ def fetch_player_positions():
                     break 
 
                 except Exception as e:
-                    tqdm.write(f"Erreur lors du téléchargement du poste du joueur d\'id {player_id}: {e}. Nouvel essai dans {3 * (attempt + 1)}s")
-                    time.sleep(3 * (attempt + 1))
+                    tqdm.write(f"Erreur lors du téléchargement du poste du joueur d\'id {player_id}: {e}. Nouvel essai dans {30 * (attempt + 1)}s")
+                    time.sleep(30 * (attempt + 1))
         
     df_positions = pd.DataFrame(list(player_positions.items()), columns=['playerName', 'position'])
     df_positions['playerName'] = df_positions['playerName'].apply(normalize_name)

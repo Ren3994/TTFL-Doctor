@@ -7,6 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import STREAMLIT_PAGES_PATH
+from update_manager.file_manager import cleanup_db
 
 PAGES = {}
 
@@ -24,12 +25,11 @@ st.set_page_config(
 
 # --- Sidebar navigation ---
 if st.sidebar.button("🛑 Quitter"):
+    cleanup_db()
     os.kill(os.getpid(), signal.SIGTERM)
-
+    
 st.sidebar.title("Navigation")
 selection = st.sidebar.radio("Aller à", list(PAGES.keys()))
-
-
 
 # --- Run the selected page ---
 page = PAGES[selection]

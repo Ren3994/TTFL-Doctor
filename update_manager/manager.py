@@ -28,9 +28,8 @@ def run_TTFL_Doctor():
         new_games_found = nba_api_future.result()
         espn_future.result()
     
-    # --- Mise à jour des tables SQL à partir des nouvelles données
-    if new_games_found:
-        update_tables()
+    # --- Mise à jour des tables SQL
+    update_tables()
 
     # # --- Nettoyage des vieux fichiers cache et mise à jour des backups
     manage_files()
