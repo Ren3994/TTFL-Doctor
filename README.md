@@ -28,7 +28,7 @@ Les initiales des joueurs (SGA, KAT, ...), juste prénom/nom quand ils sont uniq
 
 <img width="1364" height="739" alt="JDP" src="https://github.com/user-attachments/assets/ec3cc5f5-e094-4cf5-a469-26d0c58a5bbb" /><br><br>
 
-## Installation (pas testée)
+## Installation
 
 App développée avec python 3.13.3
 

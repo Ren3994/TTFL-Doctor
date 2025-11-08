@@ -25,6 +25,7 @@ def cleanup_db():
         conn.execute("""VACUUM;""")
 
 def manage_backups(db_hash):
+    os.makedirs(BACKUP_DIR_PATH, exist_ok=True)
     for filename in os.listdir(BACKUP_DIR_PATH):
         if SEASON in filename and db_hash not in filename:
             old_backup_path = os.path.join(BACKUP_DIR_PATH, filename)
@@ -33,6 +34,7 @@ def manage_backups(db_hash):
             copy2(DB_PATH, new_db_path)
 
 def manage_cache(db_hash, date):
+    os.makedirs(CACHE_DIR_PATH, exist_ok=True)
     for filename in os.listdir(CACHE_DIR_PATH):
         if db_hash not in filename:
             os.remove(os.path.join(CACHE_DIR_PATH, filename))
@@ -55,8 +57,8 @@ def get_db_hash() -> str:
     return m.hexdigest()
 
 def save_to_cache(df, game_date: str, db_hash: str):
-    game_date = game_date.replace("/", "-")
     os.makedirs(CACHE_DIR_PATH, exist_ok=True)
+    game_date = game_date.replace("/", "-")
     path = os.path.join(CACHE_DIR_PATH, f"{game_date}_{db_hash}.pkl")
     with open(path, "wb") as f:
         pickle.dump(df, f)
