@@ -1,7 +1,7 @@
 from typing import List, Optional, Union, Dict, Any
 from tqdm import tqdm
 import pandas as pd
-import sqlite3 
+import sqlite3
 import sys
 import os
 
@@ -91,7 +91,14 @@ def update_helper_tables(conn):
     run_sql_query(
         conn,
         table="boxscores",
-        select=["playerName", "ROUND(AVG(TTFL), 1) AS avg_TTFL"],
+        select=["playerName", 
+                "ROUND(AVG(TTFL), 1) AS avg_TTFL",
+                "ROUND(" + \
+                    "CASE WHEN COUNT(*) > 0 " + \
+                        "THEN SQRT((SUM(TTFL * TTFL) - SUM(TTFL) * SUM(TTFL) / COUNT(*)) / (COUNT(*))) " + \
+                        "ELSE 0.0 " + \
+                    "END, 1) " + \
+                "AS stddev_TTFL"],
         filters=["seconds > 0"],
         group_by="playerName",
         order_by="avg_TTFL DESC",
@@ -498,11 +505,12 @@ def topTTFL_query(conn, game_date):
 
     player_avgTTFL AS (
     ------------------------------------------- Moyennes TTFL par joueur --------------------------------------------
-    --   playerName  |  avg_TTFL
-    -- Luka Doncic   |    75.0
-    -- Nikola Jokic  |    57.2
+    --       playerName       |  avg_TTFL  |  stddev_TTFL
+    --      Luka Doncic       |    62.4    |     12.6
+    -- Giannis Antetokounmpo  |    59.7    |     11.6
+    --     Nikola Jokic       |    54.7    |     14.6
 
-    SELECT playerName, avg_TTFL
+    SELECT playerName, avg_TTFL, stddev_TTFL
     FROM player_avg_TTFL
     ),
 
@@ -664,7 +672,7 @@ def topTTFL_query(conn, game_date):
     ap.playerName, ap.pos, ap.isHome, 
     ap.team, ap.teamWins, ap.teamLosses,
     ap.opponent, ap.oppWins, ap.oppLosses,
-    pat.avg_TTFL,
+    pat.avg_TTFL, pat.stddev_TTFL,
 
     -- Player injury status
     ir.injury_status, ir.details,

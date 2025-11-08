@@ -47,6 +47,7 @@ def format_to_table(df) :
     prettydf['Équipe'] = df['team'] + ' (' + df['teamWins'].astype(str) + 'W-' + df['teamLosses'].astype(str) + 'L)'
     prettydf['Adversaire'] = df['opponent'] + ' (' + df['oppWins'].astype(str) + 'W-' + df['oppLosses'].astype(str) + 'L)'
     prettydf['TTFL'] = df['avg_TTFL'].round(1).fillna('N/A')
+    prettydf['stdTTFL'] = df['stddev_TTFL'].round(1).fillna('N/A')
     prettydf['Statut'] = df['injury_status'].fillna('')
     prettydf['details'] = df['details'].fillna('')
     prettydf['opp'] = df['opponent']
@@ -297,6 +298,7 @@ def format_to_table(df) :
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
+    prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + ' ± ' + prettydf['stdTTFL'].round(1).fillna('N/A').astype(str)
     prettydf = prettydf.reset_index(drop=True)
 
 

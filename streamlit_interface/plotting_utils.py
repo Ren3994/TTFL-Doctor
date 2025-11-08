@@ -89,7 +89,7 @@ def generate_plot_row(row, requested_date):
     graph_dates = row['graph_dates']
     graph_opps = row['graph_opps']
     graph_TTFLs = row['graph_TTFLs']
-    avgTTFL = row['TTFL']
+    avgTTFL = float(row['TTFL'].split('±')[0])
 
     dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
