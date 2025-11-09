@@ -29,6 +29,8 @@ def run():
 
             update_tables()
 
+            #### FIX THE BUG WHERE DATA CAN BE WRITTEN MULTIPLE TIMES IN BOXSCORES
+
             # status.update(label="Mise à jour des données réussie ✅", state="complete")
             st.session_state.data_ready = True
             st.rerun()
