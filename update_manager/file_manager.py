@@ -15,8 +15,8 @@ from misc.misc import DB_PATH, CACHE_DIR_PATH, BACKUP_DIR_PATH, SEASON
 def manage_files():
     current_hash = get_db_hash()
     current_date = datetime.today().date()
-    manage_cache(current_hash, current_date)
-    manage_backups(current_hash)
+    # manage_cache(current_hash, current_date)
+    # manage_backups(current_hash)
 
 def cleanup_db():
     for table in ['team_games', 'played', 'teammate_played', 'player_avg_TTFL', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game', 'injury_report', 'schedule', 'rosters']:

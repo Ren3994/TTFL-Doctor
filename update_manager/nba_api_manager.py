@@ -1,4 +1,5 @@
 from datetime import datetime
+import streamlit as st
 from tqdm import tqdm
 import pandas as pd
 import sqlite3
@@ -38,12 +39,19 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     else:
         lower_bound, upper_bound = 1.5, 2.5
     new_boxscores = []
+    
+    total = len(missing_gameIds_list)
+    progress_bar = st.progress(0)
+    status = st.empty()
 
-    for game_info in tqdm(missing_gameIds_list, desc = 'Téléchargement des matchs manquants...', ncols = 100) :
+    # for game_info in tqdm(missing_gameIds_list, desc = 'Téléchargement des matchs manquants...', ncols = 100) :
+    for i, game_info in enumerate(missing_gameIds_list):
         game_id = game_info['gameId']
         game_date = datetime.strptime(game_info['gameDate'], '%d/%m/%Y')
         visitor_team = game_info['awayTeam']
         home_team = game_info['homeTeam']
+
+        status.text(f"Téléchargement du match {i+1}/{total} ({game_info['gameDate']}) : {home_team} - {visitor_team} ")
 
         for attempt in range(5):  # Retry up to 5 times
             try:
@@ -51,6 +59,7 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
                 if not boxscore.empty and game_id in boxscore['gameId'].values:
                     new_boxscores.extend(boxscore.to_dict(orient="records"))
                     time.sleep(random.uniform(lower_bound, upper_bound))
+                    progress_bar.progress((i + 1) / total)
                 break  # Exit the retry loop if successful
 
             except Exception as e:
@@ -81,5 +90,8 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, gameId);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, opponentTTFL);")
     conn.close()
+
+    progress_bar.empty()
+    # status.text("✅ Téléchargement terminé !")
 
     return new_games_found
