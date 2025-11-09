@@ -36,7 +36,7 @@ def run_TTFL_Doctor():
             
     # --- Construction du df pour un ou plusieurs jours
     date_dt = datetime.now()
-    days2calc = 1
+    days2calc = 14
     for _ in tqdm(range(days2calc), desc=f'Création des classements pour {days2calc} jours...'):
         date = datetime.strftime(date_dt, '%d/%m/%Y')
         get_top_TTFL(date, preload=True)

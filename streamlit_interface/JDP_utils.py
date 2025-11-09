@@ -86,6 +86,9 @@ class JoueursDejaPick():
                     }]
         )
 
+        if 'TTFL' in df.columns:
+            df = df.drop(columns=['TTFL', 'avg_TTFL'])
+
         df = clean_player_names(df, 'joueur', scoresTTFL['playerName'].unique().tolist())
 
         df_completed = df.copy()
@@ -154,7 +157,7 @@ def match_player(input_name, names_list):
 
     if input_upper in NICKNAMES:
         return NICKNAMES[input_upper]
-    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
+    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1: ### Ajouter : si il y en a plusieurs, prendre celui avec la meilleure moyenne TTFL
         return abbv_map[input_upper][0]
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]

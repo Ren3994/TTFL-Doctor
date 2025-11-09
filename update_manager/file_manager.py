@@ -19,7 +19,7 @@ def manage_files():
     manage_backups(current_hash)
 
 def cleanup_db():
-    for table in ['team_games', 'played', 'teammate_played', 'player_avg_TTFL', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game', 'injury_report', 'schedule', 'rosters']:
+    for table in ['team_games', 'played', 'teammate_played', 'player_avg_TTFL', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game', 'injury_report']:
             drop_table(table)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""VACUUM;""")
