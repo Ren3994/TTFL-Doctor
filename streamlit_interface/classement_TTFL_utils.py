@@ -98,7 +98,7 @@ def get_low_game_count(date) :
             games_str = ", ".join(games)
             part = f"{date_str} : {row['n_games']} matchs ({games_str})"
             parts.append(part)
-        result_str = ''.join(['&nbsp;'] * 25) + f'<b>Jours avec moins de {n_games} matchs :</b>'
+        result_str = ''.join(['&nbsp;'] * 20) + f'<b>Jours avec moins de {n_games} matchs :</b>'
         for p in parts:
             result_str += '<br>'
             result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p

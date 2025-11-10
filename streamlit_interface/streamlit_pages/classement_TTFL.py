@@ -69,8 +69,7 @@ def run():
     if st.session_state.text_parse_error:
         st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
 
-    st.markdown("<hr style='width:100%;margin:auto;margin-top:0.6rem;'>", unsafe_allow_html=True)
-    st.write("")
+    st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
     # Display for games with team logos
     games_for_date = get_games_for_date(st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
@@ -98,7 +97,7 @@ def run():
             with cols[base + 2]:
                 st_image_crisp(away_logo, width=30)
     
-    st.markdown("<hr style='width:100%;margin:auto;margin-top:0.6rem;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     st.write("")
 
     # Display the TTFL table
