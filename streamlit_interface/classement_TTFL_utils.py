@@ -8,6 +8,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
 
 def accentuate_pct(text: str) -> str:
@@ -70,7 +71,14 @@ def get_low_game_count(date) :
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt + timedelta(days=30)
 
-    games_per_day = run_sql_query(table="schedule", select=['gameDate', 'GROUP_CONCAT(homeTeam) AS homes', 'GROUP_CONCAT(awayTeam) AS aways', 'COUNT(*) AS n_games'], filters='homeTeam IS NOT NULL', group_by='gameDate')
+    games_per_day = run_sql_query(table="schedule", 
+                                  select=['gameDate', 
+                                          'GROUP_CONCAT(homeTeam) AS homes', 
+                                          'GROUP_CONCAT(awayTeam) AS aways', 
+                                          'COUNT(*) AS n_games'], 
+                                  filters='homeTeam IS NOT NULL', 
+                                  group_by='gameDate')
+    
     games_per_day['gameDate'] = pd.to_datetime(games_per_day['gameDate'], errors='coerce', dayfirst=True)
     games_per_day = games_per_day.sort_values(by='gameDate')
     
@@ -80,7 +88,7 @@ def get_low_game_count(date) :
     low_games_count = games_in_mask[games_in_mask['n_games'] <= 3].reset_index(drop=True)
     low_games_count['homes'] = low_games_count['homes'].str.split(',')
     low_games_count['aways'] = low_games_count['aways'].str.split(',')
-    
+
     if len(low_games_count) > 0:
         parts = []
         for _, row in low_games_count.iterrows():
@@ -95,6 +103,7 @@ def get_low_game_count(date) :
             result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p
     else:
         result_str = ''
+
     return result_str
 
 def df_to_html(
@@ -268,6 +277,12 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.text_parse_error = False
+        topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+        st.session_state.topTTFL_df = topTTFL_df
+        st.session_state.with_plots = with_plots
+        st.session_state.plot_calc_incr = 20
+        st.session_state.plot_calc_start = 0
+        st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
     except ValueError:
         st.session_state.text_parse_error = True
 
@@ -275,8 +290,20 @@ def prev_date():
     """Go to previous date."""
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    st.session_state.topTTFL_df = topTTFL_df
+    st.session_state.with_plots = with_plots
+    st.session_state.plot_calc_incr = 20
+    st.session_state.plot_calc_start = 0
+    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
 
 def next_date():
     """Go to next date."""
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    st.session_state.topTTFL_df = topTTFL_df
+    st.session_state.with_plots = with_plots
+    st.session_state.plot_calc_incr = 20
+    st.session_state.plot_calc_start = 0
+    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr

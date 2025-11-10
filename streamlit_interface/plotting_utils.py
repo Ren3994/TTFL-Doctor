@@ -50,7 +50,10 @@ def add_plots_to_head(df, date, cutoff):
 
 def add_plots_to_rest(df, date, cutoff):
 
-    rest = df.iloc[cutoff:]
+    if cutoff == 0:
+        rest = df.copy()
+    else:
+        rest = df.iloc[cutoff:]
 
     with tempfile.NamedTemporaryFile(delete=False) as tmp_in, \
          tempfile.NamedTemporaryFile(delete=False) as tmp_out:
@@ -78,8 +81,11 @@ def add_plots_to_rest(df, date, cutoff):
             print("stderr:", e.stderr)
                     
         rest_with_plots = pd.read_pickle(output_path)
-
-        df.iloc[cutoff:] = rest_with_plots
+        
+        if cutoff == 0:
+            df = rest_with_plots.copy()
+        else:
+            df.iloc[cutoff:] = rest_with_plots
 
         return df
 

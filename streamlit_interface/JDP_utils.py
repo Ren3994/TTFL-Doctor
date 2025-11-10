@@ -98,8 +98,7 @@ class JoueursDejaPick():
         right_on=['playerName', 'gameDate'],
         how='left'
         )
-
-        df_completed = df_completed.drop(columns=['playerName', 'gameDate'])
+        
         df_completed['TTFL'] = df_completed['TTFL'].apply(lambda x: int(x) if pd.notna(x) else '')
         df_completed['avg_TTFL'] = df_completed['avg_TTFL'].fillna('')
 

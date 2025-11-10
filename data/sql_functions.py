@@ -1,4 +1,5 @@
 from typing import List, Optional, Union, Dict, Any
+import streamlit as st
 from tqdm import tqdm
 import pandas as pd
 import sqlite3
@@ -12,22 +13,23 @@ from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
 from misc.misc import DB_PATH
 
-def init_db(conn):
-    
+def init_db(conn, progress=None):
     try :
         schedule = get_schedule()
         if schedule is not None:
             save_to_db(conn, schedule, "schedule", if_exists="replace")
+            progress.progress(20/100)
         else :
             tqdm.write("Schedule is None. Table could not be saved.")
     except:
         tqdm.write('Error fetching schedule. Check internet connection')
-
+    
     rosters = get_rosters()
     if rosters is not None:
         save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
+        progress.progress(30/100)
     else:
-        tqdm.write("Rosters are None. Table could not be saved.")
+        tqdm.write("Rosters is None. Table could not be saved.")
 
     check_pos_table_exists(conn)
     rosters_with_pos = add_pos_to_rosters(conn)
@@ -37,6 +39,8 @@ def init_db(conn):
         tqdm.write("Rosters with positions is None. Table could not be saved.")
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team_player ON rosters(teamTricode, playerName);")
+
+    return progress
 
 def check_pos_table_exists(conn):
         cursor=conn.cursor()
@@ -124,19 +128,47 @@ def update_helper_tables(conn):
 
     conn.commit()
 
-def update_tables():
+def remove_duplicates_from_boxscores(conn):
+     cur = conn.cursor()
+     cur.execute("""
+        WITH dupes AS (
+            SELECT b1.rowid
+            FROM boxscores b1
+            JOIN boxscores b2
+              ON b1.gameId = b2.gameId
+              AND b1.playerName = b2.playerName
+              AND b1.rowid > b2.rowid
+        )
+        DELETE FROM boxscores
+        WHERE rowid IN (SELECT rowid FROM dupes);
+        """)
+     conn.commit()
+
+def update_tables(progress):
     with sqlite3.connect(DB_PATH) as conn:
+        
+        progress.progress(82/100)
+        conn.execute("PRAGMA journal_mode = WAL;")
+        progress.progress(84/100)
+        remove_duplicates_from_boxscores(conn)
+        progress.progress(86/100)
         update_helper_tables(conn)
+        progress.progress(88/100)
         update_home_away_rel_TTFL(conn)
+        progress.progress(90/100)
         update_avg_TTFL_per_pos(conn)
+        progress.progress(92/100)
         update_rel_player_avg_ttfl_v_opp(conn)
+        progress.progress(94/100)
         update_absent_teammate_rel_impact(conn)
+        progress.progress(96/100)
         updates_games_missed_by_players(conn)
+        progress.progress(98/100)
         update_opp_pos_avg_per_game(conn)
         
-        conn.execute("PRAGMA journal_mode = WAL;")
-        conn.execute("ANALYZE;")
-        conn.execute("PRAGMA optimize;")
+        # conn.execute("ANALYZE;")
+        # conn.execute("PRAGMA optimize;")
+        progress.progress(100/100)
 
 def update_home_away_rel_TTFL(conn):
     query = """
@@ -935,7 +967,7 @@ def save_to_db(conn, df, table_name, if_exists, index=False):
     try:
         df.to_sql(table_name, conn, if_exists=if_exists, index=index, chunksize=500)
     except Exception as e:
-        tqdm.write(f"Error saving to DB: {e}")
+        tqdm.write(f"Error saving to DB: {e} {df.columns} {if_exists}")
         return
 
 def get_missing_gameids(conn):

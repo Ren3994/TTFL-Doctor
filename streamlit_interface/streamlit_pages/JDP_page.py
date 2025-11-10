@@ -8,6 +8,7 @@ from misc.misc import DB_PATH
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 TITLE = "Joueurs déjà pick"
+ORDER = 3
 
 def run():
 

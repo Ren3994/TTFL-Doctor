@@ -22,3 +22,6 @@ custom_CSS = """
 
 def launch_GUI():
     subprocess.run([sys.executable, "-m", "streamlit", "run", STREAMLIT_MAIN_PY_PATH])
+
+if __name__ == '__main__':
+    launch_GUI()

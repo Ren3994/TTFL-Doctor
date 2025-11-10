@@ -1,4 +1,5 @@
 from datetime import datetime
+import streamlit as st
 from tqdm import tqdm
 import pandas as pd
 import sqlite3
@@ -13,18 +14,19 @@ from data.sql_functions import init_db, save_to_db, get_missing_gameids
 from update_manager.boxscores_manager import get_boxscores, log_failure
 from misc.misc import DB_PATH
 
-def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database = True):
+def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
 
     conn = sqlite3.connect(DB_PATH)
     new_games_found = True
 
     if init_database:
-        init_db(conn)
+        progress = init_db(conn, progress)
 
     missing_gameIds_df = get_missing_gameids(conn)
     if missing_gameIds_df.empty :
-        tqdm.write('Aucun nouveau match.')
+        # tqdm.write('Aucun nouveau match.')
         new_games_found = False
+        progress.progress(80/100)
         return new_games_found
     
     # tqdm.write(f"{len(missing_gameIds_df)} matchs manquants.")
@@ -38,12 +40,18 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
     else:
         lower_bound, upper_bound = 1.5, 2.5
     new_boxscores = []
+    
+    total = len(missing_gameIds_list)
+    # progress_bar = st.progress(0)
+    # status = st.empty()
 
-    for game_info in tqdm(missing_gameIds_list, desc = 'Téléchargement des matchs manquants...', ncols = 100) :
+    # for game_info in tqdm(missing_gameIds_list, desc = 'Téléchargement des matchs manquants...', ncols = 100) :
+    for i, game_info in enumerate(missing_gameIds_list):
         game_id = game_info['gameId']
         game_date = datetime.strptime(game_info['gameDate'], '%d/%m/%Y')
         visitor_team = game_info['awayTeam']
         home_team = game_info['homeTeam']
+        status.text(f"Injury report : ✅\nDonnées NBA : match {i+1}/{total} ({home_team} - {visitor_team})\nTables de calculs :")
 
         for attempt in range(5):  # Retry up to 5 times
             try:
@@ -51,6 +59,7 @@ def update_nba_data(update_attempt = 1, max_update_attempts = 3, init_database =
                 if not boxscore.empty and game_id in boxscore['gameId'].values:
                     new_boxscores.extend(boxscore.to_dict(orient="records"))
                     time.sleep(random.uniform(lower_bound, upper_bound))
+                    progress.progress((30 + 50*((i + 1) / total))/100)
                 break  # Exit the retry loop if successful
 
             except Exception as e:
