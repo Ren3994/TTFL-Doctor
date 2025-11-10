@@ -723,7 +723,7 @@ def topTTFL_query(conn, game_date):
     GROUP_CONCAT(itri.simp_status) AS simp_statuses,
     GROUP_CONCAT(itri.injured_player_avg_TTFL) AS inj_teammates_TTFLs,
     GROUP_CONCAT(itri.rel_TTFL_teammate_absent) AS rel_TTFL_inj_teammate_abs,
-    GROUP_CONCAT(itri.games_absent_count) inj_teammates_abs_count,
+    GROUP_CONCAT(itri.games_absent_count) AS inj_teammates_abs_count,
 
     -- Concatenated opponents info
     GROUP_CONCAT(orws.inj_opp_player) AS inj_opponents,
