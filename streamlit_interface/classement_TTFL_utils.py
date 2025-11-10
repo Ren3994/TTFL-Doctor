@@ -8,6 +8,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
 
 def accentuate_pct(text: str) -> str:
@@ -259,6 +260,12 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.text_parse_error = False
+        topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+        st.session_state.topTTFL_df = topTTFL_df
+        st.session_state.with_plots = with_plots
+        st.session_state.plot_calc_incr = 20
+        st.session_state.plot_calc_start = 0
+        st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
     except ValueError:
         st.session_state.text_parse_error = True
 
@@ -266,8 +273,20 @@ def prev_date():
     """Go to previous date."""
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    st.session_state.topTTFL_df = topTTFL_df
+    st.session_state.with_plots = with_plots
+    st.session_state.plot_calc_incr = 20
+    st.session_state.plot_calc_start = 0
+    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
 
 def next_date():
     """Go to next date."""
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    st.session_state.topTTFL_df = topTTFL_df
+    st.session_state.with_plots = with_plots
+    st.session_state.plot_calc_incr = 20
+    st.session_state.plot_calc_start = 0
+    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr

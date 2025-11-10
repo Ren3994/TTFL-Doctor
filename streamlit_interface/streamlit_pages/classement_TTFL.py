@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count
-from streamlit_interface.plotting_utils import add_plots_to_head, add_plots_to_rest
+from streamlit_interface.plotting_utils import generate_all_plots
 from update_manager.topTTFL_manager import get_top_TTFL, get_db_hash, save_to_cache
 from streamlit_interface.streamlit_utils import custom_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
@@ -27,10 +27,13 @@ def run():
     if "date_text" not in st.session_state or st.session_state.date_text == "":
         st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
-    if "topTTFL_df_original" not in st.session_state:
+    if "topTTFL_df" not in st.session_state:
         topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
-        st.session_state.topTTFL_df_original = topTTFL_df
+        st.session_state.topTTFL_df = topTTFL_df
         st.session_state.with_plots = with_plots
+        st.session_state.plot_calc_incr = 20
+        st.session_state.plot_calc_start = 0
+        st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -59,6 +62,11 @@ def run():
     with col_spacer1:
         filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
         filter_inj = st.checkbox("Masquer les joueurs blessés", value=False)
+        
+        if st.button('Générer plus de graphes'):
+            st.session_state.plot_calc_start += st.session_state.plot_calc_incr
+            st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
+            st.session_state.with_plots = False
     
     with col_spacer3:
         st.markdown(get_low_game_count(st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
@@ -101,37 +109,35 @@ def run():
 
     # Display the TTFL table
     
-    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
-
-    if topTTFL_df.empty:
+    if st.session_state.topTTFL_df.empty:
         st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date.strftime('%d/%m/%Y')}")
     
     else:
         table_placeholder = st.empty()
-        if not with_plots:
-            topTTFL_df['plots'] = IMG_CHARGEMENT
-            topTTFL_html = df_to_html(topTTFL_df)
+        if not st.session_state.with_plots:
+            
+            if st.session_state.plot_calc_start == 0:
+                st.session_state.topTTFL_df['plots'] = IMG_CHARGEMENT                
+
+            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
             table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
             
-            # séquentiel pour les 5 premières rangées (~0.5s)
-            cutoff = 5
-            topTTFL_df = add_plots_to_head(topTTFL_df,
-                                           st.session_state.selected_date.strftime('%d/%m/%Y'), 
-                                           cutoff=cutoff)
-            topTTFL_html = df_to_html(topTTFL_df)
-            table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
-
-            # Subprocess avec pickle pour lancer le reste en parallèle (~4.5s)
-            topTTFL_df = add_plots_to_rest(topTTFL_df,
-                                           st.session_state.selected_date.strftime('%d/%m/%Y'), 
-                                           cutoff=cutoff)
-            topTTFL_html = df_to_html(topTTFL_df)
-            table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
+            chunk_size = 5
+            for i in range(st.session_state.plot_calc_start, 
+                            min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
+                            chunk_size):
+                chunk = st.session_state.topTTFL_df.iloc[i:i+chunk_size]
+                chunk_with_plots = generate_all_plots(chunk, 
+                                                        st.session_state.selected_date.strftime('%d/%m/%Y'),
+                                                        parallelize = False)
+                st.session_state.topTTFL_df.iloc[i:i+chunk_size] = chunk_with_plots
+                topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+                table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
         joueurs_pas_dispo = get_joueurs_pas_dispo(st.session_state.selected_date.strftime('%d/%m/%Y'))
         joueurs_blesses = get_joueurs_blesses()
 
-        filtered_topTTFL_df = topTTFL_df.copy()
+        filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
         if filter_JDP:
             filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_pas_dispo)]
         if filter_inj:
@@ -140,5 +146,5 @@ def run():
         filtered_topTTFL_html = df_to_html(filtered_topTTFL_df)
         table_placeholder.markdown(filtered_topTTFL_html, unsafe_allow_html=True)
         
-        db_hash = get_db_hash()
-        save_to_cache(topTTFL_df, st.session_state.selected_date.strftime('%d/%m/%Y'), db_hash)
+        # db_hash = get_db_hash()
+        # save_to_cache(st.session_state.topTTFL_df, st.session_state.selected_date.strftime('%d/%m/%Y'), db_hash)
