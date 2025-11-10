@@ -90,7 +90,7 @@ python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.1.1
 pytz==2025.2
-pywin32==311
+pywin32==311; platform_system == "Windows"
 PyYAML==6.0.3
 qtstylish==0.1.5
 RapidFuzz==3.14.1
