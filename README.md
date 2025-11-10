@@ -9,11 +9,17 @@ Disclaimer : Ce projet est 100% personnel réalisé dans le but d'apprendre des 
 ### 1. Classement TTFL du jour 
 Donne le classement des joueurs TTFL jouant ce soir avec des informations sur les blessures et les stats TTFL.
 
-<img width="1367" height="1003" alt="Classement" src="https://github.com/user-attachments/assets/b78e8c48-4ac5-4654-b594-eb8c98004469" /><br><br>
+<img width="1336" height="994" alt="Classement" src="https://github.com/user-attachments/assets/61937031-4c11-48d3-8ee2-c877bec24cf5" /><br><br>
 
 Cliquer sur les flèches à droite et à gauche de la date, ou simplement rentrer une nouvelle date dans la case permet de naviguer entre les différentes journées de matchs.
 
-Survoler certaines colonnes des joueurs fait apparaître des statistiques plus avancées (évolution des scores, stats par poste, maison/extérieur, influence des blessures des coéquipiers et des adversaires, ...)
+Survoler certaines colonnes des joueurs fait apparaître des statistiques plus avancées (graphes des évolution des scores, stats par poste, maison/extérieur, influence des blessures des coéquipiers et des adversaires, ...). Par exemple :
+
+<p align="center">
+<img width="2294" height="400" alt="ex stats" src="https://github.com/user-attachments/assets/392f2668-6904-4a73-ac0d-f82e4a503f36" />
+</p>
+
+Par défaut, les graphes d'évolution des scores des 30 premiers joueurs sont générés, cliquer sur le bouton 'Générer plus de graphes' en génère 20 de plus à chaque fois.
 
 Les checkbox sur la gauche permettent de filtrer les joueurs blessés ou qui ont déjà été pick dans les 30 derniers jours (cf. page Historique des picks).
 
