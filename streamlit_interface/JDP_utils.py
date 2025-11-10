@@ -86,16 +86,21 @@ class JoueursDejaPick():
                     }]
         )
 
+        if 'TTFL' in df.columns:
+            df = df.drop(columns=['TTFL', 'avg_TTFL'])
+
         df = clean_player_names(df, 'joueur', scoresTTFL['playerName'].unique().tolist())
 
         df_completed = df.copy()
-        scoresTTFL_indexed = scoresTTFL.set_index(['playerName', 'gameDate'])
-        df_completed['TTFL'] = df_completed.set_index(['joueur', 'datePick']).index.map(scoresTTFL_indexed['TTFL'])
-
-        df_completed['avgTTFL'] = df_completed.set_index(['joueur', 'datePick']).index.map(scoresTTFL_indexed['avg_TTFL'])
-
+        df_completed = df_completed.merge(
+        scoresTTFL[['playerName', 'gameDate', 'TTFL', 'avg_TTFL']],
+        left_on=['joueur', 'datePick'],
+        right_on=['playerName', 'gameDate'],
+        how='left'
+        )
+        
         df_completed['TTFL'] = df_completed['TTFL'].apply(lambda x: int(x) if pd.notna(x) else '')
-        df_completed['avgTTFL'] = df_completed['avgTTFL'].fillna('')
+        df_completed['avg_TTFL'] = df_completed['avg_TTFL'].fillna('')
 
         return df_completed
     
@@ -104,7 +109,7 @@ class JoueursDejaPick():
             'joueur': 'Joueur',
             'datePick': 'Date du pick',
             'TTFL': 'TTFL',
-            'avgTTFL': 'Moyenne TTFL',
+            'avg_TTFL': 'Moyenne TTFL',
             'dateRetour': 'Date de retour'
         })
         return df
@@ -114,7 +119,7 @@ class JoueursDejaPick():
             'Joueur': 'joueur',
             'Date du pick': 'datePick',
             'TTFL': 'TTFL',
-            'Moyenne TTFL': 'avgTTFL',
+            'Moyenne TTFL': 'avg_TTFL',
             'Date de retour': 'dateRetour'
         })
         return df
@@ -151,7 +156,7 @@ def match_player(input_name, names_list):
 
     if input_upper in NICKNAMES:
         return NICKNAMES[input_upper]
-    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
+    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1: ### Ajouter : si il y en a plusieurs, prendre celui avec la meilleure moyenne TTFL
         return abbv_map[input_upper][0]
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]

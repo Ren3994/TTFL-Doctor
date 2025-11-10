@@ -97,5 +97,6 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'HALI' : 'Tyrese Haliburton',
              'AR15' : 'Austin Reaves',
              'AR-15' : 'Austin Reaves',
-             'FVV' : 'Fred VanVleet'
+             'FVV' : 'Fred VanVleet',
+             'LUKA' : 'Luka Doncic'
              }

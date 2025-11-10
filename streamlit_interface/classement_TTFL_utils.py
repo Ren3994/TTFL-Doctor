@@ -71,7 +71,14 @@ def get_low_game_count(date) :
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt + timedelta(days=30)
 
-    games_per_day = run_sql_query(table="schedule", select=['gameDate', 'COUNT(*) AS n_games'], group_by='gameDate')
+    games_per_day = run_sql_query(table="schedule", 
+                                  select=['gameDate', 
+                                          'GROUP_CONCAT(homeTeam) AS homes', 
+                                          'GROUP_CONCAT(awayTeam) AS aways', 
+                                          'COUNT(*) AS n_games'], 
+                                  filters='homeTeam IS NOT NULL', 
+                                  group_by='gameDate')
+    
     games_per_day['gameDate'] = pd.to_datetime(games_per_day['gameDate'], errors='coerce', dayfirst=True)
     games_per_day = games_per_day.sort_values(by='gameDate')
     
@@ -79,11 +86,21 @@ def get_low_game_count(date) :
     games_in_mask = games_per_day[mask_date]
     
     low_games_count = games_in_mask[games_in_mask['n_games'] <= 3].reset_index(drop=True)
+    low_games_count['homes'] = low_games_count['homes'].str.split(',')
+    low_games_count['aways'] = low_games_count['aways'].str.split(',')
+
     if len(low_games_count) > 0:
-        result_str = 'Jours avec peu de matchs :<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;' + '<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;'.join(
-            f"{row['gameDate'].strftime('%d/%m')} : {row['n_games']} matchs"
-            for _, row in low_games_count.iterrows()
-        )
+        parts = []
+        for _, row in low_games_count.iterrows():
+            date_str = pd.to_datetime(row['gameDate']).strftime('%d/%m')
+            games = [f"{h}-{a}" for h, a in zip(row['homes'], row['aways'])]
+            games_str = ", ".join(games)
+            part = f"{date_str} : {row['n_games']} matchs ({games_str})"
+            parts.append(part)
+        result_str = ''.join(['&nbsp;'] * 25) + '<b>Jours avec peu de matchs :</b>'
+        for p in parts:
+            result_str += '<br>'
+            result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p
     else:
         result_str = ''
 

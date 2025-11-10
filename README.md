@@ -17,7 +17,7 @@ Survoler certaines colonnes des joueurs fait apparaître des statistiques plus a
 
 Les checkbox sur la gauche permettent de filtrer les joueurs blessés ou qui ont déjà été pick dans les 30 derniers jours (cf. page Historique des picks).
 
-Les indications sur la droite montrent les soirs avec moins de 5 matchs dans les 30 prochains jours pour pouvoir prévoir.
+Les indications sur la droite montrent les soirs avec moins de 3 matchs dans les 30 prochains jours pour pouvoir prévoir.
 
 ### 2. Historique des picks 
 Gestion des picks : des rangées sont automatiquement ajoutées pour les soirs où des matchs ont eu lieu. Il suffit de rentrer le nom du joueur et de cliquer sur sauvegarder.
