@@ -759,7 +759,6 @@ def topTTFL_query(conn, game_date):
     JOIN rel_avg_opp_TTFL2 raot
         ON ap.opponent = raot.teamTricode
     GROUP BY ap.playerName, ap.team, ap.pos
-    --ORDER BY ap.playerName
     ORDER BY pat.avg_TTFL DESC
         """
 
