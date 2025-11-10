@@ -5,9 +5,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count
+from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df
 from streamlit_interface.plotting_utils import generate_all_plots
-from update_manager.topTTFL_manager import get_top_TTFL, get_db_hash, save_to_cache
 from streamlit_interface.streamlit_utils import custom_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
 from data.sql_functions import get_games_for_date
@@ -28,12 +27,7 @@ def run():
         st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
     if "topTTFL_df" not in st.session_state:
-        topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
-        st.session_state.topTTFL_df = topTTFL_df
-        st.session_state.with_plots = with_plots
-        st.session_state.plot_calc_incr = 20
-        st.session_state.plot_calc_start = 0
-        st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
+        update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)

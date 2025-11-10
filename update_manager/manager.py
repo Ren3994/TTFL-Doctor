@@ -1,5 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
 import sys
@@ -18,5 +16,5 @@ def run_TTFL_Doctor():
     # --- Lance le GUI Streamlit
     launch_GUI()
     
-if __name__ == "__main__":
-    run_TTFL_Doctor()
+# if __name__ == "__main__":
+#     run_TTFL_Doctor()

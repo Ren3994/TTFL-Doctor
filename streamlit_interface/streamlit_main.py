@@ -1,4 +1,6 @@
+from datetime import datetime
 import streamlit as st
+import keyboard
 import importlib
 import signal
 import sys
@@ -29,19 +31,27 @@ st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
+
+if "last_update" in st.session_state:
+    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
     
 # --- Sidebar navigation ---
 st.sidebar.title("Navigation")
 if st.sidebar.button("🛑 Quitter"):
+    keyboard.press_and_release('ctrl+w')
     cleanup_db()
     os.kill(os.getpid(), signal.SIGTERM)
 
 # --- Trigger updates if needed ---
 if "data_ready" not in st.session_state:
     st.session_state.data_ready = False
+    st.session_state.first_update = True
 
 if not st.session_state.data_ready:
-    st.title('🏀 TTFL Doctor')
+
+    if st.session_state.first_update:
+        st.title('🏀 TTFL Doctor')
+
     with st.spinner('Mise à jour des données'):
         progress = st.progress(0)
         status = st.empty()
@@ -55,6 +65,8 @@ if not st.session_state.data_ready:
         status.text("Injury report : ✅\nDonnées NBA : ✅\nTables de calculs : ✅")
 
         st.session_state.data_ready = True
+        st.session_state.last_update = datetime.today()
+        st.session_state.first_update = False
     st.rerun()
 
 # --- Or show the pages with updated data and a button to update data ---

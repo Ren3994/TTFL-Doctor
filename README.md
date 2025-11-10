@@ -43,13 +43,9 @@ pip install -r requirements.txt
 
 ## Utilisation
 
-Lancer main.py. Les données se mettront à jour. Selon la dernière fois où la base de donnée a été mise à jour, cela peut prendre quelques minutes. Si le script est lancé régulièrement, voire tous les jours, cela ne prend que quelques secondes.
+Lancer main.py. Le GUI se lancera et les données se mettront à jour. Selon la dernière fois où la base de donnée a été mise à jour, cela peut prendre quelques minutes. En règle générale, cela ne prend que quelques secondes.
 
 Les données sont stockées dans des bases de données SQL pour que les calculs soient relativement rapides.
-
-Possibilité de précalculer les classements TTFL de plusieurs jours (car la génération des graphes peut prendre quelques secondes) en avance dans manager.py.
-
-Une fois que les données sont mises à jour, un GUI Streamlit se lancera directement dans le navigateur. Le bandeau sur la gauche permet de naviguer entre les différentes pages.
 
 Vous pourrez modifier les picks dans la page Joueurs déjà pick et continuer à utiliser.
 

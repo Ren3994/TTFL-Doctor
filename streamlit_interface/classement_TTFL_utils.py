@@ -70,6 +70,7 @@ def get_low_game_count(date) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt + timedelta(days=30)
+    n_games = 3
 
     games_per_day = run_sql_query(table="schedule", 
                                   select=['gameDate', 
@@ -85,7 +86,7 @@ def get_low_game_count(date) :
     mask_date = (games_per_day['gameDate'] >= date_dt) & (games_per_day['gameDate'] <= limite)
     games_in_mask = games_per_day[mask_date]
     
-    low_games_count = games_in_mask[games_in_mask['n_games'] <= 3].reset_index(drop=True)
+    low_games_count = games_in_mask[games_in_mask['n_games'] <= n_games].reset_index(drop=True)
     low_games_count['homes'] = low_games_count['homes'].str.split(',')
     low_games_count['aways'] = low_games_count['aways'].str.split(',')
 
@@ -97,12 +98,12 @@ def get_low_game_count(date) :
             games_str = ", ".join(games)
             part = f"{date_str} : {row['n_games']} matchs ({games_str})"
             parts.append(part)
-        result_str = ''.join(['&nbsp;'] * 25) + '<b>Jours avec peu de matchs :</b>'
+        result_str = ''.join(['&nbsp;'] * 25) + f'<b>Jours avec moins de {n_games} matchs :</b>'
         for p in parts:
             result_str += '<br>'
             result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p
     else:
-        result_str = ''
+        result_str = ''.join(['&nbsp;'] * 15) + f'Pas de jours avec moins de {n_games} matchs'
 
     return result_str
 
@@ -290,20 +291,18 @@ def prev_date():
     """Go to previous date."""
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
-    st.session_state.topTTFL_df = topTTFL_df
-    st.session_state.with_plots = with_plots
-    st.session_state.plot_calc_incr = 20
-    st.session_state.plot_calc_start = 0
-    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
+    update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 def next_date():
     """Go to next date."""
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
+
+def update_session_state_df(date):
+    topTTFL_df, with_plots = get_top_TTFL(date)
     st.session_state.topTTFL_df = topTTFL_df
     st.session_state.with_plots = with_plots
     st.session_state.plot_calc_incr = 20
     st.session_state.plot_calc_start = 0
-    st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
+    st.session_state.plot_calc_stop = 30
