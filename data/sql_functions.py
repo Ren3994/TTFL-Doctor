@@ -29,7 +29,7 @@ def init_db(conn, progress=None):
         save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
         progress.progress(30/100)
     else:
-        tqdm.write("Rosters are None. Table could not be saved.")
+        tqdm.write("Rosters is None. Table could not be saved.")
 
     check_pos_table_exists(conn)
     rosters_with_pos = add_pos_to_rosters(conn)

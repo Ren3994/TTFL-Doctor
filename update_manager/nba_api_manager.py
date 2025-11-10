@@ -24,7 +24,7 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
 
     missing_gameIds_df = get_missing_gameids(conn)
     if missing_gameIds_df.empty :
-        tqdm.write('Aucun nouveau match.')
+        # tqdm.write('Aucun nouveau match.')
         new_games_found = False
         progress.progress(80/100)
         return new_games_found
