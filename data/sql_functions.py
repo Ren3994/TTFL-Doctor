@@ -700,9 +700,9 @@ def topTTFL_query(conn, game_date):
     --    AJ Johnson    |   22/10/2025, 26/10/2025  |         MIL, CHA       |           2, -1
     SELECT
       playerName,
-      GROUP_CONCAT(gameDate ORDER BY gameDate ASC) AS graph_dates,
-      GROUP_CONCAT(opponent ORDER BY gameDate ASC) AS graph_opps, 
-      GROUP_CONCAT(TTFL ORDER BY gameDate ASC) AS graph_TTFLs
+      GROUP_CONCAT(gameDate) AS graph_dates,
+      GROUP_CONCAT(opponent) AS graph_opps, 
+      GROUP_CONCAT(TTFL) AS graph_TTFLs
     FROM boxscores
     WHERE seconds > 0
     GROUP BY playerName
