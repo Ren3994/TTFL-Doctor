@@ -73,21 +73,24 @@ class JoueursDejaPick():
         else:
             st.write('not empty')
             if len(df) < len(completed_game_dates):
-                st.write('in')
-                extra_rows = len(completed_game_dates) - len(df)
-                df = pd.concat([pd.DataFrame(index=range(extra_rows), columns=df.columns), df], ignore_index=True)
+                good_df = completed_game_dates.merge(df, left_on='gameDate', right_on='datePick', how='left')
+                good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
+                # st.write('in')
+                # extra_rows = len(completed_game_dates) - len(df)
+                # st.write(extra_rows)
+                # df = pd.concat([pd.DataFrame(index=range(extra_rows), columns=df.columns), df], ignore_index=True)
         
-        st.write(df)
-        df['datePick'] = completed_game_dates.reset_index(drop=True)
-        df['dateRetour'] = df['datePick'] + timedelta(days=30)
-        df['joueur'] = df['joueur'].fillna('')
+        # st.write(df)
+        # df['datePick'] = completed_game_dates.reset_index(drop=True)
+        good_df['dateRetour'] = good_df['datePick'] + timedelta(days=30)
+        good_df['joueur'] = good_df['joueur'].fillna('')
         
-        df = self.dt_cols2str(df)
-        df = self.completeCols(df)
-        df = self.display_cols(df)
-        st.write(df)
+        good_df = self.dt_cols2str(good_df)
+        good_df = self.completeCols(good_df)
+        good_df = self.display_cols(good_df)
+        # st.write(df)
         
-        return df
+        return good_df
     
     def saveJDP(self, df:pd.DataFrame):
 
