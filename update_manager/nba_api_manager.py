@@ -10,17 +10,19 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.sql_functions import init_db, save_to_db, get_missing_gameids
+from data.sql_functions import init_db, save_to_db, get_missing_gameids, check_boxscores_integrity
 from update_manager.boxscores_manager import get_boxscores, log_failure
 from misc.misc import DB_PATH
 
 def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
-
+    
     conn = sqlite3.connect(DB_PATH)
     new_games_found = True
 
     if init_database:
         progress = init_db(conn, progress)
+    
+    check_boxscores_integrity(conn) # Removes rows with malformed data and duplicate rows
 
     missing_gameIds_df = get_missing_gameids(conn)
     if missing_gameIds_df.empty :
@@ -29,7 +31,6 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
             progress.progress(80/100)
         return new_games_found
     
-    missing_gameIds_list = missing_gameIds_df.to_dict(orient="records")
     if len(missing_gameIds_df) < 5:
         lower_bound, upper_bound = 0.2, 0.5
     if len(missing_gameIds_df) < 15:
@@ -39,9 +40,10 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
     else:
         lower_bound, upper_bound = 1.5, 2.5
 
-    new_boxscores = []
+    missing_gameIds_list = missing_gameIds_df.to_dict(orient="records")
     total = len(missing_gameIds_list)
-
+    new_boxscores = []
+    
     for i, game_info in enumerate(missing_gameIds_list):
         game_id = game_info['gameId']
         game_date = datetime.strptime(game_info['gameDate'], '%d/%m/%Y')

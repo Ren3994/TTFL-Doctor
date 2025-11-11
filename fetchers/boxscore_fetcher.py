@@ -1,4 +1,5 @@
 from nba_api.stats.endpoints import BoxScoreTraditionalV3
+# from datetime import datetime
 from tqdm import tqdm
 import pandas as pd
 import time
@@ -37,3 +38,7 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
             continue
 
     return boxscore_df
+
+# if __name__ == '__main__':
+#     df = fetch_boxscores(datetime.strptime('10/11/2025', '%d/%m/%Y'), '0022500202', 'CHI', 'SAS')
+#     print(df)

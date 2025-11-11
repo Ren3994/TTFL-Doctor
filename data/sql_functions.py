@@ -130,8 +130,7 @@ def update_helper_tables(conn):
     conn.commit()
 
 def remove_duplicates_from_boxscores(conn):
-     cur = conn.cursor()
-     cur.execute("""
+     conn.execute("""
         WITH dupes AS (
             SELECT b1.rowid
             FROM boxscores b1
@@ -145,6 +144,14 @@ def remove_duplicates_from_boxscores(conn):
         """)
      conn.commit()
 
+def check_boxscores_null_games(conn):
+    conn.execute("""DELETE FROM boxscores WHERE teamTTFL = 0""")
+    conn.commit()        
+
+def check_boxscores_integrity(conn):
+    check_boxscores_null_games(conn)
+    remove_duplicates_from_boxscores(conn)
+
 def update_tables(progress):
     with sqlite3.connect(DB_PATH) as conn:
         if progress is not None:
@@ -152,9 +159,6 @@ def update_tables(progress):
         conn.execute("PRAGMA journal_mode = WAL;")
         if progress is not None:
             progress.progress(84/100)
-        remove_duplicates_from_boxscores(conn)
-        if progress is not None:
-            progress.progress(86/100)
         update_helper_tables(conn)
         if progress is not None:
             progress.progress(88/100)
