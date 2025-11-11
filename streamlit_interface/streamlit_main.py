@@ -21,18 +21,18 @@ if env == 'local':
 elif env == 'cloud':
     st.session_state.local_instance = False
 
-# --- Get page data from /streamlit_pages/ ---
-pages_list = []
-for filename in os.listdir(STREAMLIT_PAGES_PATH):
-    if filename.endswith(".py") and not filename.startswith("_"):
-        module_name = filename[:-3]
-        module = importlib.import_module(f"streamlit_interface.streamlit_pages.{module_name}")
-        title = getattr(module, "TITLE", module_name.replace("_", " ").title())
-        order = getattr(module, "ORDER", 999)
-        pages_list.append((order, title, module))
+# # --- Get page data from /streamlit_pages/ ---
+# pages_list = []
+# for filename in os.listdir(STREAMLIT_PAGES_PATH):
+#     if filename.endswith(".py") and not filename.startswith("_"):
+#         module_name = filename[:-3]
+#         module = importlib.import_module(f"streamlit_interface.streamlit_pages.{module_name}")
+#         title = getattr(module, "TITLE", module_name.replace("_", " ").title())
+#         order = getattr(module, "ORDER", 999)
+#         pages_list.append((order, title, module))
 
-pages_list.sort(key=lambda x: (x[0], x[1]))
-PAGES = {title: module for _, title, module in pages_list}
+# pages_list.sort(key=lambda x: (x[0], x[1]))
+# PAGES = {title: module for _, title, module in pages_list}
 
 st.set_page_config(
     page_title="TTFL Doctor",
@@ -84,11 +84,11 @@ else:
         st.session_state.data_ready = False
         st.rerun()
 
-    selection = st.sidebar.radio("Aller à", list(PAGES.keys()))
+    # selection = st.sidebar.radio("Aller à", list(PAGES.keys()))
 
-    # --- Run the selected page ---
-    page = PAGES[selection]
-    if hasattr(page, "run"):
-        page.run()
-    else:
-        st.warning(f"The module `{page.__name__}` has no `run()` function.")
+    # # --- Run the selected page ---
+    # page = PAGES[selection]
+    # if hasattr(page, "run"):
+    #     page.run()
+    # else:
+    #     st.warning(f"The module `{page.__name__}` has no `run()` function.")
