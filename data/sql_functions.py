@@ -505,8 +505,7 @@ def topTTFL_query(conn, game_date):
     FROM home_players
     UNION ALL
     SELECT playerName, pos, team, teamWins, teamLosses, opponent, oppWins, oppLosses, isHome
-    FROM away_players 
-    ORDER BY playerName
+    FROM away_players
     ),
 
     inj_report AS (
@@ -612,7 +611,6 @@ def topTTFL_query(conn, game_date):
         ON ir.player_name = rtat.teammate
     JOIN player_avgTTFL pat
         ON ir.player_name = pat.playerName
-    --GROUP BY rtat.playerName
     ),
 
     opp_pos_avg_per_gameId AS (
@@ -694,8 +692,6 @@ def topTTFL_query(conn, game_date):
     JOIN player_avg_rel_TTFL_per_opp_pos partpop
         ON r.playerName = partpop.did_not_play
         AND ap.pos = partpop.opp_pos
-    --GROUP BY ap.playerName, ap.pos
-    ORDER BY ap.playerName
     ),
 
     graph_data AS (
