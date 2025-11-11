@@ -55,7 +55,7 @@ class JoueursDejaPick():
             
     def initJDP(self) -> pd.DataFrame:
         df = self.loadJDP()
-
+        st.write(df)
         with sqlite3.connect(self.db_path) as conn:
             game_dates_completed = run_sql_query(conn, 
                                                     table='schedule', 
