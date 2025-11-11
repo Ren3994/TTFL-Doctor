@@ -5,9 +5,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df
+from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
-from streamlit_interface.streamlit_utils import custom_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
 from data.sql_functions import get_games_for_date
 
@@ -36,7 +35,7 @@ def run():
     st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
     # Text field with buttons on the sides
-    col_spacer1, col_prev, col_input, col_next, col_spacer3 = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
+    col_checkboxes, col_prev, col_input, col_next, col_low_games_count = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
 
     with col_prev:
         st.button("◀️", on_click=prev_date)
@@ -53,7 +52,7 @@ def run():
     with col_next:
         st.button("▶️", on_click=next_date)
     
-    with col_spacer1:
+    with col_checkboxes:
         filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
         filter_inj = st.checkbox("Masquer les joueurs blessés", value=False)
         
@@ -62,7 +61,7 @@ def run():
             st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
             st.session_state.with_plots = False
     
-    with col_spacer3:
+    with col_low_games_count:
         st.markdown(get_low_game_count(st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
 
     # Error handler if invalid date format in text field

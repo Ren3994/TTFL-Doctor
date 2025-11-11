@@ -24,12 +24,11 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
 
     missing_gameIds_df = get_missing_gameids(conn)
     if missing_gameIds_df.empty :
-        # tqdm.write('Aucun nouveau match.')
         new_games_found = False
-        progress.progress(80/100)
+        if progress is not None:
+            progress.progress(80/100)
         return new_games_found
     
-    # tqdm.write(f"{len(missing_gameIds_df)} matchs manquants.")
     missing_gameIds_list = missing_gameIds_df.to_dict(orient="records")
     if len(missing_gameIds_df) < 5:
         lower_bound, upper_bound = 0.2, 0.5
@@ -39,19 +38,17 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
         lower_bound, upper_bound = 3, 5
     else:
         lower_bound, upper_bound = 1.5, 2.5
-    new_boxscores = []
-    
-    total = len(missing_gameIds_list)
-    # progress_bar = st.progress(0)
-    # status = st.empty()
 
-    # for game_info in tqdm(missing_gameIds_list, desc = 'Téléchargement des matchs manquants...', ncols = 100) :
+    new_boxscores = []
+    total = len(missing_gameIds_list)
+
     for i, game_info in enumerate(missing_gameIds_list):
         game_id = game_info['gameId']
         game_date = datetime.strptime(game_info['gameDate'], '%d/%m/%Y')
         visitor_team = game_info['awayTeam']
         home_team = game_info['homeTeam']
-        status.text(f"Injury report : ✅\nDonnées NBA : match {i+1}/{total} ({home_team} - {visitor_team})\nTables de calculs :")
+        if status is not None:
+            status.text(f"Injury report : ✅\nDonnées NBA : match {i+1}/{total} ({home_team} - {visitor_team})\nTables de calculs :")
 
         for attempt in range(5):  # Retry up to 5 times
             try:
@@ -59,7 +56,8 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
                 if not boxscore.empty and game_id in boxscore['gameId'].values:
                     new_boxscores.extend(boxscore.to_dict(orient="records"))
                     time.sleep(random.uniform(lower_bound, upper_bound))
-                    progress.progress((30 + 50*((i + 1) / total))/100)
+                    if progress is not None:
+                        progress.progress((30 + 50*((i + 1) / total))/100)
                 break  # Exit the retry loop if successful
 
             except Exception as e:

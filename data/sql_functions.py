@@ -18,7 +18,8 @@ def init_db(conn, progress=None):
         schedule = get_schedule()
         if schedule is not None:
             save_to_db(conn, schedule, "schedule", if_exists="replace")
-            progress.progress(20/100)
+            if progress is not None:
+                progress.progress(20/100)
         else :
             tqdm.write("Schedule is None. Table could not be saved.")
     except:
@@ -27,7 +28,8 @@ def init_db(conn, progress=None):
     rosters = get_rosters()
     if rosters is not None:
         save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
-        progress.progress(30/100)
+        if progress is not None:
+            progress.progress(30/100)
     else:
         tqdm.write("Rosters is None. Table could not be saved.")
 
@@ -39,7 +41,6 @@ def init_db(conn, progress=None):
         tqdm.write("Rosters with positions is None. Table could not be saved.")
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team_player ON rosters(teamTricode, playerName);")
-
     return progress
 
 def check_pos_table_exists(conn):
@@ -146,29 +147,38 @@ def remove_duplicates_from_boxscores(conn):
 
 def update_tables(progress):
     with sqlite3.connect(DB_PATH) as conn:
-        
-        progress.progress(82/100)
+        if progress is not None:
+            progress.progress(82/100)
         conn.execute("PRAGMA journal_mode = WAL;")
-        progress.progress(84/100)
+        if progress is not None:
+            progress.progress(84/100)
         remove_duplicates_from_boxscores(conn)
-        progress.progress(86/100)
+        if progress is not None:
+            progress.progress(86/100)
         update_helper_tables(conn)
-        progress.progress(88/100)
+        if progress is not None:
+            progress.progress(88/100)
         update_home_away_rel_TTFL(conn)
-        progress.progress(90/100)
+        if progress is not None:
+            progress.progress(90/100)
         update_avg_TTFL_per_pos(conn)
-        progress.progress(92/100)
+        if progress is not None:
+            progress.progress(92/100)
         update_rel_player_avg_ttfl_v_opp(conn)
-        progress.progress(94/100)
+        if progress is not None:
+            progress.progress(94/100)
         update_absent_teammate_rel_impact(conn)
-        progress.progress(96/100)
+        if progress is not None:
+            progress.progress(96/100)
         updates_games_missed_by_players(conn)
-        progress.progress(98/100)
+        if progress is not None:
+            progress.progress(98/100)
         update_opp_pos_avg_per_game(conn)
-        
+        if progress is not None:
+            progress.progress(100/100)
+            
         # conn.execute("ANALYZE;")
         # conn.execute("PRAGMA optimize;")
-        progress.progress(100/100)
 
 def update_home_away_rel_TTFL(conn):
     query = """

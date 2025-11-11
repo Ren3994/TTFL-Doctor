@@ -13,7 +13,6 @@ from data.sql_functions import run_sql_query
 
 def accentuate_pct(text: str) -> str:
     def color_for_value(value: float) -> str:
-        # Extremes
         if value >= 10:
             return "#FFD700"  # gold
         if value <= -10:
@@ -21,19 +20,15 @@ def accentuate_pct(text: str) -> str:
         if value == 0:
             return "gray"
 
-        # Normalize magnitude between 0 and 1 relative to 10%
         magnitude = min(abs(value), 10) / 10.0
 
         if value > 0:
-            # Gradient: light green → rich mid green (better contrast)
             r1, g1, b1 = (182, 242, 182)  # #b6f2b6
             r2, g2, b2 = (0, 204, 102)    # #00cc66
         else:
-            # Gradient: light red → bright red (better contrast)
             r1, g1, b1 = (246, 176, 176)  # #f6b0b0
             r2, g2, b2 = (255, 77, 77)    # #ff4d4d
 
-        # Linear interpolation between RGB values
         r = int(r1 + (r2 - r1) * magnitude)
         g = int(g1 + (g2 - g1) * magnitude)
         b = int(b1 + (b2 - b1) * magnitude)
@@ -43,7 +38,6 @@ def accentuate_pct(text: str) -> str:
     def replacer(match):
         value = float(match.group(1))
         color = color_for_value(value)
-        # return f'<span style="color:{color}; font-weight:bold;">{match.group(0)}</span>'
         return f'<span style="color:{color}">{match.group(0)}</span>'
 
     return re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
@@ -120,7 +114,8 @@ def df_to_html(
                           'TTFL' : 'Toutes les équipes contre : scores TTFL relatifs des équipes adverses contre cette équipe' + \
                           '<br>Postes contre : scores TTFL relatifs des joueurs de ce poste contre cette équipe',
                           'Adversaire' : 'Score TTFL relatif des joueurs adverses de ce poste quand ils sont blessés',
-                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé'},
+                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé',
+                          'Statut' : 'Survoler pour voir les détails de la blessure'},
     image_tooltips={'Joueur' : 'plots'},
     show_index=True,
     zebra_stripes=True,
@@ -278,23 +273,16 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.text_parse_error = False
-        topTTFL_df, with_plots = get_top_TTFL(st.session_state.selected_date.strftime('%d/%m/%Y'))
-        st.session_state.topTTFL_df = topTTFL_df
-        st.session_state.with_plots = with_plots
-        st.session_state.plot_calc_incr = 20
-        st.session_state.plot_calc_start = 0
-        st.session_state.plot_calc_stop = st.session_state.plot_calc_incr
+        update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
     except ValueError:
         st.session_state.text_parse_error = True
 
 def prev_date():
-    """Go to previous date."""
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 def next_date():
-    """Go to next date."""
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
@@ -306,3 +294,17 @@ def update_session_state_df(date):
     st.session_state.plot_calc_incr = 20
     st.session_state.plot_calc_start = 0
     st.session_state.plot_calc_stop = 30
+
+custom_CSS = """
+    <style>
+    /* --- Title styling --- */
+    .date-title {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: -3rem;
+        margin-top: -3.8rem;
+        margin-left: -2.5rem
+    }
+    </style>
+    """

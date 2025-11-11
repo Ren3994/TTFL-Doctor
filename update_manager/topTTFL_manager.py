@@ -64,22 +64,22 @@ def format_to_table(df) :
     df['rel_TTFL_v_opp'] = pd.to_numeric(df['rel_TTFL_v_opp'], errors='coerce')
     df['ha_rel_TTFL'] = pd.to_numeric(df['ha_rel_TTFL'], errors='coerce')
 
-    prettydf['pos_rel_TTFL_v_team'] = np.select([df['pos_rel_TTFL_v_team'].isna(),           df['pos_rel_TTFL_v_team'] >=0], 
+    prettydf['pos_rel_TTFL_v_team'] = np.select([df['pos_rel_TTFL_v_team'].isna(), df['pos_rel_TTFL_v_team'] >= 0], 
                             [       'N/A',                        '+' + df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%'],
                             df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%')
 
     prettydf['ha_rel_TTFL'] = df['playerName'] + np.where(df['isHome'] == 1, ' à la maison : ', ' à l\'extérieur : ') + \
-                            np.select([df['ha_rel_TTFL'].isna(),           df['ha_rel_TTFL'] >=0], 
+                            np.select([df['ha_rel_TTFL'].isna(), df['ha_rel_TTFL'] >= 0], 
                             [       'N/A',                        '+' + df['ha_rel_TTFL'].round(1).astype(str) + '%'],
                             df['ha_rel_TTFL'].round(1).astype(str) + '%')
 
     prettydf['rel_TTFL_v_opp'] = df['playerName'] + ' contre ' + df['opponent'] + ' : ' + \
-                            np.select([df['rel_TTFL_v_opp'].isna(),           df['rel_TTFL_v_opp'] >=0], 
+                            np.select([df['rel_TTFL_v_opp'].isna(), df['rel_TTFL_v_opp'] >= 0], 
                             [       'N/A',                        '+' + df['rel_TTFL_v_opp'].round(1).astype(str) + '%'],
                             df['rel_TTFL_v_opp'].round(1).astype(str) + '%')
     
     prettydf['rel_opp_avg_TTFL'] = 'Toutes les équipes contre ' + df['opponent'] + ' : ' + \
-                                np.select([df['rel_opp_avg_TTFL'].isna(),      df['rel_opp_avg_TTFL'] >=0],
+                                np.select([df['rel_opp_avg_TTFL'].isna(), df['rel_opp_avg_TTFL'] >= 0],
                                 [           'N/A',           '+' + df['rel_opp_avg_TTFL'].round(1).astype(str) + '%'],
                                 df['rel_opp_avg_TTFL'].round(1).astype(str) + '%')
 

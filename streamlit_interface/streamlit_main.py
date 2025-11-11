@@ -31,11 +31,11 @@ st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
-
+    
+# --- Sidebar ---
 if "last_update" in st.session_state:
     st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
-    
-# --- Sidebar navigation ---
+
 st.sidebar.title("Navigation")
 if st.sidebar.button("🛑 Quitter"):
     keyboard.press_and_release('ctrl+w')
@@ -67,6 +67,7 @@ if not st.session_state.data_ready:
         st.session_state.data_ready = True
         st.session_state.last_update = datetime.today()
         st.session_state.first_update = False
+        
     st.rerun()
 
 # --- Or show the pages with updated data and a button to update data ---

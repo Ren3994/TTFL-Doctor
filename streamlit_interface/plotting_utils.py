@@ -114,7 +114,7 @@ def generate_plot_row(row, requested_date):
     fig, ax = plt.subplots(figsize=(6, 4))
 
     ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
-    ax.plot(alldates, [avgTTFL for _ in alldates], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
+    ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
 
     for date, opp, TTFL in zip(dates, opps, TTFLs):
         opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
@@ -123,8 +123,6 @@ def generate_plot_row(row, requested_date):
             imagebox = OffsetImage(img, zoom=0.2)
             ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
             ax.add_artist(ab)
-
-    # ax.vlines(requested_date, ymin, ymax, linestyles='--', color='k', linewidth=linew)
     
     if ymin == 0:
         ymin = -2
