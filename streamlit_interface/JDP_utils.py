@@ -51,11 +51,6 @@ class JoueursDejaPick():
                                                     .eq("username", username_clean)
                                                     .execute()
                                             ).data[0]['picks'].items()), columns=['joueur', 'datePick'])
-                    st.write((self.supabase.table("ttfl_doctor_user_picks")
-                                                    .select("picks")
-                                                    .eq("username", username_clean)
-                                                    .execute()
-                                            ).data[0]['picks'])
         return df
             
     def initJDP(self) -> pd.DataFrame:
@@ -71,14 +66,18 @@ class JoueursDejaPick():
         completed_game_dates = pd.to_datetime(game_dates_completed['gameDate'], errors='coerce', dayfirst=True).sort_values(ascending=False)
 
         if df.empty:
+            st.write('Empty')
             df['datePick'] = completed_game_dates.reset_index(drop=True)
             df['joueur'] = df['joueur'].fillna('')
             
         else:
+            st.write('not empty')
             if len(df) < len(completed_game_dates):
+                st.write('in')
                 extra_rows = len(completed_game_dates) - len(df)
                 df = pd.concat([pd.DataFrame(index=range(extra_rows), columns=df.columns), df], ignore_index=True)
-                
+        
+        st.write(df)
         df['datePick'] = completed_game_dates.reset_index(drop=True)
         df['dateRetour'] = df['datePick'] + timedelta(days=30)
         df['joueur'] = df['joueur'].fillna('')
@@ -86,6 +85,7 @@ class JoueursDejaPick():
         df = self.dt_cols2str(df)
         df = self.completeCols(df)
         df = self.display_cols(df)
+        st.write(df)
         
         return df
     
