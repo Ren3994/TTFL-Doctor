@@ -64,31 +64,22 @@ class JoueursDejaPick():
         completed_game_dates = pd.to_datetime(game_dates_completed['gameDate'], errors='coerce', dayfirst=True).sort_values(ascending=False)
 
         if good_df.empty:
-            st.write('Empty')
             good_df['datePick'] = completed_game_dates.reset_index(drop=True)
             good_df['joueur'] = good_df['joueur'].fillna('')
             
         else:
-            st.write('not empty')
             if len(good_df) < len(completed_game_dates):
                 completed_game_dates = completed_game_dates.to_frame()
                 good_df['datePick'] = pd.to_datetime(good_df['datePick'], errors='coerce', dayfirst=True)
                 good_df = completed_game_dates.merge(good_df, left_on='gameDate', right_on='datePick', how='left')
                 good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
-                # st.write('in')
-                # extra_rows = len(completed_game_dates) - len(df)
-                # st.write(extra_rows)
-                # df = pd.concat([pd.DataFrame(index=range(extra_rows), columns=df.columns), df], ignore_index=True)
-        
-        # st.write(df)
-        # df['datePick'] = completed_game_dates.reset_index(drop=True)
+
         good_df['dateRetour'] = good_df['datePick'] + timedelta(days=30)
         good_df['joueur'] = good_df['joueur'].fillna('')
         
         good_df = self.dt_cols2str(good_df)
         good_df = self.completeCols(good_df)
         good_df = self.display_cols(good_df)
-        # st.write(df)
         
         return good_df
     

@@ -30,11 +30,13 @@ def run():
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)
-    if 'username' in st.session_state:
-        st.write(st.session_state.username)
-    else:
-        st.write('Pas d\'utilisateur')
+    if 'username' not in st.session_state:
         st.session_state.username = None
+    if st.session_state.username is not None:
+        st.write(f'Utilisateur : {st.session_state.username}')
+    else:
+        st.write('No user')
+
     # Title
     st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
