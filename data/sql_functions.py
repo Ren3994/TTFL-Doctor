@@ -756,7 +756,7 @@ def topTTFL_query(conn, game_date):
     LEFT JOIN inj_report ir
         ON ap.playerName = ir.player_name
     LEFT JOIN inj_teammate_rel_impact itri
-        ON ap.playerName == itri.playing_teammate
+        ON ap.playerName = itri.playing_teammate
     LEFT JOIN opp_roster_with_stats orws
         ON ap.playerName = orws.playerName
         AND ap.pos = orws.pos
