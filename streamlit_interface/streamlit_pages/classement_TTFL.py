@@ -37,6 +37,7 @@ def run():
         st.session_state.username = None
     if st.session_state.username is not None:
         st.write(f'Utilisateur : {st.session_state.username}')
+        st.write(st.session_state.jdp_df)
     else:
         st.write('No user')
 
