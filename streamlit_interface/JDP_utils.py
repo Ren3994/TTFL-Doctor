@@ -71,6 +71,7 @@ class JoueursDejaPick():
         else:
             st.write('not empty')
             if len(good_df) < len(completed_game_dates):
+                completed_game_dates = completed_game_dates.to_frame()
                 good_df = completed_game_dates.merge(good_df, left_on='gameDate', right_on='datePick', how='left')
                 good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
                 # st.write('in')
