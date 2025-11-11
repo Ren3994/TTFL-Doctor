@@ -85,7 +85,6 @@ class JoueursDejaPick():
 
         df = self.db_cols(df)
         df = self.completeCols(df)
-        df = self.display_cols(df)
 
         df_db = df.copy()
         df_db = df_db[['joueur', 'datePick']]
@@ -98,7 +97,8 @@ class JoueursDejaPick():
                     username_clean = re.sub(r'\W+', '', st.session_state.username)
                     user_table = f'joueurs_deja_pick_{username_clean}'
                     df_db.to_sql(user_table, conn, if_exists="replace", index=False)
-
+                    
+        df = self.display_cols(df)
         return df
     
     def completeCols(self, df:pd.DataFrame):
