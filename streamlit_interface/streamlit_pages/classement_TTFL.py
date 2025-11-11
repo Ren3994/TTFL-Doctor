@@ -27,6 +27,9 @@ def run():
 
     if "topTTFL_df" not in st.session_state:
         update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
+
+    if "jdf_df" not in st.session_state:
+        st.session_state.jdf_df = None
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -44,19 +47,20 @@ def run():
     col_checkboxes, col_prev, col_input, col_next, col_low_games_count = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
 
     with col_prev:
-        st.button("◀️", on_click=prev_date, args=(st.session_state.username,))
+        st.button("◀️", on_click=prev_date, args=(st.session_state.username, st.session_state.jdp_df))
 
     with col_input:
         st.text_input(
             label="date du jour",
             key="date_text",
             on_change=on_text_change,
+            args=(st.session_state.username, st.session_state.jdp_df),
             label_visibility="collapsed",
             width=120,
         )
 
     with col_next:
-        st.button("▶️", on_click=next_date, args=(st.session_state.username,))
+        st.button("▶️", on_click=next_date, args=(st.session_state.username, st.session_state.jdp_df))
     
     with col_checkboxes:
         filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)

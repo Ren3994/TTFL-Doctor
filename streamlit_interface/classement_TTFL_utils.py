@@ -50,7 +50,7 @@ def get_joueurs_pas_dispo(date) :
     if st.session_state.local_instance:
         JDP = run_sql_query(table="joueurs_deja_pick")
     else:
-        if st.session_state.username is not None:
+        if st.session_state.jdf_df is not None:
             JDP = st.session_state.jdp_df[['joueur', 'datePick']]
 
     JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
@@ -271,27 +271,31 @@ def st_image_crisp(path, width=40):
         unsafe_allow_html=True
     )
 
-def on_text_change():
+def on_text_change(username=None, jdf_df=None):
     """Parse text input into a date object."""
     text_value = st.session_state.date_text.strip()
     try:
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.text_parse_error = False
+        st.session_state.username = username
+        st.session_state.jdf_df = jdf_df
         update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
     except ValueError:
         st.session_state.text_parse_error = True
 
-def prev_date(username=None):
+def prev_date(username=None, jdf_df=None):
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
     st.session_state.username = username
+    st.session_state.jdf_df = jdf_df
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
-def next_date(username=None):
+def next_date(username=None, jdf_df=None):
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
     st.session_state.username = username
+    st.session_state.jdf_df = jdf_df
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 def update_session_state_df(date):
