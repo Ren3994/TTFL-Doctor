@@ -74,6 +74,8 @@ class JoueursDejaPick():
                 good_df = completed_game_dates.merge(good_df, left_on='gameDate', right_on='datePick', how='left')
                 good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
 
+        good_df = self.str_cols2dt(good_df)
+
         good_df['dateRetour'] = good_df['datePick'] + timedelta(days=30)
         good_df['joueur'] = good_df['joueur'].fillna('')
         
@@ -175,6 +177,16 @@ class JoueursDejaPick():
         except:
             pass
         return df
+    
+    def str_cols2dt(self, df:pd.DataFrame):
+        try:
+            df['datePick'] = pd.to_datetime(df['datePick'], errors='coerce', dayfirst=True)
+        except:
+            pass
+        try:
+            df['dateRetour'] = pd.to_datetime(df['dateRetour'], errors='coerce', dayfirst=True)
+        except:
+            pass
 
 def clean_player_names(df, colname, names_list):
     clean_names = []
