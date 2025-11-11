@@ -50,7 +50,12 @@ class JoueursDejaPick():
                                                     .select("picks")
                                                     .eq("username", username_clean)
                                                     .execute()
-                                            ).data[0]['picks'].items()), columns=['joueur', 'datePick'])                
+                                            ).data[0]['picks'].items()), columns=['joueur', 'datePick'])
+                    st.write((self.supabase.table("ttfl_doctor_user_picks")
+                                                    .select("picks")
+                                                    .eq("username", username_clean)
+                                                    .execute()
+                                            ).data[0]['picks'])
         return df
             
     def initJDP(self) -> pd.DataFrame:
