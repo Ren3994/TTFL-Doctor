@@ -18,7 +18,7 @@ class JoueursDejaPick():
         self._init_db()
     
     def _init_db(self):
-        if 'username' not in st.session_state:
+        if st.session_state.username is None:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
@@ -41,7 +41,7 @@ class JoueursDejaPick():
                 conn.commit()
         
     def loadJDP(self) -> pd.DataFrame:
-        if 'username' not in st.session_state:
+        if st.session_state.username is None:
             with sqlite3.connect(self.db_path) as conn:
                 return pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
         else:
@@ -93,11 +93,11 @@ class JoueursDejaPick():
             if st.session_state.local_instance:
                 df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
             else:
-                if 'username' in st.session_state:
+                if st.session_state.username is not None:
                     username_clean = re.sub(r'\W+', '', st.session_state.username)
                     user_table = f'joueurs_deja_pick_{username_clean}'
                     df_db.to_sql(user_table, conn, if_exists="replace", index=False)
-                    
+
         df = self.display_cols(df)
         return df
     
