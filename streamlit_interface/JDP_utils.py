@@ -54,26 +54,24 @@ class JoueursDejaPick():
         return df
             
     def initJDP(self) -> pd.DataFrame:
-        df = self.loadJDP()
-        st.write(df)
+        good_df = self.loadJDP()
         with sqlite3.connect(self.db_path) as conn:
-            game_dates_completed = run_sql_query(conn, 
-                                                    table='schedule', 
-                                                    select='DISTINCT gameDate',
-                                                    filters='gameStatus = 3',
-                                                    order_by='gameDate DESC')
+            game_dates_completed = run_sql_query(table='schedule', 
+                                                 select='DISTINCT gameDate',
+                                                 filters='gameStatus = 3',
+                                                 order_by='gameDate DESC')
                 
         completed_game_dates = pd.to_datetime(game_dates_completed['gameDate'], errors='coerce', dayfirst=True).sort_values(ascending=False)
 
-        if df.empty:
+        if good_df.empty:
             st.write('Empty')
-            df['datePick'] = completed_game_dates.reset_index(drop=True)
-            df['joueur'] = df['joueur'].fillna('')
+            good_df['datePick'] = completed_game_dates.reset_index(drop=True)
+            good_df['joueur'] = good_df['joueur'].fillna('')
             
         else:
             st.write('not empty')
-            if len(df) < len(completed_game_dates):
-                good_df = completed_game_dates.merge(df, left_on='gameDate', right_on='datePick', how='left')
+            if len(good_df) < len(completed_game_dates):
+                good_df = completed_game_dates.merge(good_df, left_on='gameDate', right_on='datePick', how='left')
                 good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
                 # st.write('in')
                 # extra_rows = len(completed_game_dates) - len(df)
