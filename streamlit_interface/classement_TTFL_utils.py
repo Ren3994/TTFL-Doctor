@@ -47,7 +47,13 @@ def get_joueurs_pas_dispo(date) :
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt - timedelta(days=30)
 
-    JDP = run_sql_query(table="joueurs_deja_pick")
+    if 'username' not in st.session_state:
+        JDP = run_sql_query(table="joueurs_deja_pick")
+    else:
+        username_clean = re.sub(r'\W+', '', st.session_state.username)
+        user_table = f'joueurs_deja_pick_{username_clean}'
+        JDP = run_sql_query(table=user_table)
+        
     JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
     joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
 
