@@ -5,6 +5,7 @@ import pandas as pd
 import sqlite3
 import sys
 import os
+import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -17,28 +18,47 @@ class JoueursDejaPick():
         self._init_db()
     
     def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
-                    joueur TEXT,
-                    datePick TEXT
-                )
-            """)
-            conn.commit()
+        if 'username' not in st.session_state:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
+                        joueur TEXT,
+                        datePick TEXT
+                    )
+                """)
+                conn.commit()
+        else:
+            username_clean = re.sub(r'\W+', '', st.session_state.username)
+            user_table = f'joueurs_deja_pick_{username_clean}'
+
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(f"""
+                    CREATE TABLE IF NOT EXISTS {user_table} (
+                        joueur TEXT,
+                        datePick TEXT
+                    )
+                """)
+                conn.commit()
         
     def loadJDP(self) -> pd.DataFrame:
-        with sqlite3.connect(self.db_path) as conn:
-            return pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
+        if 'username' not in st.session_state:
+            with sqlite3.connect(self.db_path) as conn:
+                return pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
+        else:
+            username_clean = re.sub(r'\W+', '', st.session_state.username)
+            user_table = f'joueurs_deja_pick_{username_clean}'
+            with sqlite3.connect(self.db_path) as conn:
+                return pd.read_sql_query(f"SELECT joueur, datePick FROM {user_table}", conn)
 
     def initJDP(self) -> pd.DataFrame:
         df = self.loadJDP()
 
         with sqlite3.connect(self.db_path) as conn:
-                game_dates_completed = run_sql_query(conn, 
-                                                     table='schedule', 
-                                                     select='DISTINCT gameDate',
-                                                     filters='gameStatus = 3',
-                                                     order_by='gameDate DESC')
+            game_dates_completed = run_sql_query(conn, 
+                                                    table='schedule', 
+                                                    select='DISTINCT gameDate',
+                                                    filters='gameStatus = 3',
+                                                    order_by='gameDate DESC')
                 
         completed_game_dates = pd.to_datetime(game_dates_completed['gameDate'], errors='coerce', dayfirst=True).sort_values(ascending=False)
 
@@ -65,12 +85,19 @@ class JoueursDejaPick():
 
         df = self.db_cols(df)
         df = self.completeCols(df)
-        df_db = df.copy()
-        df_db = df_db[['joueur', 'datePick']]
         df = self.display_cols(df)
 
+        df_db = df.copy()
+        df_db = df_db[['joueur', 'datePick']]
+
         with sqlite3.connect(self.db_path) as conn:
-            df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
+            if st.session_state.local_instance:
+                df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
+            else:
+                if 'username' in st.session_state:
+                    username_clean = re.sub(r'\W+', '', st.session_state.username)
+                    user_table = f'joueurs_deja_pick_{username_clean}'
+                    df_db.to_sql(user_table, conn, if_exists="replace", index=False)
 
         return df
     

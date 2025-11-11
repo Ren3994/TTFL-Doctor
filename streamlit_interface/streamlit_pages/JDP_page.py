@@ -19,6 +19,21 @@ def run():
     st.set_page_config(page_title="Joueurs déjà pick", layout="wide")
     
     st.write("### Historique des picks")
+
+    if not st.session_state.local_instance:
+        col_username_input, col_accept_username = st.columns([5, 5])
+        with col_username_input:
+            st.text_input(
+                label="Nom d'utilisateur",
+                key="username",
+                label_visibility="collapsed",
+                width=120,
+            )
+        with col_accept_username:
+            if st.button('OK'):
+                st.session_state.JDP = JoueursDejaPick(DB_PATH)
+                st.session_state.jdp_df = st.session_state.JDP.initJDP()
+
     edited_df = st.data_editor(st.session_state.jdp_df,
                                key="jdp_editor",
                                num_rows="dynamic",
