@@ -81,6 +81,8 @@ class JoueursDejaPick():
                                                     .eq("username", username_clean)
                                                     .execute()
                                             ).data[0]['picks'].items()))
+                    st.write('df')
+                    st.write(df)
         return df
             
     def initJDP(self) -> pd.DataFrame:
