@@ -1,3 +1,4 @@
+from supabase import create_client, Client
 from datetime import datetime, timedelta
 from rapidfuzz import fuzz, process
 import streamlit as st
@@ -16,9 +17,9 @@ class JoueursDejaPick():
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._init_db()
-    
+            
     def _init_db(self):
-        if st.session_state.username is None:
+        if st.session_state.local_instance:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
@@ -28,28 +29,30 @@ class JoueursDejaPick():
                 """)
                 conn.commit()
         else:
-            username_clean = re.sub(r'\W+', '', st.session_state.username)
-            user_table = f'joueurs_deja_pick_{username_clean}'
-
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute(f"""
-                    CREATE TABLE IF NOT EXISTS {user_table} (
-                        joueur TEXT,
-                        datePick TEXT
-                    )
-                """)
-                conn.commit()
+            url = st.secrets.get("SUPABASE_URL", "unknown")
+            key = st.secrets.get("SUPABASE_KEY", "unknown")
+            self.supabase: Client = create_client(url, key)
+            self.existing_users = pd.DataFrame(self.supabase.table("ttfl_doctor_user_picks")
+                                                            .select("username")
+                                                            .execute().data
+                                                )['username'].tolist()
         
     def loadJDP(self) -> pd.DataFrame:
-        if st.session_state.username is None:
+        if st.session_state.local_instance:
             with sqlite3.connect(self.db_path) as conn:
-                return pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
+                df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
         else:
-            username_clean = re.sub(r'\W+', '', st.session_state.username)
-            user_table = f'joueurs_deja_pick_{username_clean}'
-            with sqlite3.connect(self.db_path) as conn:
-                return pd.read_sql_query(f"SELECT joueur, datePick FROM {user_table}", conn)
-
+            df = pd.DataFrame(columns=['joueur', 'datePick'])
+            if 'username' in st.session_state:
+                username_clean = re.sub(r'\W+', '', st.session_state.username)
+                if username_clean in self.existing_users:
+                    df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
+                                                    .select("picks")
+                                                    .eq("username", username_clean)
+                                                    .execute()
+                                            ).data[0]['picks'].items()), columns=['joueur', 'datePick'])                
+        return df
+            
     def initJDP(self) -> pd.DataFrame:
         df = self.loadJDP()
 
@@ -88,15 +91,26 @@ class JoueursDejaPick():
 
         df_db = df.copy()
         df_db = df_db[['joueur', 'datePick']]
-
-        with sqlite3.connect(self.db_path) as conn:
-            if st.session_state.local_instance:
+        
+        if st.session_state.local_instance:
+            with sqlite3.connect(self.db_path) as conn:
                 df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
-            else:
-                if st.session_state.username is not None:
-                    username_clean = re.sub(r'\W+', '', st.session_state.username)
-                    user_table = f'joueurs_deja_pick_{username_clean}'
-                    df_db.to_sql(user_table, conn, if_exists="replace", index=False)
+        else:
+            picks = dict(zip(df_db['joueur'], df_db['datePick']))
+            if 'username' in st.session_state:
+                username_clean = re.sub(r'\W+', '', st.session_state.username)
+                if username_clean in self.existing_users:
+                    update = (self.supabase.table("ttfl_doctor_user_picks")
+                                            .update({"picks" : picks})
+                                            .eq("username", username_clean)
+                                            .execute()
+                            )
+                else:
+                    insert = (self.supabase.table("ttfl_doctor_user_picks")
+                                             .insert({"username" : username_clean, 
+                                                     "picks" : picks})
+                                             .execute()
+                                )
 
         df = self.display_cols(df)
         return df
