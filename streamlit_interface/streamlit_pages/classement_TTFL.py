@@ -30,7 +30,7 @@ def run():
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)
-
+    st.write(st.session_state.username)
     # Title
     st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
