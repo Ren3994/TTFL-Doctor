@@ -29,7 +29,7 @@ def run():
         update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
     if "jdf_df" not in st.session_state:
-        st.session_state.jdf_df = None
+        st.session_state.jdp_df = None
         
     # ---------- UI ----------
     st.markdown(custom_CSS, unsafe_allow_html=True)
