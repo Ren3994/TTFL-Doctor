@@ -14,6 +14,13 @@ from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
 from data.sql_functions import update_tables
 
+# --- Check if running local or cloud version ---
+env = st.secrets.get("environment", "unknown")
+if env == 'local':
+    st.session_state.local_instance = True
+elif env == 'cloud':
+    st.session_state.local_instance = False
+
 # --- Get page data from /streamlit_pages/ ---
 pages_list = []
 for filename in os.listdir(STREAMLIT_PAGES_PATH):
@@ -37,10 +44,11 @@ if "last_update" in st.session_state:
     st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
 st.sidebar.title("Navigation")
-if st.sidebar.button("🛑 Quitter"):
-    keyboard.press_and_release('ctrl+w')
-    cleanup_db()
-    os.kill(os.getpid(), signal.SIGTERM)
+if st.session_state.local_instance:
+    if st.sidebar.button("🛑 Quitter"):
+        keyboard.press_and_release('ctrl+w')
+        cleanup_db()
+        os.kill(os.getpid(), signal.SIGTERM)
 
 # --- Trigger updates if needed ---
 if "data_ready" not in st.session_state:
