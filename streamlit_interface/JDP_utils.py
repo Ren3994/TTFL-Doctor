@@ -96,6 +96,7 @@ class JoueursDejaPick():
             with sqlite3.connect(self.db_path) as conn:
                 df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
         else:
+            df_db = df_db[df_db['joueur'] != '']
             picks = dict(zip(df_db['joueur'], df_db['datePick']))
             if 'username' in st.session_state and st.session_state.username is not None:
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
