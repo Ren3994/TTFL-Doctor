@@ -187,6 +187,7 @@ class JoueursDejaPick():
             df['dateRetour'] = pd.to_datetime(df['dateRetour'], errors='coerce', dayfirst=True)
         except:
             pass
+        return df
 
 def clean_player_names(df, colname, names_list):
     clean_names = []
