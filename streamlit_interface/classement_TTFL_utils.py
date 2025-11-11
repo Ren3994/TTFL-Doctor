@@ -53,7 +53,7 @@ def get_joueurs_pas_dispo(date) :
         username_clean = re.sub(r'\W+', '', st.session_state.username)
         user_table = f'joueurs_deja_pick_{username_clean}'
         JDP = run_sql_query(table=user_table)
-        
+
     JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
     joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
 
@@ -283,14 +283,16 @@ def on_text_change():
     except ValueError:
         st.session_state.text_parse_error = True
 
-def prev_date():
+def prev_date(username=None):
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    st.session_state.username = username
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
-def next_date():
+def next_date(username=None):
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+    st.session_state.username = username
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 def update_session_state_df(date):

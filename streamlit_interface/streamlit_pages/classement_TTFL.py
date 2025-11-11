@@ -34,6 +34,7 @@ def run():
         st.write(st.session_state.username)
     else:
         st.write('Pas d\'utilisateur')
+        st.session_state.username = None
     # Title
     st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
@@ -41,7 +42,7 @@ def run():
     col_checkboxes, col_prev, col_input, col_next, col_low_games_count = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
 
     with col_prev:
-        st.button("◀️", on_click=prev_date)
+        st.button("◀️", on_click=prev_date, args=(st.session_state.username,))
 
     with col_input:
         st.text_input(
@@ -53,7 +54,7 @@ def run():
         )
 
     with col_next:
-        st.button("▶️", on_click=next_date)
+        st.button("▶️", on_click=next_date, args=(st.session_state.username,))
     
     with col_checkboxes:
         filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
