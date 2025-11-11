@@ -43,7 +43,7 @@ class JoueursDejaPick():
                 df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
         else:
             df = pd.DataFrame(columns=['joueur', 'datePick'])
-            if 'username' in st.session_state:
+            if 'username' in st.session_state and st.session_state.username is not None:
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
                     df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
@@ -97,7 +97,7 @@ class JoueursDejaPick():
                 df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
         else:
             picks = dict(zip(df_db['joueur'], df_db['datePick']))
-            if 'username' in st.session_state:
+            if 'username' in st.session_state and st.session_state.username is not None:
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
                     update = (self.supabase.table("ttfl_doctor_user_picks")
