@@ -28,18 +28,23 @@ if "date_text" not in st.session_state or st.session_state.date_text == "":
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
+if 'username' not in st.session_state:
+    st.session_state.username = None
+
 if "jdf_df" not in st.session_state:
     st.session_state.jdp_df = None
     
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
-if 'username' not in st.session_state:
-    st.session_state.username = None
+
 if st.session_state.username is not None:
     st.write(f'Utilisateur : {st.session_state.username}')
-    st.write(st.session_state.jdp_df)
 else:
     st.write('No user')
+if st.session_state.jdp_df is not None:
+    st.write(st.session_state.jdp_df)
+else:
+    st.write('No jdp_df')
 
 # Title
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
