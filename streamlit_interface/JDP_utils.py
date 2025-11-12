@@ -11,11 +11,11 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import run_sql_query
-from misc.misc import NICKNAMES
+from misc.misc import NICKNAMES, DB_PATH
 
 class JoueursDejaPick():
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+    def __init__(self):
+        self.db_path = DB_PATH
         self._init_db()
             
     def _init_db(self):
@@ -43,7 +43,7 @@ class JoueursDejaPick():
                 df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
         else:
             df = pd.DataFrame(columns=['joueur', 'datePick'])
-            if 'username' in st.session_state and st.session_state.username is not None:
+            if 'username' in st.session_state:
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
                     df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
@@ -55,29 +55,24 @@ class JoueursDejaPick():
             
     def initJDP(self) -> pd.DataFrame:
         good_df = self.loadJDP()
-        with sqlite3.connect(self.db_path) as conn:
-            game_dates_completed = run_sql_query(table='schedule', 
-                                                 select='DISTINCT gameDate',
-                                                 filters='gameStatus = 3',
-                                                 order_by='gameDate DESC')
-                
-        completed_game_dates = pd.to_datetime(game_dates_completed['gameDate'], errors='coerce', dayfirst=True).sort_values(ascending=False)
-
-        if good_df.empty:
-            good_df['datePick'] = completed_game_dates.reset_index(drop=True)
-            good_df['joueur'] = good_df['joueur'].fillna('')
-            
-        else:
-            if len(good_df) < len(completed_game_dates):
-                completed_game_dates = completed_game_dates.to_frame()
-                good_df['datePick'] = pd.to_datetime(good_df['datePick'], errors='coerce', dayfirst=True)
-                good_df = completed_game_dates.merge(good_df, left_on='gameDate', right_on='datePick', how='left')
-                good_df = good_df[['joueur', 'gameDate']].rename(columns={'gameDate': 'datePick'})
-
-        good_df = self.str_cols2dt(good_df)
-
+        game_dates_completed = run_sql_query(table='schedule', 
+                                                select='DISTINCT gameDate',
+                                                filters='gameStatus = 3')
+        
+        good_df = (game_dates_completed
+                   .merge(good_df, 
+                          left_on='gameDate', 
+                          right_on='datePick', 
+                          how='left')
+                    [['joueur', 'gameDate']]
+                    .rename(columns={'gameDate': 'datePick'})
+                    .copy()
+                )
+        
+        good_df['datePick'] = pd.to_datetime(good_df['datePick'], errors='coerce', dayfirst=True)
         good_df['dateRetour'] = good_df['datePick'] + timedelta(days=30)
         good_df['joueur'] = good_df['joueur'].fillna('')
+        good_df = good_df.sort_values(by='datePick', ascending=False)
         
         good_df = self.dt_cols2str(good_df)
         good_df = self.completeCols(good_df)
@@ -99,7 +94,7 @@ class JoueursDejaPick():
         else:
             df_db = df_db[df_db['joueur'] != '']
             picks = dict(zip(df_db['joueur'], df_db['datePick']))
-            if 'username' in st.session_state and st.session_state.username is not None:
+            if 'username' in st.session_state:
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
                     update = (self.supabase.table("ttfl_doctor_user_picks")

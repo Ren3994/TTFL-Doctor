@@ -1,5 +1,7 @@
-from datetime import date
+from datetime import datetime, date
 import streamlit as st
+import keyboard
+import signal
 import sys
 import os
 
@@ -8,12 +10,63 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
+from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache
 from data.sql_functions import get_games_for_date
+from streamlit_interface.JDP_utils import JoueursDejaPick
 
 TITLE = "Classement TTFL"
-ORDER = 2
 
-# def run():
+if 'data_ready' not in st.session_state:
+    st.switch_page('streamlit_main.py')
+
+st.set_page_config(
+    page_title="TTFL Doctor",
+    page_icon="🏀",
+    layout="wide")
+    
+# --- Sidebar ---
+if not st.session_state.local_instance:
+    col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
+    with col_username_input:
+        if 'username_str' not in st.session_state:
+            st.text_input(
+                label="Nom d'utilisateur",
+                placeholder="Nom d'utilisateur",
+                key="username",
+                label_visibility='collapsed',
+                width=200,
+            )
+        else:
+            st.text_input(
+                label="Nom d'utilisateur",
+                value=st.session_state.username_str,
+                key="username",
+                label_visibility='collapsed',
+                width=200,
+            )
+    with col_accept_username:
+        if st.button('Login'):
+            st.session_state.JDP = JoueursDejaPick()
+            st.session_state.jdp_df = st.session_state.JDP.initJDP()
+            st.session_state.username_str = st.session_state.username
+    
+    if 'username' in st.session_state:
+        st.session_state.JDP = JoueursDejaPick()
+        st.session_state.jdp_df = st.session_state.JDP.initJDP()
+        st.session_state.username_str = st.session_state.username
+
+if "last_update" in st.session_state:
+    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
+
+if st.session_state.local_instance:
+    if st.sidebar.button("🛑 Quitter"):
+        keyboard.press_and_release('ctrl+w')
+        cleanup_db()
+        os.kill(os.getpid(), signal.SIGTERM)
+
+if st.sidebar.button("Mettre à jour les données"):
+    st.session_state.data_ready = False
+    st.switch_page('streamlit_main.py')
 
     # ---------- Initialize session state ----------
 
@@ -28,23 +81,8 @@ if "date_text" not in st.session_state or st.session_state.date_text == "":
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
-if 'username' not in st.session_state:
-    st.session_state.username = None
-
-if "jdf_df" not in st.session_state:
-    st.session_state.jdp_df = None
-    
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
-
-if st.session_state.username is not None:
-    st.write(f'Utilisateur : {st.session_state.username}')
-else:
-    st.write('No user')
-if st.session_state.jdp_df is not None:
-    st.write(st.session_state.jdp_df)
-else:
-    st.write('No jdp_df')
 
 # Title
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
@@ -53,20 +91,19 @@ st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allo
 col_checkboxes, col_prev, col_input, col_next, col_low_games_count = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
 
 with col_prev:
-    st.button("◀️", on_click=prev_date, args=(st.session_state.username, st.session_state.jdp_df))
+    st.button("◀️", on_click=prev_date)
 
 with col_input:
     st.text_input(
         label="date du jour",
         key="date_text",
         on_change=on_text_change,
-        args=(st.session_state.username, st.session_state.jdp_df),
         label_visibility="collapsed",
         width=120,
     )
 
 with col_next:
-    st.button("▶️", on_click=next_date, args=(st.session_state.username, st.session_state.jdp_df))
+    st.button("▶️", on_click=next_date)
 
 with col_checkboxes:
     filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
@@ -154,5 +191,5 @@ else:
     filtered_topTTFL_html = df_to_html(filtered_topTTFL_df)
     table_placeholder.markdown(filtered_topTTFL_html, unsafe_allow_html=True)
     
-    # db_hash = get_db_hash()
-    # save_to_cache(st.session_state.topTTFL_df, st.session_state.selected_date.strftime('%d/%m/%Y'), db_hash)
+    db_hash = get_db_hash()
+    save_to_cache(st.session_state.topTTFL_df, st.session_state.selected_date.strftime('%d/%m/%Y'), db_hash)

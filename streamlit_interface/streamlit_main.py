@@ -1,7 +1,6 @@
 from datetime import datetime
 import streamlit as st
 import keyboard
-import importlib
 import signal
 import sys
 import os
@@ -21,19 +20,6 @@ if env == 'local':
 elif env == 'cloud':
     st.session_state.local_instance = False
 
-# # --- Get page data from /streamlit_pages/ ---
-# pages_list = []
-# for filename in os.listdir(STREAMLIT_PAGES_PATH):
-#     if filename.endswith(".py") and not filename.startswith("_"):
-#         module_name = filename[:-3]
-#         module = importlib.import_module(f"streamlit_interface.streamlit_pages.{module_name}")
-#         title = getattr(module, "TITLE", module_name.replace("_", " ").title())
-#         order = getattr(module, "ORDER", 999)
-#         pages_list.append((order, title, module))
-
-# pages_list.sort(key=lambda x: (x[0], x[1]))
-# PAGES = {title: module for _, title, module in pages_list}
-
 st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
@@ -43,12 +29,15 @@ st.set_page_config(
 if "last_update" in st.session_state:
     st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
-st.sidebar.title("Navigation")
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
         keyboard.press_and_release('ctrl+w')
         cleanup_db()
         os.kill(os.getpid(), signal.SIGTERM)
+
+if st.sidebar.button("Mettre à jour les données"):
+    st.session_state.data_ready = False
+    st.rerun()
 
 # --- Trigger updates if needed ---
 if "data_ready" not in st.session_state:
@@ -76,19 +65,4 @@ if not st.session_state.data_ready:
         st.session_state.last_update = datetime.today()
         st.session_state.first_update = False
         
-    st.rerun()
-
-# --- Or show the pages with updated data and a button to update data ---
-else:
-    if st.sidebar.button("Mettre à jour les données"):
-        st.session_state.data_ready = False
-        st.rerun()
-
-    # selection = st.sidebar.radio("Aller à", list(PAGES.keys()))
-
-    # # --- Run the selected page ---
-    # page = PAGES[selection]
-    # if hasattr(page, "run"):
-    #     page.run()
-    # else:
-    #     st.warning(f"The module `{page.__name__}` has no `run()` function.")
+    st.switch_page('pages/1_classement_TTFL.py')
