@@ -3,7 +3,7 @@ import streamlit as st
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
