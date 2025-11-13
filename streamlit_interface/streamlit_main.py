@@ -1,10 +1,8 @@
-from streamlit_js_eval import streamlit_js_eval
 from zoneinfo import ZoneInfo
 from datetime import datetime
 import streamlit as st
 import keyboard
 import signal
-import uuid
 import sys
 import os
 
@@ -14,7 +12,6 @@ from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
 from update_manager.file_manager import cleanup_db
 from data.sql_functions import update_tables
-from misc.misc import ICON_PATH
 
 st.set_page_config(
     page_title="TTFL Doctor",
@@ -30,14 +27,6 @@ if env == 'local':
     st.session_state.local_instance = True
 elif env == 'cloud':
     st.session_state.local_instance = False
-
-if 'scr_key' not in st.session_state:
-    st.session_state.scr_key = str(uuid.uuid4())
-
-if "screen_width" not in st.session_state:
-    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
-    if width:
-        st.session_state.screen_width = width
 
 # --- Sidebar ---
 
