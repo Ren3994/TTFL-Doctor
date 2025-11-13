@@ -1,5 +1,5 @@
 from datetime import datetime, date
-import streamlit_js_eval
+from streamlit_js_eval import streamlit_js_eval
 import streamlit as st
 import keyboard
 import signal
