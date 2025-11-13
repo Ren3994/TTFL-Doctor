@@ -4,6 +4,8 @@ Application python pour aider à faire des choix sur la TrashTalk Fantasy League
 
 Disclaimer : Ce projet est 100% personnel réalisé dans le but d'apprendre des techniques et de faire des best picks mais n'est pas affilié à l'équipe de TrashTalk.
 
+Site hébergé sur streamlit community cloud : [TTFL Doctor](https://ttfl-doctor.streamlit.app)
+
 ## Pages disponibles : 
 
 ### 1. Classement TTFL du jour 

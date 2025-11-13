@@ -9,18 +9,31 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from update_manager.file_manager import cleanup_db
 from streamlit_interface.JDP_utils import JoueursDejaPick
-
-TITLE = "Joueurs déjà pick"
-
-if 'data_ready' not in st.session_state:
-    st.switch_page('streamlit_main.py')
+from misc.misc import ICON_PATH
 
 st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
-    
+
+st.markdown(
+    f'<link rel="icon" href="{ICON_PATH}" type="image/png">',
+    unsafe_allow_html=True
+)
+
+# ---------- Initialize session state ----------
+
+if 'data_ready' not in st.session_state:
+    st.switch_page('streamlit_main.py')
+
+if "jdp_df" not in st.session_state:
+    st.session_state.JDP = JoueursDejaPick()
+    st.session_state.jdp_df = st.session_state.JDP.initJDP()
+
 # --- Sidebar ---
+if "last_update" in st.session_state:
+    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
+
 if not st.session_state.local_instance:
     col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
     with col_username_input:
@@ -33,13 +46,22 @@ if not st.session_state.local_instance:
                 width=200,
             )
         else:
-            st.text_input(
-                label="Nom d'utilisateur",
-                value=st.session_state.username_str,
-                key="username",
-                label_visibility='collapsed',
-                width=200,
-            )
+            if st.session_state.username_str == '':
+                st.text_input(
+                    label="Nom d'utilisateur",
+                    placeholder="Nom d'utilisateur",
+                    key="username",
+                    label_visibility='collapsed',
+                    width=200,
+                )
+            else:
+                st.text_input(
+                    label="Nom d'utilisateur",
+                    value=st.session_state.username_str,
+                    key="username",
+                    label_visibility='collapsed',
+                    width=200,
+                )
     with col_accept_username:
         if st.button('Login'):
             st.session_state.JDP = JoueursDejaPick()
@@ -51,24 +73,11 @@ if not st.session_state.local_instance:
         st.session_state.jdp_df = st.session_state.JDP.initJDP()
         st.session_state.username_str = st.session_state.username
 
-if "last_update" in st.session_state:
-    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
-
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
         keyboard.press_and_release('ctrl+w')
         cleanup_db()
         os.kill(os.getpid(), signal.SIGTERM)
-
-if st.sidebar.button("Mettre à jour les données"):
-    st.session_state.data_ready = False
-    st.switch_page('streamlit_main.py')
-
-if "jdp_df" not in st.session_state:
-    st.session_state.JDP = JoueursDejaPick()
-    st.session_state.jdp_df = st.session_state.JDP.initJDP()
-
-st.set_page_config(page_title="Joueurs déjà pick", layout="wide")
 
 st.write("### Historique des picks")
 st.markdown("""
