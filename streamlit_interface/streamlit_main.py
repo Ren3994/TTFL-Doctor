@@ -32,9 +32,7 @@ elif env == 'cloud':
 if "data_ready" not in st.session_state:
     st.session_state.data_ready = False
 
-if "scr_key" not in st.session_state:
-    st.session_state.scr_key = str(uuid.uuid4())
-
+scr_key = str(uuid.uuid4())
 if "screen_width" not in st.session_state:
     width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
     if width:
