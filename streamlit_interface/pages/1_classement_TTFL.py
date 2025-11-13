@@ -1,7 +1,9 @@
+from streamlit_js_eval import streamlit_js_eval
 from datetime import datetime, date
 import streamlit as st
 import keyboard
 import signal
+import uuid
 import sys
 import os
 
@@ -92,15 +94,18 @@ if st.session_state.local_instance:
         cleanup_db()
         os.kill(os.getpid(), signal.SIGTERM)
 
+if 'screen_width' in st.session_state:
+    if st.sidebar.button('Recalculer taille de l\écran'):
+        width = streamlit_js_eval(js_expressions='screen.width', key=str(uuid.uuid4()))
+        if width:
+            st.session_state.screen_width = width
+
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 
-# Title
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
-# Text field with buttons on the sides
 mobile = st.session_state.get("screen_width", 1000) <= 500
-
 if mobile:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
     cols_top = st.columns([1, 5, 1], gap="small")
@@ -120,8 +125,7 @@ with col_input:
         key="date_text",
         on_change=on_text_change,
         label_visibility="collapsed",
-        width=120,
-    )
+        width=120)
 
 with col_next:
     st.button("▶️", on_click=next_date)
