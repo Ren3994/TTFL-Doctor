@@ -26,14 +26,6 @@ st.set_page_config(
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
 
-if 'scr_key' not in st.session_state:
-    st.session_state.scr_key = str(uuid.uuid4())
-
-if "screen_width" not in st.session_state:
-    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
-    if width:
-        st.session_state.screen_width = width
-
 if "selected_date" not in st.session_state:
     today = date.today()
     st.session_state.selected_date = today
@@ -42,8 +34,18 @@ if "selected_date" not in st.session_state:
 if "date_text" not in st.session_state or st.session_state.date_text == "":
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
+st.write(f'-{st.session_state.selected_date}-{st.session_state.date_text}-')
+
 if st.session_state.text_parse_error:
     st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
+
+if 'scr_key' not in st.session_state:
+    st.session_state.scr_key = str(uuid.uuid4())
+
+if "screen_width" not in st.session_state:
+    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
+    if width:
+        st.session_state.screen_width = width
 
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
