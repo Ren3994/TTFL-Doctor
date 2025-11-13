@@ -94,4 +94,4 @@ edited_df = st.data_editor(st.session_state.jdp_df,
 
 if st.button("💾 Sauvegarder"):
     st.session_state.jdp_df = st.session_state.JDP.saveJDP(edited_df)
-    st.success("Modifications sauvegardées")
+    st.rerun()
