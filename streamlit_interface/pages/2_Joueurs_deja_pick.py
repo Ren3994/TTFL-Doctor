@@ -11,7 +11,9 @@ from update_manager.file_manager import cleanup_db
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 TITLE = "Joueurs déjà pick"
-ORDER = 3
+
+if 'data_ready' not in st.session_state:
+    st.switch_page('streamlit_main.py')
 
 st.set_page_config(
     page_title="TTFL Doctor",
