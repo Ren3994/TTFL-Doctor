@@ -1,5 +1,4 @@
 from datetime import datetime, date
-from streamlit_js_eval import streamlit_js_eval
 import streamlit as st
 import keyboard
 import signal
@@ -8,7 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS
+from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS, custom_mobile_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT
 from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache
@@ -30,6 +29,9 @@ if "selected_date" not in st.session_state:
 if "date_text" not in st.session_state or st.session_state.date_text == "":
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
+if st.session_state.text_parse_error:
+    st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
+
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
@@ -37,8 +39,6 @@ st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
-
-st.write(f"Screen width is {streamlit_js_eval(js_expressions='screen.width', key = 'SCR')}")
     
 # --- Sidebar ---
 if not st.session_state.local_instance:
@@ -91,7 +91,17 @@ st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
 # Text field with buttons on the sides
-col_checkboxes, col_prev, col_input, col_next, col_low_games_count = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
+mobile = st.session_state.get("screen_width", 1000) <= 500
+
+if mobile:
+    st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
+    cols_top = st.columns([1, 5, 1], gap="small")
+    col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
+    col_checkboxes, col_low_games_count = st.columns([1])[0], st.columns([1])[0]
+else:
+    cols_top = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
+    col_prev, col_input, col_next = cols_top[1], cols_top[2], cols_top[3]
+    col_checkboxes, col_low_games_count = cols_top[0], cols_top[4]
 
 with col_prev:
     st.button("◀️", on_click=prev_date)
@@ -120,16 +130,14 @@ with col_checkboxes:
 with col_low_games_count:
     st.markdown(get_low_game_count(st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
 
-# Error handler if invalid date format in text field
-if st.session_state.text_parse_error:
-    st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
-
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
 # Display for games with team logos
 games_for_date = get_games_for_date(st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
-
-games_per_row = 3
+if mobile:
+    games_per_row = 1
+else:
+    games_per_row = 3
 cols_per_game = 3
 total_cols = games_per_row * cols_per_game
 
@@ -153,7 +161,6 @@ for i in range(0, len(games_for_date), games_per_row):
             st_image_crisp(away_logo, width=30)
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-st.write("")
 
 # Display the TTFL table
 

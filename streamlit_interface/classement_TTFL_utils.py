@@ -316,3 +316,15 @@ custom_CSS = """
     }
     </style>
     """
+
+custom_mobile_CSS = """
+        <style>
+        /* Allow columns to shrink on small screens */
+        @media (max-width: 600px) {
+            .stColumn {
+                flex: 1 !important;
+                min-width: 0 !important;
+            }
+        }
+        </style>
+        """

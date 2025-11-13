@@ -1,8 +1,10 @@
+from streamlit_js_eval import streamlit_js_eval
 from zoneinfo import ZoneInfo
 from datetime import datetime
 import streamlit as st
 import keyboard
 import signal
+import uuid
 import sys
 import os
 
@@ -28,6 +30,14 @@ st.set_page_config(
 # --- Sidebar ---
 if "last_update" in st.session_state:
     st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
+
+if "scr_key" not in st.session_state:
+    st.session_state.scr_key = str(uuid.uuid4())
+
+if "screen_width" not in st.session_state:
+    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
+    if width:
+        st.session_state.screen_width = width
 
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
