@@ -40,8 +40,11 @@ if st.session_state.text_parse_error:
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
-if 'screen_width' not in st.session_state:
-    width = streamlit_js_eval(js_expressions='screen.width', key=str(uuid.uuid4()))
+if 'scr_key' not in st.session_state:
+    st.session_state.scr_key = str(uuid.uuid4())
+
+if "screen_width" not in st.session_state:
+    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
     if width:
         st.session_state.screen_width = width
     
@@ -99,7 +102,7 @@ if st.session_state.local_instance:
         cleanup_db()
         os.kill(os.getpid(), signal.SIGTERM)
 
-if 'screen_width' not in st.session_state:
+if 'screen_width' in st.session_state:
     if st.sidebar.button('Recalculer taille de l\'écran'):
         width = streamlit_js_eval(js_expressions='screen.width', key=str(uuid.uuid4()))
         if width:

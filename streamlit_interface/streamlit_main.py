@@ -31,8 +31,11 @@ if env == 'local':
 elif env == 'cloud':
     st.session_state.local_instance = False
 
+if 'scr_key' not in st.session_state:
+    st.session_state.scr_key = str(uuid.uuid4())
+
 if "screen_width" not in st.session_state:
-    width = streamlit_js_eval(js_expressions='screen.width', key=str(uuid.uuid4()))
+    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
     if width:
         st.session_state.screen_width = width
 
