@@ -21,8 +21,10 @@ st.set_page_config(
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
 
-if "jdp_df" not in st.session_state:
+if "JDP" not in st.session_state:
     st.session_state.JDP = JoueursDejaPick()
+
+if "jdp_df" not in st.session_state:
     st.session_state.jdp_df = st.session_state.JDP.initJDP()
 
 # --- Sidebar ---

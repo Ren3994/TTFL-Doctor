@@ -50,7 +50,7 @@ class JoueursDejaPick():
                                                     .select("picks")
                                                     .eq("username", username_clean)
                                                     .execute()
-                                            ).data[0]['picks'].items()), columns=['joueur', 'datePick'])
+                                            ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
         return df
             
     def initJDP(self) -> pd.DataFrame:
@@ -93,7 +93,7 @@ class JoueursDejaPick():
                 df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
         else:
             df_db = df_db[df_db['joueur'] != '']
-            picks = dict(zip(df_db['joueur'], df_db['datePick']))
+            picks = dict(zip(df_db['datePick'], df_db['joueur']))
             if 'username' in st.session_state and st.session_state.username != '':
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
@@ -114,34 +114,40 @@ class JoueursDejaPick():
     
     def completeCols(self, df:pd.DataFrame):
         scoresTTFL = run_sql_query(
-                    table="boxscores b",
-                    select=['b.playerName', 'b.gameDate', 'b.TTFL, pat.avg_TTFL'],
-                    filters='b.seconds > 0',
-                    joins=[{
-                        'table' : 'player_avg_TTFL pat',
-                        'on' : 'b.playerName = pat.playerName',
-                        'type' : 'LEFT'
-                    }]
+                    table="boxscores",
+                    select=['playerName', 'gameDate', 'TTFL'],
+                    filters='seconds > 0'
         )
-
-        if 'TTFL' in df.columns:
-            df = df.drop(columns=['TTFL', 'avg_TTFL'])
-        if 'gameDate' in df.columns:
-            df = df.drop(columns='gameDate')
+        avg_TTFL = run_sql_query(table='player_avg_TTFL', select=['playerName', 'avg_TTFL'])
+        
+        for col in ['TTFL', 'avg_TTFL', 'gameDate']:
+            if col in df.columns:
+                df = df.drop(columns=col)
 
         df = clean_player_names(df, 'joueur', scoresTTFL['playerName'].unique().tolist())
 
         df_completed = df.copy()
         df_completed = df_completed.merge(
-        scoresTTFL[['playerName', 'gameDate', 'TTFL', 'avg_TTFL']],
-        left_on=['joueur', 'datePick'],
-        right_on=['playerName', 'gameDate'],
-        how='left'
-        )
+            scoresTTFL[['playerName', 'gameDate', 'TTFL']],
+            left_on=['joueur', 'datePick'],
+            right_on=['playerName', 'gameDate'],
+            how='left'
+        ).drop(columns=['playerName', 'gameDate'])
+
+        df_completed = df_completed.merge(
+            avg_TTFL[['playerName', 'avg_TTFL']],
+            left_on=['joueur'],
+            right_on=['playerName'],
+            how='left'
+        ).drop(columns=['playerName'])
         
+        df_completed.loc[(df_completed['joueur'] != '') & 
+                         (df_completed['TTFL'].isna()) & 
+                         (df_completed['avg_TTFL'].notna()), ['TTFL']] = 0
         df_completed['TTFL'] = df_completed['TTFL'].apply(lambda x: int(x) if pd.notna(x) else '')
-        df_completed['avg_TTFL'] = df_completed['avg_TTFL'].fillna('')
-        df_completed = df_completed.drop(columns=['playerName', 'gameDate'])
+
+        df_completed[['TTFL', 'avg_TTFL']] = df_completed[['TTFL', 'avg_TTFL']].astype('string')
+        df_completed.loc[df_completed['joueur'] == '', ['TTFL', 'avg_TTFL']] = ''
 
         return df_completed
     
