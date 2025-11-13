@@ -4,7 +4,7 @@ Application python pour aider à faire des choix sur la TrashTalk Fantasy League
 
 Disclaimer : Ce projet est 100% personnel réalisé dans le but d'apprendre des techniques et de faire des best picks mais n'est pas affilié à l'équipe de TrashTalk.
 
-Site hébergé sur streamlit community cloud : <a href="https://ttfl-doctor.streamlit.app" target="_blank">TTFL Doctor</a>
+Site hébergé sur streamlit community cloud : [TTFL Doctor](https://ttfl-doctor.streamlit.app)
 
 ## Pages disponibles : 
 
@@ -72,7 +72,7 @@ Ce projet utilise des api open-source, notamment :
 - **nba_api** (Licence MIT)
   Copyright (c) 2018 Swar Patel
 
-Plus d'informations : <a href="https://github.com/swar/nba_api" target="_blank">nba_api</a>
+Plus d'informations : [nba_api](https://github.com/swar/nba_api).
 
 ## Auteur
 
