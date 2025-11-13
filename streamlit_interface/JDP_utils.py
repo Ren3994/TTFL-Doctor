@@ -94,7 +94,7 @@ class JoueursDejaPick():
         else:
             df_db = df_db[df_db['joueur'] != '']
             picks = dict(zip(df_db['joueur'], df_db['datePick']))
-            if 'username' in st.session_state:
+            if 'username' in st.session_state and st.session_state.username != '':
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
                 if username_clean in self.existing_users:
                     update = (self.supabase.table("ttfl_doctor_user_picks")
@@ -126,6 +126,8 @@ class JoueursDejaPick():
 
         if 'TTFL' in df.columns:
             df = df.drop(columns=['TTFL', 'avg_TTFL'])
+        if 'gameDate' in df.columns:
+            df = df.drop(columns='gameDate')
 
         df = clean_player_names(df, 'joueur', scoresTTFL['playerName'].unique().tolist())
 
@@ -139,6 +141,7 @@ class JoueursDejaPick():
         
         df_completed['TTFL'] = df_completed['TTFL'].apply(lambda x: int(x) if pd.notna(x) else '')
         df_completed['avg_TTFL'] = df_completed['avg_TTFL'].fillna('')
+        df_completed = df_completed.drop(columns=['playerName', 'gameDate'])
 
         return df_completed
     
@@ -205,10 +208,18 @@ def match_player(input_name, names_list):
 
     if input_upper in NICKNAMES:
         return NICKNAMES[input_upper]
-    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1: ### Ajouter : si il y en a plusieurs, prendre celui avec la meilleure moyenne TTFL
+    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
         return abbv_map[input_upper][0]
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]
+    if input_upper in abbv_map:
+        pat = run_sql_query(table='player_avg_TTFL')
+        filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
+        return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
+    if input_upper in splits:
+        pat = run_sql_query(table='player_avg_TTFL')
+        filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
+        return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     
     match, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
     return match
