@@ -134,6 +134,8 @@ storage3==2.24.0
 streamlit==1.50.0
 streamlit-aggrid==1.1.9
 streamlit-autorefresh==1.0.1
+streamlit-javascript==0.1.5
+streamlit-js-eval==0.1.7
 streamlit-option-menu==0.4.0
 StrEnum==0.4.15
 supabase==2.24.0

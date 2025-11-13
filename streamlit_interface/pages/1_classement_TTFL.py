@@ -1,4 +1,5 @@
 from datetime import datetime, date
+import streamlit_js_eval
 import streamlit as st
 import keyboard
 import signal
@@ -36,6 +37,8 @@ st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
+
+st.write(f"Screen width is {streamlit_js_eval(js_expressions='screen.width', key = 'SCR')}")
     
 # --- Sidebar ---
 if not st.session_state.local_instance:
