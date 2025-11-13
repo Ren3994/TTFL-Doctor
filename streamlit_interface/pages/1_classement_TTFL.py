@@ -127,7 +127,7 @@ with col_input:
     st.write(f'-{st.session_state.selected_date.strftime("%d/%m/%Y")}-{st.session_state.date_text}-')
     st.text_input(
         label="date du jour",
-        key=st.session_state.date_text,
+        value=st.session_state.date_text,
         on_change=on_text_change,
         label_visibility="collapsed",
         width=120)
