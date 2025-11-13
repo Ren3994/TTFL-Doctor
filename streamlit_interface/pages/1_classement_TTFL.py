@@ -34,8 +34,6 @@ if "selected_date" not in st.session_state:
 if "date_text" not in st.session_state or st.session_state.date_text == "":
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
-st.write(f'-{st.session_state.selected_date.strftime("%d/%m/%Y")}-{st.session_state.date_text}-')
-
 if st.session_state.text_parse_error:
     st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
 
@@ -124,7 +122,6 @@ with col_prev:
     st.button("◀️", on_click=prev_date)
 
 with col_input:
-    st.write(f'-{st.session_state.selected_date.strftime("%d/%m/%Y")}-{st.session_state.date_text}-')
     st.text_input(
         label="date du jour",
         value=st.session_state.date_text,
