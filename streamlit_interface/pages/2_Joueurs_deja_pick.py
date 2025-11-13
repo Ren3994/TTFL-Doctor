@@ -69,7 +69,12 @@ if "jdp_df" not in st.session_state:
 st.set_page_config(page_title="Joueurs déjà pick", layout="wide")
 
 st.write("### Historique des picks")
-
+st.markdown("""
+1. Choisissez un nom d'utilisateur et appuyez sur **login** (ou entrée). Si vous avez déjà rentré vos picks, ils s'afficheront dans le tableau
+2. Rentrez vos picks (initiales, surnom, juste prénom, juste nom, ou nom entier)
+3. Cliquez sur **sauvegarder**
+4. Les scores vont s'afficher, vos picks seront sauvegardés et ne s'afficheront dans le tableau **"Classement TTFL"** que s'ils sont disponibles
+""")
 edited_df = st.data_editor(st.session_state.jdp_df,
                             key="jdp_editor",
                             num_rows="dynamic",
