@@ -22,6 +22,8 @@ st.set_page_config(
     layout="wide")
 
 # ---------- Initialize session state ----------
+if "data_ready" not in st.session_state:
+    st.session_state.data_ready = False
 
 env = st.secrets.get("environment", "unknown")
 if env == 'local':
@@ -29,17 +31,12 @@ if env == 'local':
 elif env == 'cloud':
     st.session_state.local_instance = False
 
-if "data_ready" not in st.session_state:
-    st.session_state.data_ready = False
-
 scr_key = str(uuid.uuid4())
 width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
 if width:
     st.session_state.screen_width = width
 
 # --- Sidebar ---
-if "last_update" in st.session_state:
-    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
