@@ -46,7 +46,7 @@ if 'scr_key' not in st.session_state:
     st.session_state.scr_key = str(uuid.uuid4())
 
 if "screen_width" not in st.session_state:
-    width = 1000#streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
+    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
     if width:
         st.session_state.screen_width = width
     
@@ -124,6 +124,7 @@ with col_prev:
     st.button("◀️", on_click=prev_date)
 
 with col_input:
+    st.write(f'-{st.session_state.selected_date.strftime("%d/%m/%Y")}-{st.session_state.date_text}-')
     st.text_input(
         label="date du jour",
         key="date_text",
