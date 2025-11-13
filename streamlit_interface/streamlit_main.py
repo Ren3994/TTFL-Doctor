@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from datetime import datetime
 import streamlit as st
 import keyboard
@@ -7,10 +8,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import STREAMLIT_PAGES_PATH
-from update_manager.file_manager import cleanup_db
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
+from update_manager.file_manager import cleanup_db
 from data.sql_functions import update_tables
 
 # --- Check if running local or cloud version ---
@@ -62,7 +62,7 @@ if not st.session_state.data_ready:
         status.text("Injury report : ✅\nDonnées NBA : ✅\nTables de calculs : ✅")
 
         st.session_state.data_ready = True
-        st.session_state.last_update = datetime.today()
         st.session_state.first_update = False
+        st.session_state.last_update = datetime.now(ZoneInfo("Europe/Paris"))
         
     st.switch_page('pages/1_classement_TTFL.py')

@@ -16,8 +16,21 @@ from streamlit_interface.JDP_utils import JoueursDejaPick
 
 TITLE = "Classement TTFL"
 
+    # ---------- Initialize session state ----------
+
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
+
+if "selected_date" not in st.session_state:
+    today = date.today()
+    st.session_state.selected_date = today
+    st.session_state.text_parse_error = False
+
+if "date_text" not in st.session_state or st.session_state.date_text == "":
+    st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
+
+if "topTTFL_df" not in st.session_state:
+    update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 st.set_page_config(
     page_title="TTFL Doctor",
@@ -67,19 +80,6 @@ if st.session_state.local_instance:
 if st.sidebar.button("Mettre à jour les données"):
     st.session_state.data_ready = False
     st.switch_page('streamlit_main.py')
-
-    # ---------- Initialize session state ----------
-
-if "selected_date" not in st.session_state:
-    today = date.today()
-    st.session_state.selected_date = today
-    st.session_state.text_parse_error = False
-
-if "date_text" not in st.session_state or st.session_state.date_text == "":
-    st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-
-if "topTTFL_df" not in st.session_state:
-    update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
