@@ -19,11 +19,6 @@ st.set_page_config(
     page_icon="🏀",
     layout="wide")
 
-st.markdown(
-    f'<link rel="icon" href="{ICON_PATH}" type="image/png">',
-    unsafe_allow_html=True
-)
-
 # ---------- Initialize session state ----------
 
 if 'data_ready' not in st.session_state:
