@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
+from streamlit_interface.classement_TTFL_utils import custom_CSS
 
 st.set_page_config(
     page_title="TTFL Doctor",
@@ -79,7 +80,9 @@ if st.session_state.local_instance:
         keyboard.press_and_release('ctrl+w')
         os.kill(os.getpid(), signal.SIGTERM)
 
-st.write("### Historique des picks")
+# ---------- UI ------------
+st.markdown(custom_CSS, unsafe_allow_html=True)
+st.markdown('<div class="date-title">Historique des picks</div>', unsafe_allow_html=True)
 st.markdown("""
 1. Choisissez un nom d'utilisateur et appuyez sur **login** (ou entrée). Si vous avez déjà rentré vos picks, ils s'afficheront dans le tableau
 2. Rentrez vos picks (initiales, surnom, juste prénom, juste nom, ou nom entier)
