@@ -28,6 +28,8 @@ def sidebar(page):
     st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
     st.sidebar.page_link('pages/2_Historique_des_picks.py', label='2 - Historique des picks')
 
+    st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+
     if page != 'main':
         if "last_update" in st.session_state:
             st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
@@ -77,6 +79,17 @@ def sidebar(page):
                 st.switch_page('streamlit_main.py')
 
     if st.secrets.environment == 'local':
+        if page != 'main':
+            st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+        
+        st.sidebar.header('Dev tools')
+
+        st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
+        if st.sidebar.button('Switch instance'):
+            st.session_state.local_instance = not st.session_state.local_instance
+            st.session_state.pop('jdp_df', None)
+            st.rerun()
+            
         if st.sidebar.button("🛑 Quitter"):
             cleanup_db()
             if 'data_ready' in st.session_state:
@@ -85,12 +98,6 @@ def sidebar(page):
 
             keyboard.press_and_release('ctrl+w')
             os.kill(os.getpid(), signal.SIGTERM)
-        
-        st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
-        if st.sidebar.button('Switch instance'):
-            st.session_state.local_instance = not st.session_state.local_instance
-            st.session_state.pop('jdp_df', None)
-            st.rerun()
 
 # if __name__ == '__main__':
 #     launch_GUI()
