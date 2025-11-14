@@ -3,14 +3,8 @@ import matplotlib.dates as mdates
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from datetime import datetime
-import concurrent.futures
-import streamlit as st
 from io import BytesIO
-import pandas as pd
-import subprocess
-import tempfile
 import base64
-import time
 import sys
 import os
 
@@ -23,70 +17,6 @@ def generate_all_plots(df, date, parallelize=False, max_workers=MAX_WORKERS):
     if not parallelize:
         for i, row in df.iterrows():
             df.loc[i, 'plots'] = generate_plot_row(row, date)
-        return df
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as pool:
-        results = list(
-            pool.map(
-                generate_plot_row,
-                [row for _, row in df.iterrows()],
-                [date] * len(df)
-            )
-        )
-
-    df['plots'] = results
-    return df
-
-def add_plots_to_head(df, date, cutoff):
-
-    head = df.iloc[:cutoff]
-    head_with_plots = generate_all_plots(head, 
-                                         date,
-                                         parallelize=False)
-        
-    df.iloc[:cutoff] = head_with_plots
-
-    return df
-
-def add_plots_to_rest(df, date, cutoff):
-
-    if cutoff == 0:
-        rest = df.copy()
-    else:
-        rest = df.iloc[cutoff:]
-
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_in, \
-         tempfile.NamedTemporaryFile(delete=False) as tmp_out:
-            
-        input_path = tmp_in.name
-        output_path = tmp_out.name
-        rest.to_pickle(input_path)
-        
-        try :
-            result = subprocess.run(
-                [
-                    "python", 
-                    PLOT_GEN_WORKER_PATH, 
-                    input_path, 
-                    output_path, 
-                    date
-                ],
-                capture_output=True, 
-                text=True,
-                check=True
-            )
-        except subprocess.CalledProcessError as e:
-            print("Worker failed!")
-            print("stdout:", e.stdout)
-            print("stderr:", e.stderr)
-                    
-        rest_with_plots = pd.read_pickle(output_path)
-        
-        if cutoff == 0:
-            df = rest_with_plots.copy()
-        else:
-            df.iloc[cutoff:] = rest_with_plots
-
         return df
 
 def generate_plot_row(row, requested_date):
