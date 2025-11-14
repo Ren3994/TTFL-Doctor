@@ -1,22 +1,15 @@
-from datetime import datetime
 import streamlit as st
-import keyboard
-import signal
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from update_manager.file_manager import cleanup_db, manage_backups
-from streamlit_interface.JDP_utils import JoueursDejaPick
 from streamlit_interface.classement_TTFL_utils import custom_CSS
-
-st.set_page_config(
-    page_title="TTFL Doctor",
-    page_icon="🏀",
-    layout="wide")
+from streamlit_interface.streamlit_utils import config, sidebar
+from streamlit_interface.JDP_utils import JoueursDejaPick
 
 # ---------- Initialize session state ----------
+config(page='JDP')
 
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
@@ -28,67 +21,19 @@ if "jdp_df" not in st.session_state:
     st.session_state.jdp_df = st.session_state.JDP.initJDP()
 
 # --- Sidebar ---
-if "last_update" in st.session_state:
-    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
-
-if not st.session_state.local_instance:
-    col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
-    with col_username_input:
-        if 'username_str' not in st.session_state:
-            st.text_input(
-                label="Nom d'utilisateur",
-                placeholder="Nom d'utilisateur",
-                key="username",
-                label_visibility='collapsed',
-                width=200,
-            )
-        else:
-            if st.session_state.username_str == '':
-                st.text_input(
-                    label="Nom d'utilisateur",
-                    placeholder="Nom d'utilisateur",
-                    key="username",
-                    label_visibility='collapsed',
-                    width=200,
-                )
-            else:
-                st.text_input(
-                    label="Nom d'utilisateur",
-                    value=st.session_state.username_str,
-                    key="username",
-                    label_visibility='collapsed',
-                    width=200,
-                )
-    with col_accept_username:
-        if st.button('Login'):
-            st.session_state.JDP = JoueursDejaPick()
-            st.session_state.jdp_df = st.session_state.JDP.initJDP()
-            st.session_state.username_str = st.session_state.username
-    
-    if 'username' in st.session_state:
-        st.session_state.JDP = JoueursDejaPick()
-        st.session_state.jdp_df = st.session_state.JDP.initJDP()
-        st.session_state.username_str = st.session_state.username
-
-if st.session_state.local_instance:
-    if st.sidebar.button("🛑 Quitter"):
-        cleanup_db()
-        if 'data_ready' in st.session_state:
-            if st.session_state.data_ready:
-                manage_backups()
-
-        keyboard.press_and_release('ctrl+w')
-        os.kill(os.getpid(), signal.SIGTERM)
+sidebar(page='JDP')
 
 # ---------- UI ------------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Historique des picks</div>', unsafe_allow_html=True)
+
 st.markdown("""
 1. Choisissez un nom d'utilisateur et appuyez sur **login** (ou entrée). Si vous avez déjà rentré vos picks, ils s'afficheront dans le tableau
 2. Rentrez vos picks (initiales, surnom, juste prénom, juste nom, ou nom entier)
 3. Cliquez sur **sauvegarder**
 4. Les scores vont s'afficher, vos picks seront sauvegardés et ne s'afficheront dans le tableau **"Classement TTFL"** que s'ils sont disponibles
 """)
+
 edited_df = st.data_editor(st.session_state.jdp_df,
                             key="jdp_editor",
                             num_rows="dynamic",

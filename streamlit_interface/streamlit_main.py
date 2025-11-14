@@ -1,53 +1,35 @@
 from zoneinfo import ZoneInfo
 from datetime import datetime
 import streamlit as st
-import keyboard
-import signal
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
+from streamlit_interface.streamlit_utils import config, sidebar
 from update_manager.nba_api_manager import update_nba_data
-from update_manager.file_manager import cleanup_db, manage_cache, manage_backups
+from update_manager.file_manager import manage_cache
 from data.sql_functions import update_tables
 
-st.set_page_config(
-    page_title="TTFL Doctor",
-    page_icon="🏀",
-    layout="wide")
-
 # ---------- Initialize session state ----------
+config(page='main')
+
 if "data_ready" not in st.session_state:
     st.session_state.data_ready = False
     manage_cache()
 
 env = st.secrets.get("environment", "unknown")
-if env == 'local':
-    st.session_state.local_instance = True
-elif env == 'cloud':
-    st.session_state.local_instance = False
+if 'local_instance' not in st.session_state:
+    if env == 'local':
+        st.session_state.local_instance = True
+    elif env == 'cloud':
+        st.session_state.local_instance = False
 
 # --- Sidebar ---
-
-if st.session_state.local_instance:
-    if st.sidebar.button("🛑 Quitter"):
-        cleanup_db()
-        if 'data_ready' in st.session_state:
-            if st.session_state.data_ready:
-                manage_backups()
-
-        keyboard.press_and_release('ctrl+w')
-        os.kill(os.getpid(), signal.SIGTERM)
-
-if st.session_state.data_ready:
-    if st.sidebar.button("Mettre à jour les données"):
-        st.session_state.data_ready = False
-        st.rerun()
+sidebar(page='main')
 
 # --- Trigger updates if needed ---
-
 if not st.session_state.data_ready:
 
     st.title('🏀 TTFL Doctor')

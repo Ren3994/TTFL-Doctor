@@ -1,27 +1,21 @@
 from streamlit_js_eval import streamlit_js_eval
-from datetime import datetime, date
+from datetime import date
 import streamlit as st
-import keyboard
-import signal
 import uuid
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS, custom_mobile_CSS
-from streamlit_interface.plotting_utils import generate_all_plots
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache, manage_backups
+from update_manager.file_manager import get_db_hash, save_to_cache
+from streamlit_interface.plotting_utils import generate_all_plots
+from streamlit_interface.streamlit_utils import config, sidebar
+from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
-from streamlit_interface.JDP_utils import JoueursDejaPick
-
-st.set_page_config(
-    page_title="TTFL Doctor",
-    page_icon="🏀",
-    layout="wide")
 
 # ---------- Initialize session state ----------
+config(page='classement')
 
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
@@ -49,62 +43,7 @@ if "screen_width" not in st.session_state:
         st.session_state.screen_width = width
     
 # --- Sidebar ---
-if "last_update" in st.session_state:
-    st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
-
-if not st.session_state.local_instance:
-    col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
-    with col_username_input:
-        if 'username_str' not in st.session_state:
-            st.text_input(
-                label="Nom d'utilisateur",
-                placeholder="Nom d'utilisateur",
-                key="username",
-                label_visibility='collapsed',
-                width=200,
-            )
-        else:
-            if st.session_state.username_str == '':
-                st.text_input(
-                    label="Nom d'utilisateur",
-                    placeholder="Nom d'utilisateur",
-                    key="username",
-                    label_visibility='collapsed',
-                    width=200,
-                )
-            else:
-                st.text_input(
-                    label="Nom d'utilisateur",
-                    value=st.session_state.username_str,
-                    key="username",
-                    label_visibility='collapsed',
-                    width=200,
-                )
-    with col_accept_username:
-        if st.button('Login'):
-            st.session_state.JDP = JoueursDejaPick()
-            st.session_state.jdp_df = st.session_state.JDP.initJDP()
-            st.session_state.username_str = st.session_state.username
-    
-    if 'username' in st.session_state:
-        st.session_state.JDP = JoueursDejaPick()
-        st.session_state.jdp_df = st.session_state.JDP.initJDP()
-        st.session_state.username_str = st.session_state.username
-
-if st.session_state.data_ready:
-    if st.sidebar.button("Mettre à jour les données"):
-        st.session_state.data_ready = False
-        st.switch_page('streamlit_main.py')
-
-if st.session_state.local_instance:
-    if st.sidebar.button("🛑 Quitter"):
-        cleanup_db()
-        if 'data_ready' in st.session_state:
-            if st.session_state.data_ready:
-                manage_backups()
-
-        keyboard.press_and_release('ctrl+w')
-        os.kill(os.getpid(), signal.SIGTERM)
+sidebar(page='classement')
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
