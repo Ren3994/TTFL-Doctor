@@ -64,6 +64,9 @@ def generate_plot_row(row, requested_date):
     ax.set_xticks(alldates)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%b'))
     fig.autofmt_xdate()
+
+    secax = ax.secondary_yaxis('right')
+    secax.tick_params(axis='both', labelsize=8)
     
     ax.set_title(joueur, fontsize=10)
     ax.set_ylabel("TTFL", fontsize=8, rotation=0, labelpad=15)

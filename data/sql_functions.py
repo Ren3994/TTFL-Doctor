@@ -308,14 +308,16 @@ def update_absent_teammate_rel_impact(conn):
       FROM played
     ),
 
-    -- final aggregation (without relative TTFL)
+    --aggregation (without relative TTFL)
     absent_teammate_impact AS (
       SELECT
         pg.playerA                    AS playerName,
         pg.teammate                   AS teammate,
         pg.teamTricode                AS teamTricode,
-        COUNT(pp.player_TTFL)         AS games_absent_count,
-        AVG(pp.player_TTFL)           AS avg_TTFL_when_teammate_absent
+        COUNT(CASE WHEN tp.teammate IS NULL AND pp.player_TTFL IS NOT NULL
+               THEN 1 END) AS games_absent_count,
+        AVG(CASE WHEN tp.teammate IS NULL AND pp.player_TTFL IS NOT NULL
+            THEN pp.player_TTFL END) AS avg_TTFL_when_teammate_absent
 
       FROM pair_games pg
 
@@ -332,10 +334,6 @@ def update_absent_teammate_rel_impact(conn):
       -- add average TTFL to compute the relative values
       LEFT JOIN player_avg_TTFL pat
           ON pg.playerA = pat.playerName
-
-      -- keep only games where teammate didn't play but player did
-      WHERE tp.teammate IS NULL
-        AND pp.player_TTFL IS NOT NULL
 
       GROUP BY pg.playerA, pg.teammate, pg.teamTricode
     )
@@ -603,11 +601,11 @@ def topTTFL_query(conn, game_date):
     ir.simplified_status AS simp_status,
     rtat.playerName AS playing_teammate,
     COALESCE(rtat.rel_TTFL_teammate_absent, '0.0') AS rel_TTFL_teammate_absent,
-    rtat.games_absent_count,
+    COALESCE(rtat.games_absent_count, 0) AS games_absent_count,
     pat.avg_TTFL AS injured_player_avg_TTFL
 
     FROM inj_report ir
-    JOIN rel_TTFL_abs_teammate rtat
+    LEFT JOIN rel_TTFL_abs_teammate rtat
         ON ir.player_name = rtat.teammate
     JOIN player_avgTTFL pat
         ON ir.player_name = pat.playerName
