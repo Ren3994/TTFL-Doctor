@@ -36,7 +36,7 @@ st.markdown("""
 
 edited_df = st.data_editor(st.session_state.jdp_df,
                             key="jdp_editor",
-                            num_rows="dynamic",
+                            num_rows="fixed",
                             width='stretch',
                             column_config={
                                 "Joueur": st.column_config.TextColumn("Joueur", disabled=False),

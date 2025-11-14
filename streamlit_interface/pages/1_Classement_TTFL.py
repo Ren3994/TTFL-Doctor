@@ -95,7 +95,7 @@ with col_low_games_count:
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
-# Display for games with team logos
+# Display tonight's games
 games_for_date = get_games_for_date(st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
 cols_per_game = 3
 total_cols = games_per_row * cols_per_game
@@ -122,7 +122,6 @@ for i in range(0, len(games_for_date), games_per_row):
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
 # Display the TTFL table
-
 if st.session_state.topTTFL_df.empty:
     st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date.strftime('%d/%m/%Y')}")
 
