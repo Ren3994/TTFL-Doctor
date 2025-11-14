@@ -113,10 +113,12 @@ if mobile:
     cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
     col_checkboxes, col_low_games_count = st.columns([1])[0], st.columns([1])[0]
+    games_per_row = 1
 else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
     col_prev, col_input, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_checkboxes, col_low_games_count = cols_top[0], cols_top[4]
+    games_per_row = 3
 
 with col_prev:
     st.button("◀️", on_click=prev_date)
@@ -133,7 +135,11 @@ with col_next:
     st.button("▶️", on_click=next_date)
 
 with col_checkboxes:
-    filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
+    if 'username_str' in st.session_state and st.session_state.username_str != '':
+        filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
+    else:
+        filter_JDP = False
+
     filter_inj = st.checkbox("Masquer les joueurs blessés", value=False)
     
     if st.button('Générer plus de graphes'):
@@ -148,10 +154,6 @@ st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_all
 
 # Display for games with team logos
 games_for_date = get_games_for_date(st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
-if mobile:
-    games_per_row = 1
-else:
-    games_per_row = 3
 cols_per_game = 3
 total_cols = games_per_row * cols_per_game
 
