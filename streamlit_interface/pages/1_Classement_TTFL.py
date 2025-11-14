@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS, custom_mobile_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
-from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, ICON_PATH
+from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache
 from data.sql_functions import get_games_for_date
 from streamlit_interface.JDP_utils import JoueursDejaPick
@@ -186,7 +186,11 @@ else:
     if not st.session_state.with_plots:
         
         if st.session_state.plot_calc_start == 0:
-            st.session_state.topTTFL_df['plots'] = IMG_CHARGEMENT                
+            st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES                
+        
+        st.session_state.topTTFL_df.loc[
+            st.session_state.plot_calc_start:
+            st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
         topTTFL_html = df_to_html(st.session_state.topTTFL_df)
         table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
