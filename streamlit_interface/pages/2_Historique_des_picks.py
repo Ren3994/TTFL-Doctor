@@ -28,9 +28,9 @@ st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Historique des picks</div>', unsafe_allow_html=True)
 
 st.markdown("""
-1. Choisissez un nom d'utilisateur et appuyez sur **login** (ou entrée). Si vous avez déjà rentré vos picks, ils s'afficheront dans le tableau
-2. Rentrez vos picks (initiales, surnom, juste prénom, juste nom, ou nom entier)
-3. Cliquez sur **sauvegarder**
+1. Choisissez un nom d'utilisateur et appuyez sur **login** (ou entrée). Si vous avez déjà sauvegardé vos picks, ils s'afficheront dans le tableau
+2. Rentrez vos picks (initiales, surnom, juste prénom, juste nom, ou nom entier). Pas besoin de capitaliser
+3. Cliquez sur **💾 Sauvegarder**
 4. Les scores vont s'afficher, vos picks seront sauvegardés et ne s'afficheront dans le tableau **"Classement TTFL"** que s'ils sont disponibles
 """)
 
