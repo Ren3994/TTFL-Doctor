@@ -1,12 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from shutil import copy2
-from tqdm import tqdm
 import sqlite3
 import hashlib
 import pickle
 import sys
 import os
-import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -14,8 +12,7 @@ from misc.misc import DB_PATH, CACHE_DIR_PATH, BACKUP_DIR_PATH, SEASON
 
 def manage_files():
     current_hash = get_db_hash()
-    current_date = datetime.today().date()
-    # manage_cache(current_hash, current_date)
+    manage_cache(current_hash)
     # manage_backups(current_hash)
 
 def cleanup_db():
@@ -24,25 +21,30 @@ def cleanup_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""VACUUM;""")
 
-def manage_backups(db_hash):
+def manage_backups():
+    current_date = datetime.today()
+    delete_backup_date = current_date - timedelta(days=30)
+    current_date_str = current_date.strftime('%d-%m-%Y')
     os.makedirs(BACKUP_DIR_PATH, exist_ok=True)
-    for filename in os.listdir(BACKUP_DIR_PATH):
-        if SEASON in filename and db_hash not in filename:
-            old_backup_path = os.path.join(BACKUP_DIR_PATH, filename)
-            os.remove(old_backup_path)
-            new_db_path = os.path.join(BACKUP_DIR_PATH, f'backup_db_{SEASON}_{db_hash}.db')
-            copy2(DB_PATH, new_db_path)
 
-def manage_cache(db_hash, date):
+    existing_backup_dates = []
+    for filename in os.listdir(BACKUP_DIR_PATH):
+        backup_date = filename[:-3].split('_')[-1]
+        backup_date_dt = datetime.strptime(backup_date, '%d-%m-%Y')
+        existing_backup_dates.append(backup_date)
+
+        if backup_date_dt < delete_backup_date:
+            os.remove(os.path.join(BACKUP_DIR_PATH, filename))
+
+    if current_date_str not in existing_backup_dates:
+        new_backup_path = os.path.join(BACKUP_DIR_PATH, f'backup_db_{SEASON}_{current_date_str}.db')
+        copy2(DB_PATH, new_backup_path)
+
+def manage_cache():
     os.makedirs(CACHE_DIR_PATH, exist_ok=True)
+    db_hash = get_db_hash()
     for filename in os.listdir(CACHE_DIR_PATH):
         if db_hash not in filename:
-            os.remove(os.path.join(CACHE_DIR_PATH, filename))
-            continue
-        
-        file_date = filename.split('_')[0]
-        file_date_dt = datetime.strptime(file_date, '%d-%m-%Y').date()
-        if file_date_dt < date:
             os.remove(os.path.join(CACHE_DIR_PATH, filename))
     
 def get_db_hash() -> str:
@@ -89,4 +91,5 @@ def drop_table(table_name: str, db_path=DB_PATH):
 
 if __name__ == "__main__":
     # manage_files()
-    cleanup_db()
+    # cleanup_db()
+    manage_backups()

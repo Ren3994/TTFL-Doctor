@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
-from update_manager.file_manager import cleanup_db
+from update_manager.file_manager import cleanup_db, manage_cache, manage_backups
 from data.sql_functions import update_tables
 
 st.set_page_config(
@@ -21,6 +21,7 @@ st.set_page_config(
 # ---------- Initialize session state ----------
 if "data_ready" not in st.session_state:
     st.session_state.data_ready = False
+    manage_cache()
 
 env = st.secrets.get("environment", "unknown")
 if env == 'local':
@@ -32,8 +33,12 @@ elif env == 'cloud':
 
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
-        keyboard.press_and_release('ctrl+w')
         cleanup_db()
+        if 'data_ready' in st.session_state:
+            if st.session_state.data_ready:
+                manage_backups()
+
+        keyboard.press_and_release('ctrl+w')
         os.kill(os.getpid(), signal.SIGTERM)
 
 if st.session_state.data_ready:

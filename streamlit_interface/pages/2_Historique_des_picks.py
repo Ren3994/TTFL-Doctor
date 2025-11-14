@@ -7,9 +7,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from update_manager.file_manager import cleanup_db
+from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
-from misc.misc import ICON_PATH
 
 st.set_page_config(
     page_title="TTFL Doctor",
@@ -72,8 +71,12 @@ if not st.session_state.local_instance:
 
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
-        keyboard.press_and_release('ctrl+w')
         cleanup_db()
+        if 'data_ready' in st.session_state:
+            if st.session_state.data_ready:
+                manage_backups()
+
+        keyboard.press_and_release('ctrl+w')
         os.kill(os.getpid(), signal.SIGTERM)
 
 st.write("### Historique des picks")

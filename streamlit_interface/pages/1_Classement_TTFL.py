@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.classement_TTFL_utils import st_image_crisp, next_date, prev_date, on_text_change, df_to_html, get_joueurs_pas_dispo, get_joueurs_blesses, get_low_game_count, update_session_state_df, custom_CSS, custom_mobile_CSS
 from streamlit_interface.plotting_utils import generate_all_plots
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache
+from update_manager.file_manager import cleanup_db, get_db_hash, save_to_cache, manage_backups
 from data.sql_functions import get_games_for_date
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
@@ -98,8 +98,12 @@ if st.session_state.data_ready:
 
 if st.session_state.local_instance:
     if st.sidebar.button("🛑 Quitter"):
-        keyboard.press_and_release('ctrl+w')
         cleanup_db()
+        if 'data_ready' in st.session_state:
+            if st.session_state.data_ready:
+                manage_backups()
+
+        keyboard.press_and_release('ctrl+w')
         os.kill(os.getpid(), signal.SIGTERM)
 
 # ---------- UI ----------
@@ -135,7 +139,7 @@ with col_next:
     st.button("▶️", on_click=next_date)
 
 with col_checkboxes:
-    if 'username_str' in st.session_state and st.session_state.username_str != '':
+    if (st.session_state.local_instance) or ('username_str' in st.session_state and st.session_state.username_str != ''):
         filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
     else:
         filter_JDP = False
