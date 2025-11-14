@@ -62,6 +62,6 @@ if not st.session_state.data_ready:
         st.session_state.data_ready = True
         st.session_state.last_update = datetime.now(ZoneInfo("Europe/Paris"))
         
-    st.switch_page('pages/1_classement_TTFL.py')
+    st.switch_page('pages/1_Classement_TTFL.py')
 else:
-    st.switch_page('pages/1_classement_TTFL.py')
+    st.switch_page('pages/1_Classement_TTFL.py')
