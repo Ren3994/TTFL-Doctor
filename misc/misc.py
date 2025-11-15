@@ -15,7 +15,7 @@ PLOT_GEN_WORKER_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "plot
 FAILED_LOG_PATH = os.path.join(BASE_DIR, "..", "data", "failed_games.log")
 OG_TEAM_LOGOS_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos")
 RESIZED_LOGOS_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos_150")
-ICON_PATH = os.path.join(BASE_DIR, "..", "data", "icon.png")
+TBD_LOGO_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos_150", 'TBD.png')
 
 STREAMLIT_MAIN_PY_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_main.py")
 STREAMLIT_PAGES_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_pages")

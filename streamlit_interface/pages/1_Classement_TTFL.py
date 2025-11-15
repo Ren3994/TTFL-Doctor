@@ -32,6 +32,9 @@ if st.session_state.date_text == "" or not st.session_state.date_text:
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
 
+if 'games_TBD' not in st.session_state:
+    st.session_state.games_TBD = False
+
 if 'scr_key' not in st.session_state:
     st.session_state.scr_key = str(uuid.uuid4())
 
@@ -107,6 +110,9 @@ for i in range(0, len(games_for_date), games_per_row):
         home = game["homeTeam"]
         away = game["awayTeam"]
 
+        if home == 'TBD' or away == 'TBD':
+            st.session_state.games_TBD = True
+
         home_logo = os.path.join(RESIZED_LOGOS_PATH, f"{home}.png")
         away_logo = os.path.join(RESIZED_LOGOS_PATH, f"{away}.png")
 
@@ -118,11 +124,15 @@ for i in range(0, len(games_for_date), games_per_row):
         with cols[base + 2]:
             st_image_crisp(away_logo, width=30)
 
-st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+if len(games_for_date) > 0:
+    st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
 # Display the TTFL table
 if st.session_state.topTTFL_df.empty:
-    st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date.strftime('%d/%m/%Y')}")
+    if not st.session_state.games_TBD:
+        st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date.strftime('%d/%m/%Y')}")
+    else:
+        st.subheader(f"Les équipes de des matchs du {st.session_state.selected_date.strftime('%d/%m/%Y')} n'ont pas encore été déterminées")
 
 else:
     table_placeholder = st.empty()

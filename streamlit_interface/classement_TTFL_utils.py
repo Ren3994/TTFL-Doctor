@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
+from misc.misc import TBD_LOGO_PATH
 
 def accentuate_pct(text: str) -> str:
     def color_for_value(value: float) -> str:
@@ -264,8 +265,12 @@ def df_to_html(
     return html
 
 def st_image_crisp(path, width=40):
-    with open(path, "rb") as f:
-        data = f.read()
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except:
+        with open(TBD_LOGO_PATH, "rb") as f:
+            data=f.read()
     encoded = base64.b64encode(data).decode()
     st.markdown(
         f"""
@@ -303,6 +308,7 @@ def update_session_state_df(date):
     st.session_state.plot_calc_incr = 20
     st.session_state.plot_calc_start = 0
     st.session_state.plot_calc_stop = 30
+    st.session_state.games_TBD = False
 
 custom_CSS = """
     <style>
