@@ -1013,7 +1013,7 @@ def get_missing_gameids(conn):
 
 def get_games_for_date(game_date_str):
     with sqlite3.connect(DB_PATH) as conn:
-        df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}'", conn)
+        df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}' AND homeTeam IS NOT NULL", conn)
 
     df["pair_key"] = df.apply(lambda x: tuple(sorted([x["homeTeam"], x["awayTeam"]])), axis=1)
 

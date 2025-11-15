@@ -24,9 +24,9 @@ st.session_state.selected_date = st.session_state.get("selected_date", date.toda
 
 st.session_state.date_text = st.session_state.get(
     "date_text",
-    st.session_state.selected_date.strftime("%d/%m/%Y")
-)
-if "date_text" not in st.session_state or st.session_state.date_text == "" or not st.session_state.date_text:
+    st.session_state.selected_date.strftime("%d/%m/%Y"))
+
+if st.session_state.date_text == "" or not st.session_state.date_text:
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
 if "topTTFL_df" not in st.session_state:
@@ -45,7 +45,6 @@ sidebar(page='classement')
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
-
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
 mobile = st.session_state.get("screen_width", 1000) <= 500
