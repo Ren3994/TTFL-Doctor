@@ -9,6 +9,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.file_manager import cleanup_db, manage_backups
+from streamlit_interface.classement_TTFL_utils import cached_get_top_TTFL
+from streamlit_interface.plotting_utils import cached_generate_plot_row
 from streamlit_interface.JDP_utils import JoueursDejaPick
 from misc.misc import STREAMLIT_MAIN_PY_PATH
 
@@ -75,6 +77,8 @@ def sidebar(page):
 
         if st.session_state.data_ready:
             if st.sidebar.button("Mettre à jour les données"):
+                cached_get_top_TTFL.clear()
+                cached_generate_plot_row.clear()
                 st.session_state.data_ready = False
                 st.switch_page('streamlit_main.py')
 

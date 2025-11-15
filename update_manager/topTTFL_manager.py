@@ -57,6 +57,7 @@ def format_to_table(df) :
     prettydf['graph_dates'] = df['graph_dates']
     prettydf['graph_opps'] = df['graph_opps']
     prettydf['graph_TTFLs'] = df['graph_TTFLs']
+    prettydf['graph_wins'] = df['graph_wins']
 
     # ------------------------------------------ Relative stuff ------------------------------------------------
 

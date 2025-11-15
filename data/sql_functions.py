@@ -700,7 +700,8 @@ def topTTFL_query(conn, game_date):
       playerName,
       GROUP_CONCAT(gameDate) AS graph_dates,
       GROUP_CONCAT(opponent) AS graph_opps, 
-      GROUP_CONCAT(TTFL) AS graph_TTFLs
+      GROUP_CONCAT(TTFL) AS graph_TTFLs,
+      GROUP_CONCAT(win) AS graph_wins
     FROM boxscores
     WHERE seconds > 0
     GROUP BY playerName
@@ -742,7 +743,8 @@ def topTTFL_query(conn, game_date):
     -- Graph data
     gd.graph_dates,
     gd.graph_opps,
-    gd.graph_TTFLs
+    gd.graph_TTFLs,
+    gd.graph_wins
 
     FROM all_players ap
     JOIN player_avg_TTFL pat

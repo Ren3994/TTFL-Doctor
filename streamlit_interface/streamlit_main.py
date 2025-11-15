@@ -9,7 +9,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from update_manager.injury_report_manager import update_injury_report
 from streamlit_interface.streamlit_utils import config, sidebar
 from update_manager.nba_api_manager import update_nba_data
-from update_manager.file_manager import manage_cache
 from data.sql_functions import update_tables
 
 # ---------- Initialize session state ----------
@@ -17,7 +16,6 @@ config(page='main')
 
 if "data_ready" not in st.session_state:
     st.session_state.data_ready = False
-    manage_cache()
 
 env = st.secrets.get("environment", "unknown")
 if 'local_instance' not in st.session_state:

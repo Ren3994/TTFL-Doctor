@@ -2,30 +2,36 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.dates as mdates
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
+import streamlit as st
+import seaborn as sns
 import base64
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import RESIZED_LOGOS_PATH, MAX_WORKERS, PLOT_GEN_WORKER_PATH
+from misc.misc import RESIZED_LOGOS_PATH
 
-def generate_all_plots(df, date, parallelize=False, max_workers=MAX_WORKERS):
+@st.cache_data(show_spinner=False)
+def load_logo(path):
+    return mpimg.imread(path)
 
+def generate_all_plots(df, date, parallelize=False):
     if not parallelize:
         for i, row in df.iterrows():
-            df.loc[i, 'plots'] = generate_plot_row(row, date)
+                joueur = row['Joueur']
+                graph_dates = row['graph_dates']
+                graph_opps = row['graph_opps']
+                graph_TTFLs = row['graph_TTFLs']
+                graph_wins = row['graph_wins']
+                avgTTFL = float(row['TTFL'].split('±')[0])
+                df.loc[i, 'plots'] = cached_generate_plot_row(date, joueur, graph_dates, graph_opps, graph_TTFLs, graph_wins, avgTTFL)
         return df
-
-def generate_plot_row(row, requested_date):
-
-    joueur = row['Joueur']
-    graph_dates = row['graph_dates']
-    graph_opps = row['graph_opps']
-    graph_TTFLs = row['graph_TTFLs']
-    avgTTFL = float(row['TTFL'].split('±')[0])
+    
+@st.cache_data(show_spinner=False)
+def cached_generate_plot_row(requested_date, joueur, graph_dates, graph_opps, graph_TTFLs, graph_wins, avgTTFL):
 
     dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
@@ -34,26 +40,44 @@ def generate_plot_row(row, requested_date):
     njours = (alldates[-1] - alldates[0]).days
     opps = graph_opps.split(',')
     TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
-
-    plt.style.use("seaborn-v0_8-dark")
+    wins = [int(win) for win in graph_wins.split(',')]
 
     linew = 1.5
     alpha=0.7
     ymin = min(0, min(TTFLs) * 1.2)
-    ymax = max(TTFLs) * 1.2
+    ymax = max(TTFLs) * 1.4
 
     fig, ax = plt.subplots(figsize=(6, 4))
+    plt.rcParams['figure.autolayout'] = False
+    plt.style.use("seaborn-v0_8-dark")
+    palette = sns.color_palette("deep")
+    bkg_color = fig.get_facecolor()
 
     ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
     ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
 
-    for date, opp, TTFL in zip(dates, opps, TTFLs):
+    ypos_list = []
+    colors_list = []
+    
+    n = 0
+    for date, opp, TTFL, win in zip(dates, opps, TTFLs, wins):
         opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
-        if os.path.exists(opp_sprite_path):
-            img = mpimg.imread(opp_sprite_path)
-            imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
-            ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
-            ax.add_artist(ab)
+        img = load_logo(opp_sprite_path)
+
+        imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
+        ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
+        ax.add_artist(ab)
+        ypos = 0.9 + (-1)**n * 0.04
+        ypos_list.append(ypos)
+        colors_list.append(palette[2] if win else palette[3])
+
+        ax.text(date, ypos, 'W' if win else 'L', color = bkg_color, ha='center', va='center', fontweight='bold', zorder=3, transform=ax.get_xaxis_transform())
+        n += 1
+        # x_size = timedelta(days=0.7)   imshow instead of AnnotationBbox could be faster with many images ? No diff for ~20 images
+        # y_size = (ymax - ymin) * 0.05
+        # ax.imshow(img,extent=(date - x_size,date + x_size,TTFL - y_size,TTFL + y_size),aspect='auto',zorder=5)
+
+    ax.scatter(dates, ypos_list, s=350, c=colors_list, edgecolor='k', linewidth=1, zorder=2, transform=ax.get_xaxis_transform())
     
     if ymin == 0:
         ymin = -2
@@ -69,15 +93,13 @@ def generate_plot_row(row, requested_date):
         ax.vlines(alldates[-1], ymin, ymax, color = 'grey', linewidth=linew, alpha=alpha)
         locator = mdates.AutoDateLocator()
         ax.xaxis.set_major_locator(locator)
-        rotation = None
+        rotation = 30
 
     formatter = mdates.DateFormatter('%d %b.')
     ax.xaxis.set_major_formatter(formatter)
 
-    if rotation:
-        plt.xticks(rotation=rotation)
-    else:
-        fig.autofmt_xdate()
+    for t in ax.get_xticklabels():
+        t.set_rotation(rotation)
 
     secax = ax.secondary_yaxis('right')
     secax.tick_params(axis='both', labelsize=8)
@@ -90,7 +112,7 @@ def generate_plot_row(row, requested_date):
     # plt.show()
 
     buf = BytesIO()
-    fig.savefig(buf, format="png", bbox_inches='tight', dpi=150)
+    fig.savefig(buf, format="jpg", dpi=120)
     plt.close(fig)
     img_base64 = base64.b64encode(buf.getvalue()).decode()
 
@@ -114,6 +136,11 @@ if __name__ == '__main__':
         '32,28,40',
         '15,22',
         '45,38,50,41,45,38,50,41,45,38,50'
+    ],
+    'graph_wins' : [
+        '1,1,0',
+        '0,0',
+        '0,1,1,1,0,1,1,0,1,1,1'
     ],
     'TTFL': ['33±5', '19±3', '43±4']
     }

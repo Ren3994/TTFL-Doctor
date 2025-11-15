@@ -8,9 +8,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from update_manager.file_manager import get_db_hash, save_to_cache
-from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.streamlit_utils import config, sidebar, custom_error
+from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
 
@@ -113,16 +112,18 @@ for i in range(0, len(games_for_date), games_per_row):
         if home == 'TBD' or away == 'TBD':
             st.session_state.games_TBD = True
 
-        home_logo = os.path.join(RESIZED_LOGOS_PATH, f"{home}.png")
-        away_logo = os.path.join(RESIZED_LOGOS_PATH, f"{away}.png")
+        home_logo_path = os.path.join(RESIZED_LOGOS_PATH, f"{home}.png")
+        away_logo_path = os.path.join(RESIZED_LOGOS_PATH, f"{away}.png")
 
         base = j * cols_per_game
         with cols[base]:
-            st_image_crisp(home_logo, width=30)
+            home_logo = st_image_crisp(home_logo_path, width=30)
+            st.markdown(home_logo, unsafe_allow_html=True)
         with cols[base + 1]:
             st.markdown(f"{home} - {away}")
         with cols[base + 2]:
-            st_image_crisp(away_logo, width=30)
+            away_logo = st_image_crisp(away_logo_path, width=30)
+            st.markdown(away_logo, unsafe_allow_html=True)
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
@@ -147,7 +148,7 @@ else:
 
         topTTFL_html = df_to_html(st.session_state.topTTFL_df)
         table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
-        
+
         chunk_size = 5
         for i in range(st.session_state.plot_calc_start, 
                         min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
@@ -171,6 +172,3 @@ else:
 
     filtered_topTTFL_html = df_to_html(filtered_topTTFL_df)
     table_placeholder.markdown(filtered_topTTFL_html, unsafe_allow_html=True)
-    
-    db_hash = get_db_hash()
-    save_to_cache(st.session_state.topTTFL_df, st.session_state.selected_date.strftime('%d/%m/%Y'), db_hash)

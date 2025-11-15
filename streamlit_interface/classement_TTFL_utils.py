@@ -264,6 +264,7 @@ def df_to_html(
     html += "</tbody></table>"
     return html
 
+@st.cache_data(show_spinner=False)
 def st_image_crisp(path, width=40):
     try:
         with open(path, "rb") as f:
@@ -272,12 +273,12 @@ def st_image_crisp(path, width=40):
         with open(TBD_LOGO_PATH, "rb") as f:
             data=f.read()
     encoded = base64.b64encode(data).decode()
-    st.markdown(
-        f"""
-        <img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>
-        """,
-        unsafe_allow_html=True
-    )
+    return f"""<img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>"""
+
+@st.cache_data(show_spinner=False)
+def cached_get_top_TTFL(date):
+    topTTFL_df, with_plots = get_top_TTFL(date)
+    return topTTFL_df, with_plots
 
 def on_text_change():
     """Parse text input into a date object."""
@@ -302,7 +303,7 @@ def next_date():
     update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
 
 def update_session_state_df(date):
-    topTTFL_df, with_plots = get_top_TTFL(date)
+    topTTFL_df, with_plots = cached_get_top_TTFL(date)
     st.session_state.topTTFL_df = topTTFL_df
     st.session_state.with_plots = with_plots
     st.session_state.plot_calc_incr = 20
