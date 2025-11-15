@@ -71,6 +71,7 @@ def generate_plot_row(row, requested_date):
         ax.set_xticks(alldates)
         rotation = 60
     else:
+        ax.vlines(alldates[-1], ymin, ymax, color = 'grey', linewidth=linew, alpha=alpha)
         locator = mdates.AutoDateLocator()
         ax.xaxis.set_major_locator(locator)
         rotation = None
