@@ -62,15 +62,9 @@ def generate_plot_row(row, requested_date):
     if ymin != ymax:
         ax.set_ylim((ymin, ymax))
 
-    if njours < 20:
+    if njours < 40:
         ax.set_xticks(alldates)
-        rotation = 30
-    elif njours < 40:
-        ax.set_xticks(alldates)
-        rotation = 45
-    elif njours < 60:
-        ax.set_xticks(alldates)
-        rotation = 60
+        rotation = 30 + njours * 3 / 4
     else:
         ax.vlines(alldates[-1], ymin, ymax, color = 'grey', linewidth=linew, alpha=alpha)
         locator = mdates.AutoDateLocator()

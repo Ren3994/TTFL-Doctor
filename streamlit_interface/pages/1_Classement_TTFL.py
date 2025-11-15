@@ -20,11 +20,6 @@ config(page='classement')
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
 
-# if "selected_date" not in st.session_state:
-    # today = date.today()
-    # st.session_state.selected_date = today
-    # st.session_state.text_parse_error = False
-
 st.session_state.selected_date = st.session_state.get("selected_date", date.today())
 
 st.session_state.date_text = st.session_state.get(
