@@ -31,6 +31,7 @@ def generate_plot_row(row, requested_date):
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
     alldates = dates.copy()
     alldates.append(requested_date)
+    njours = (alldates[-1] - alldates[0]).days
     opps = graph_opps.split(',')
     TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
 
@@ -50,7 +51,7 @@ def generate_plot_row(row, requested_date):
         opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
         if os.path.exists(opp_sprite_path):
             img = mpimg.imread(opp_sprite_path)
-            imagebox = OffsetImage(img, zoom=0.2)
+            imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
             ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
             ax.add_artist(ab)
     
@@ -61,13 +62,13 @@ def generate_plot_row(row, requested_date):
     if ymin != ymax:
         ax.set_ylim((ymin, ymax))
 
-    if alldates[-1] - alldates[0] < timedelta(days=20):
+    if njours < 20:
         ax.set_xticks(alldates)
         rotation = 30
-    elif alldates[-1] - alldates[0] < timedelta(days=40):
+    elif njours < 40:
         ax.set_xticks(alldates)
         rotation = 45
-    elif alldates[-1] - alldates[0] < timedelta(days=60):
+    elif njours < 60:
         ax.set_xticks(alldates)
         rotation = 60
     else:
