@@ -25,7 +25,7 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = today
     st.session_state.text_parse_error = False
 
-if "date_text" not in st.session_state or st.session_state.date_text == "":
+if "date_text" not in st.session_state or st.session_state.date_text == "" or not st.session_state.date_text:
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
 if st.session_state.text_parse_error:
