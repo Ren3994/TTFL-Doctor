@@ -8,10 +8,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from streamlit_interface.streamlit_utils import config, sidebar, custom_error
+from streamlit_interface.streamlit_utils import config, custom_error
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
+from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
 config(page='classement')

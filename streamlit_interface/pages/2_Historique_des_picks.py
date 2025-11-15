@@ -5,8 +5,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.classement_TTFL_utils import custom_CSS
-from streamlit_interface.streamlit_utils import config, sidebar
 from streamlit_interface.JDP_utils import JoueursDejaPick
+from streamlit_interface.streamlit_utils import config
+from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
 config(page='JDP')

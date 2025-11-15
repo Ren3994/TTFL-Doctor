@@ -1,4 +1,3 @@
-from supabase import create_client, Client
 from datetime import datetime, timedelta
 from rapidfuzz import fuzz, process
 import streamlit as st
@@ -11,11 +10,14 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import run_sql_query
+from streamlit_interface.streamlit_utils import conn_supabase, fetch_supabase_users
 from misc.misc import NICKNAMES, DB_PATH
 
 class JoueursDejaPick():
     def __init__(self):
         self.db_path = DB_PATH
+        self.supabase = conn_supabase()
+        self.existing_users = []
         self._init_db()
             
     def _init_db(self):
@@ -29,14 +31,8 @@ class JoueursDejaPick():
                 """)
                 conn.commit()
         else:
-            url = st.secrets.get("SUPABASE_URL", "unknown")
-            key = st.secrets.get("SUPABASE_KEY", "unknown")
-            self.supabase: Client = create_client(url, key)
-            self.existing_users = pd.DataFrame(self.supabase.table("ttfl_doctor_user_picks")
-                                                            .select("username")
-                                                            .execute().data
-                                                )['username'].tolist()
-        
+            self.existing_users = fetch_supabase_users(self.supabase)
+            
     def loadJDP(self) -> pd.DataFrame:
         if st.session_state.local_instance:
             with sqlite3.connect(self.db_path) as conn:
