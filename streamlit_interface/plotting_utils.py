@@ -47,10 +47,10 @@ def cached_generate_plot_row(requested_date, joueur, graph_dates, graph_opps, gr
     ymin = min(0, min(TTFLs) * 1.2)
     ymax = max(TTFLs) * 1.4
 
-    fig, ax = plt.subplots(figsize=(6, 4))
     plt.rcParams['figure.autolayout'] = False
     plt.style.use("seaborn-v0_8-dark")
     palette = sns.color_palette("deep")
+    fig, ax = plt.subplots(figsize=(6, 4))
     bkg_color = fig.get_facecolor()
 
     ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
@@ -110,7 +110,7 @@ def cached_generate_plot_row(requested_date, joueur, graph_dates, graph_opps, gr
     ax.grid(axis='both', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
 
     # plt.show()
-
+    fig.tight_layout()
     buf = BytesIO()
     fig.savefig(buf, format="jpg", dpi=120)
     plt.close(fig)
