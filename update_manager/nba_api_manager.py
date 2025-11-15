@@ -12,11 +12,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import init_db, save_to_db, get_missing_gameids, check_boxscores_integrity
 from update_manager.boxscores_manager import get_boxscores, log_failure
-from misc.misc import DB_PATH
 
-def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
+def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
     
-    conn = sqlite3.connect(DB_PATH)
     new_games_found = True
 
     if init_database:
@@ -78,8 +76,7 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
     if not final_missing_gameIds_df.empty and update_attempt < max_update_attempts:
         tqdm.write(f'Retry {update_attempt + 1}/{max_update_attempts} for {len(final_missing_gameIds_df)} missing games...')
         time.sleep(10)
-        conn.close()
-        update_nba_data(update_attempt + 1, init_database=False)
+        update_nba_data(conn=conn, update_attempt=update_attempt + 1, init_database=False)
         return new_games_found
         
     elif not final_missing_gameIds_df.empty:
@@ -89,6 +86,5 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_opponent_player ON boxscores(opponent, playerName);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, gameId);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, opponentTTFL);")
-    conn.close()
 
     return new_games_found

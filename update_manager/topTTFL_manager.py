@@ -7,29 +7,16 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.plotting_utils import generate_all_plots
-from update_manager.file_manager import get_db_hash, load_from_cache, save_to_cache
-from misc.misc import DB_PATH
+from streamlit_interface.streamlit_utils import conn_db
 from data.sql_functions import topTTFL_query
 
-def get_top_TTFL(game_date: str, preload: bool = False) -> pd.DataFrame:
+def get_top_TTFL(game_date: str) -> pd.DataFrame:
 
-    db_hash = get_db_hash()
     with_plots = False
-    
-    df = load_from_cache(game_date, db_hash)
-    if df is not None:
-        with_plots = True
-        return df, with_plots
+    conn = conn_db()
 
-    with sqlite3.connect(DB_PATH) as conn:
-        df = topTTFL_query(conn, game_date)
-
+    df = topTTFL_query(conn, game_date)
     prettydf = format_to_table(df)
-    if preload:
-        prettydf_with_plots = generate_all_plots(prettydf, game_date, parallelize=True)
-        db_hash = get_db_hash()
-        save_to_cache(prettydf_with_plots, game_date, db_hash)
 
     return prettydf, with_plots
 

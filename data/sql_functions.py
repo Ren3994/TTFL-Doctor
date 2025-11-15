@@ -11,7 +11,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from fetchers.player_position_fetcher import fetch_player_positions
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
-from misc.misc import DB_PATH
 
 def init_db(conn, progress=None):
     try :
@@ -110,7 +109,8 @@ def update_helper_tables(conn):
         output_table="player_avg_TTFL"
     )
 
-    run_sql_query(table="boxscores", 
+    run_sql_query(conn, 
+                  table="boxscores", 
                   select=[
                       'teamTricode',
                       'AVG(opponentTTFL) AS avg_opp_TTFL', 
@@ -152,37 +152,36 @@ def check_boxscores_integrity(conn):
     check_boxscores_null_games(conn)
     remove_duplicates_from_boxscores(conn)
 
-def update_tables(progress):
-    with sqlite3.connect(DB_PATH) as conn:
-        if progress is not None:
-            progress.progress(82/100)
-        conn.execute("PRAGMA journal_mode = WAL;")
-        if progress is not None:
-            progress.progress(84/100)
-        update_helper_tables(conn)
-        if progress is not None:
-            progress.progress(88/100)
-        update_home_away_rel_TTFL(conn)
-        if progress is not None:
-            progress.progress(90/100)
-        update_avg_TTFL_per_pos(conn)
-        if progress is not None:
-            progress.progress(92/100)
-        update_rel_player_avg_ttfl_v_opp(conn)
-        if progress is not None:
-            progress.progress(94/100)
-        update_absent_teammate_rel_impact(conn)
-        if progress is not None:
-            progress.progress(96/100)
-        updates_games_missed_by_players(conn)
-        if progress is not None:
-            progress.progress(98/100)
-        update_opp_pos_avg_per_game(conn)
-        if progress is not None:
-            progress.progress(100/100)
-            
-        # conn.execute("ANALYZE;")
-        # conn.execute("PRAGMA optimize;")
+def update_tables(conn, progress):
+    if progress is not None:
+        progress.progress(82/100)
+    conn.execute("PRAGMA journal_mode = WAL;")
+    if progress is not None:
+        progress.progress(84/100)
+    update_helper_tables(conn)
+    if progress is not None:
+        progress.progress(88/100)
+    update_home_away_rel_TTFL(conn)
+    if progress is not None:
+        progress.progress(90/100)
+    update_avg_TTFL_per_pos(conn)
+    if progress is not None:
+        progress.progress(92/100)
+    update_rel_player_avg_ttfl_v_opp(conn)
+    if progress is not None:
+        progress.progress(94/100)
+    update_absent_teammate_rel_impact(conn)
+    if progress is not None:
+        progress.progress(96/100)
+    updates_games_missed_by_players(conn)
+    if progress is not None:
+        progress.progress(98/100)
+    update_opp_pos_avg_per_game(conn)
+    if progress is not None:
+        progress.progress(100/100)
+        
+    # conn.execute("ANALYZE;")
+    # conn.execute("PRAGMA optimize;")
 
 def update_home_away_rel_TTFL(conn):
     query = """
@@ -777,7 +776,7 @@ def topTTFL_query(conn, game_date):
     return df
 
 def run_sql_query(
-    conn: Optional[sqlite3.Connection] = None,
+    conn: sqlite3.Connection = None,
     table: str = '',
     select: Union[str, List[str]] = "*",
     joins: Optional[List[dict]] = None,
@@ -861,10 +860,6 @@ def run_sql_query(
         Returns a DataFrame if `return_df=True` and `output_table` is not set.
         Returns None if data is written to a table or query fails.
     """
-    created_temp_conn = False
-    if conn is None:
-        conn = sqlite3.connect(DB_PATH)
-        created_temp_conn = True
 
     def ensure_list(x):
         if x is None:
@@ -967,10 +962,6 @@ def run_sql_query(
         tqdm.write(f"❌ SQL query failed: {e}")
         tqdm.write(f"Query:\n{query}")
         return None
-    
-    finally:
-        if created_temp_conn:
-            conn.close()
 
 def save_to_db(conn, df, table_name, if_exists, index=False):
     try:
@@ -1014,9 +1005,8 @@ def get_missing_gameids(conn):
 
     return missing_games
 
-def get_games_for_date(game_date_str):
-    with sqlite3.connect(DB_PATH) as conn:
-        df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}'", conn)
+def get_games_for_date(conn, game_date_str):
+    df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}'", conn)
     
     df['homeTeam'] = df['homeTeam'].fillna('TBD') # For games where teams have not yet been determined (IST final bracket, ...)
     df['awayTeam'] = df['awayTeam'].fillna('TBD')

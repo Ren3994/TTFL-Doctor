@@ -8,13 +8,14 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from streamlit_interface.streamlit_utils import config, custom_error
+from streamlit_interface.streamlit_utils import config, custom_error, conn_db
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
+conn = conn_db()
 config(page='classement')
 
 if 'data_ready' not in st.session_state:
@@ -93,12 +94,12 @@ with col_checkboxes:
         st.session_state.with_plots = False
 
 with col_low_games_count:
-    st.markdown(get_low_game_count(st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
+    st.markdown(get_low_game_count(conn, st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
 # Display tonight's games
-games_for_date = get_games_for_date(st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
+games_for_date = get_games_for_date(conn, st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
 cols_per_game = 3
 total_cols = games_per_row * cols_per_game
 
@@ -162,8 +163,8 @@ else:
             topTTFL_html = df_to_html(st.session_state.topTTFL_df)
             table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
-    joueurs_pas_dispo = get_joueurs_pas_dispo(st.session_state.selected_date.strftime('%d/%m/%Y'))
-    joueurs_blesses = get_joueurs_blesses()
+    joueurs_pas_dispo = get_joueurs_pas_dispo(conn, st.session_state.selected_date.strftime('%d/%m/%Y'))
+    joueurs_blesses = get_joueurs_blesses(conn)
 
     filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
     if filter_JDP:

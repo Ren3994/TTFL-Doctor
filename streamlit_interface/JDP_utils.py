@@ -9,34 +9,32 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.streamlit_utils import conn_db, conn_supabase, fetch_supabase_users
 from data.sql_functions import run_sql_query
-from streamlit_interface.streamlit_utils import conn_supabase, fetch_supabase_users
-from misc.misc import NICKNAMES, DB_PATH
+from misc.misc import NICKNAMES
 
 class JoueursDejaPick():
     def __init__(self):
-        self.db_path = DB_PATH
+        self.conn = conn_db()
         self.supabase = conn_supabase()
         self.existing_users = []
         self._init_db()
             
     def _init_db(self):
         if st.session_state.local_instance:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
-                        joueur TEXT,
-                        datePick TEXT
-                    )
-                """)
-                conn.commit()
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
+                    joueur TEXT,
+                    datePick TEXT
+                )
+            """)
+            self.conn.commit()
         else:
             self.existing_users = fetch_supabase_users(self.supabase)
             
     def loadJDP(self) -> pd.DataFrame:
         if st.session_state.local_instance:
-            with sqlite3.connect(self.db_path) as conn:
-                df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", conn)
+            df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
         else:
             df = pd.DataFrame(columns=['joueur', 'datePick'])
             if 'username' in st.session_state:
@@ -51,9 +49,10 @@ class JoueursDejaPick():
             
     def initJDP(self) -> pd.DataFrame:
         good_df = self.loadJDP()
-        game_dates_completed = run_sql_query(table='schedule', 
-                                                select='DISTINCT gameDate',
-                                                filters='gameStatus = 3')
+        game_dates_completed = run_sql_query(conn=self.conn,
+                                             table='schedule', 
+                                             select='DISTINCT gameDate',
+                                             filters='gameStatus = 3')
         
         good_df = (game_dates_completed
                    .merge(good_df, 
@@ -85,8 +84,7 @@ class JoueursDejaPick():
         df_db = df_db[['joueur', 'datePick']]
         
         if st.session_state.local_instance:
-            with sqlite3.connect(self.db_path) as conn:
-                df_db.to_sql("joueurs_deja_pick", conn, if_exists="replace", index=False)
+            df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
         else:
             df_db = df_db[df_db['joueur'] != '']
             picks = dict(zip(df_db['datePick'], df_db['joueur']))
@@ -110,11 +108,14 @@ class JoueursDejaPick():
     
     def completeCols(self, df:pd.DataFrame):
         scoresTTFL = run_sql_query(
+                    conn=self.conn,
                     table="boxscores",
                     select=['playerName', 'gameDate', 'TTFL'],
                     filters='seconds > 0'
         )
-        avg_TTFL = run_sql_query(table='player_avg_TTFL', select=['playerName', 'avg_TTFL'])
+        avg_TTFL = run_sql_query(conn=self.conn,
+                                 table='player_avg_TTFL', 
+                                 select=['playerName', 'avg_TTFL'])
         
         for col in ['TTFL', 'avg_TTFL', 'gameDate']:
             if col in df.columns:
@@ -215,11 +216,13 @@ def match_player(input_name, names_list):
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]
     if input_upper in abbv_map:
-        pat = run_sql_query(table='player_avg_TTFL')
+        conn = conn_db()
+        pat = run_sql_query(conn=conn, table='player_avg_TTFL')
         filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
         return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     if input_upper in splits:
-        pat = run_sql_query(table='player_avg_TTFL')
+        conn = conn_db()
+        pat = run_sql_query(conn=conn, table='player_avg_TTFL')
         filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
         return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     

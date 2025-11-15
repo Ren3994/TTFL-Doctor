@@ -43,13 +43,13 @@ def accentuate_pct(text: str) -> str:
 
     return re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
 
-def get_joueurs_pas_dispo(date) :
+def get_joueurs_pas_dispo(conn, date) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt - timedelta(days=30)
 
     if st.session_state.local_instance:
-        JDP = run_sql_query(table="joueurs_deja_pick")
+        JDP = run_sql_query(conn, table="joueurs_deja_pick")
         JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
         joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
     else:
@@ -62,20 +62,22 @@ def get_joueurs_pas_dispo(date) :
 
     return joueurs_pas_dispo
 
-def get_joueurs_blesses():
-    injury_report = run_sql_query(table="injury_report", 
+def get_joueurs_blesses(conn):
+    injury_report = run_sql_query(conn,
+                                  table="injury_report", 
                                   select='player_name', 
                                   filters="""simplified_status != 'Probable'""")
     
     return injury_report['player_name'].tolist()
 
-def get_low_game_count(date) :
+def get_low_game_count(conn, date) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt + timedelta(days=30)
     n_games = 3
 
-    games_per_day = run_sql_query(table="schedule", 
+    games_per_day = run_sql_query(conn, 
+                                  table="schedule", 
                                   select=['gameDate', 
                                           'GROUP_CONCAT(homeTeam) AS homes', 
                                           'GROUP_CONCAT(awayTeam) AS aways', 

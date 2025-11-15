@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
-from streamlit_interface.streamlit_utils import config
+from streamlit_interface.streamlit_utils import config, conn_db
 from streamlit_interface.sidebar import sidebar
 from data.sql_functions import update_tables
 
@@ -32,17 +32,18 @@ sidebar(page='main')
 if not st.session_state.data_ready:
 
     st.title('🏀 TTFL Doctor')
+    conn = conn_db()
 
     with st.spinner('Mise à jour des données'):
         progress = st.progress(0)
         status = st.empty()
         status.text("Injury report :\nDonnées NBA :\nTables de calculs :")
-        update_injury_report()
+        update_injury_report(conn)
         status.text("Injury report : ✅\nDonnées NBA : \nTables de calculs :")
         progress.progress(10/100)
-        update_nba_data(progress=progress, status=status)
+        update_nba_data(conn=conn, progress=progress, status=status)
         status.text("Injury report : ✅\nDonnées NBA : ✅\nTables de calculs :")
-        update_tables(progress)
+        update_tables(conn, progress)
         status.text("Injury report : ✅\nDonnées NBA : ✅\nTables de calculs : ✅")
 
         st.session_state.data_ready = True

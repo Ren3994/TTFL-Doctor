@@ -2,12 +2,18 @@ from supabase import create_client
 import streamlit as st
 import pandas as pd
 import subprocess
+import sqlite3
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import STREAMLIT_MAIN_PY_PATH
+from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH
+
+@st.cache_resource 
+def conn_db():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False) 
+    return conn
 
 @st.cache_resource
 def conn_supabase():
@@ -15,7 +21,7 @@ def conn_supabase():
     key = st.secrets.get("SUPABASE_KEY", "unknown")
     return create_client(url, key)
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def fetch_supabase_users(_supabase):
     data = _supabase.table("ttfl_doctor_user_picks").select("username").execute().data
     return pd.DataFrame(data)['username'].tolist()

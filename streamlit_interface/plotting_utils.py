@@ -31,7 +31,13 @@ def generate_all_plots(df, date, parallelize=False):
         return df
     
 @st.cache_data(show_spinner=False)
-def cached_generate_plot_row(requested_date, joueur, graph_dates, graph_opps, graph_TTFLs, graph_wins, avgTTFL):
+def cached_generate_plot_row(requested_date, 
+                             joueur, 
+                             graph_dates, 
+                             graph_opps, 
+                             graph_TTFLs, 
+                             graph_wins, 
+                             avgTTFL):
 
     dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
