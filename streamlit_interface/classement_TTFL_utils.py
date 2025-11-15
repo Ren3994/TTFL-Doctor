@@ -280,6 +280,7 @@ def on_text_change():
     try:
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
+        st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
         st.session_state.text_parse_error = False
         update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
     except ValueError:

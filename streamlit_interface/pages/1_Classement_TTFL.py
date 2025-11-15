@@ -69,7 +69,7 @@ with col_prev:
 with col_input:
     st.text_input(
         label="date du jour",
-        value=st.session_state.date_text,
+        key="date_text",
         on_change=on_text_change,
         label_visibility="collapsed",
         width=120)
