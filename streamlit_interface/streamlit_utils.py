@@ -99,5 +99,19 @@ def sidebar(page):
             keyboard.press_and_release('ctrl+w')
             os.kill(os.getpid(), signal.SIGTERM)
 
+def custom_error(error_text, fontsize, center_text=True):
+    st.markdown(f"""
+            <div style="
+                background-color: #3e2428; 
+                color: #f06666; 
+                padding: 10px; 
+                border-radius: 5px; 
+                font-size: {fontsize}px;
+                text-align: {'center' if center_text else 'left'};
+            ">
+                {error_text}
+            </div>
+            """, unsafe_allow_html=True)
+
 # if __name__ == '__main__':
 #     launch_GUI()

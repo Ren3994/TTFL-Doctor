@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from update_manager.file_manager import get_db_hash, save_to_cache
 from streamlit_interface.plotting_utils import generate_all_plots
-from streamlit_interface.streamlit_utils import config, sidebar
+from streamlit_interface.streamlit_utils import config, sidebar, custom_error
 from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
 
@@ -33,10 +33,6 @@ st.session_state.date_text = st.session_state.get(
 )
 if "date_text" not in st.session_state or st.session_state.date_text == "" or not st.session_state.date_text:
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-
-if st.session_state.get("text_parse_error", False):
-    st.markdown("<div style='height:50px;'></div>", unsafe_allow_html=True)
-    st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
 
 if "topTTFL_df" not in st.session_state:
     update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
@@ -80,7 +76,9 @@ with col_input:
         on_change=on_text_change,
         label_visibility="collapsed",
         width=120)
-
+    if st.session_state.get("text_parse_error", False):
+        custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
+        
 with col_next:
     st.button("▶️", on_click=next_date)
 
