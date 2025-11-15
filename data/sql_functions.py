@@ -981,6 +981,7 @@ def get_missing_gameids(conn):
     """
     Return a DataFrame of missing games:
     - games that are completed in 'schedule'
+    - games from the regular season (id starts with 002)
     - but not yet present in 'boxscores'
     """
 
@@ -991,7 +992,7 @@ def get_missing_gameids(conn):
         LEFT JOIN (
             SELECT DISTINCT gameId FROM boxscores
         ) b ON s.gameId = b.gameId
-        WHERE s.gameStatus = 3 AND b.gameId IS NULL
+        WHERE s.gameStatus = 3 AND s.gameId LIKE '002%' AND b.gameId IS NULL
         ORDER BY gameDate ASC
     """
 
@@ -1003,7 +1004,7 @@ def get_missing_gameids(conn):
             query = """
             SELECT gameId, gameDate, hometeam, awayTeam
             FROM schedule
-            WHERE gameStatus = 3
+            WHERE gameStatus = 3 AND gameId LIKE '002%'
             ORDER BY gameDate ASC
             """
 
@@ -1013,7 +1014,10 @@ def get_missing_gameids(conn):
 
 def get_games_for_date(game_date_str):
     with sqlite3.connect(DB_PATH) as conn:
-        df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}' AND homeTeam IS NOT NULL", conn)
+        df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}'", conn)
+    
+    df['homeTeam'] = df['homeTeam'].fillna('TBD') # For games where teams have not yet been determined (IST final bracket, ...)
+    df['awayTeam'] = df['awayTeam'].fillna('TBD')
 
     df["pair_key"] = df.apply(lambda x: tuple(sorted([x["homeTeam"], x["awayTeam"]])), axis=1)
 

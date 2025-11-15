@@ -46,7 +46,7 @@ def get_schedule():
             schedule['gameDate'] = pd.to_datetime(schedule['gameDate'], errors='coerce')
             schedule['gameDate'] = schedule['gameDate'].dt.strftime('%d/%m/%Y')
 
-            schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('002')].copy()
+            # schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('006')].copy()
 
             break
 
@@ -55,10 +55,14 @@ def get_schedule():
             time.sleep(3 * (attempt + 1))
             continue
         
-    if schedule_reg_season is None:
+    if schedule is None:
         tqdm.write('Impossible de télécharger le calendrier')
         return
 
-    return schedule_reg_season
+    return schedule
 
 # Game IDs : starting with 001 : preseason, 002 : regular season, 003 : all-star game, 004 : playoffs, 005 : play-in tournament, 006 : IST finals
+
+if __name__ == '__main__':
+    df = get_schedule()
+    print(df[pd.isna(df['homeTeam'])])
