@@ -35,6 +35,7 @@ if "date_text" not in st.session_state or st.session_state.date_text == "" or no
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
 if st.session_state.get("text_parse_error", False):
+    st.markdown("<div style='height:50px;'></div>", unsafe_allow_html=True)
     st.error("Format de date invalide — utilisez JJ/MM/AAAA (ex: 20/12/2025).")
 
 if "topTTFL_df" not in st.session_state:
