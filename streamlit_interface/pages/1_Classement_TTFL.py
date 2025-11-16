@@ -147,8 +147,11 @@ if st.session_state.topTTFL_df.empty:
 else:
     table_placeholder = st.empty()
     if ('plots' not in st.session_state.topTTFL_df.columns 
-        or st.session_state.gen_more_plots):
-        # or (st.session_state.topTTFL_df['plots'] == IMG_PLUS_DE_GRAPHES).all()):
+        or st.session_state.gen_more_plots
+        or (st.session_state.topTTFL_df.loc[
+            st.session_state.plot_calc_start:
+            st.session_state.plot_calc_stop - 1, 
+            'plots'] == IMG_PLUS_DE_GRAPHES).any()):
         
         if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
