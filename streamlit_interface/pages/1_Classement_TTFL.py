@@ -18,6 +18,9 @@ from streamlit_interface.sidebar import sidebar
 # ---------- Run updates if needed ----------
 # last_update = update_all_data()
 
+if 'data_ready' not in st.session_state:
+    st.switch_page('streamlit_main.py')
+
 # --- Sidebar ---
 sidebar(page='classement')
 
@@ -26,8 +29,7 @@ conn = conn_db()
 config(page='classement')
 
 # st.session_state.last_update = last_update
-if 'data_ready' not in st.session_state:
-    st.switch_page('streamlit_main.py')
+
 
 st.session_state.selected_date = st.session_state.get("selected_date", date.today())
 
