@@ -12,13 +12,12 @@ from data.sql_functions import topTTFL_query
 
 def get_top_TTFL(game_date: str) -> pd.DataFrame:
 
-    with_plots = False
     conn = conn_db()
 
     df = topTTFL_query(conn, game_date)
     prettydf = format_to_table(df)
 
-    return prettydf, with_plots
+    return prettydf
 
 def format_to_table(df) :
     if df.empty :

@@ -11,13 +11,21 @@ from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_utils import config, custom_error, conn_db
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
+# from streamlit_interface.update import update_all_data
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
+
+# ---------- Run updates if needed ----------
+# last_update = update_all_data()
+
+# --- Sidebar ---
+sidebar(page='classement')
 
 # ---------- Initialize session state ----------
 conn = conn_db()
 config(page='classement')
 
+# st.session_state.last_update = last_update
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
 
@@ -43,9 +51,6 @@ if "screen_width" not in st.session_state:
     width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
     if width:
         st.session_state.screen_width = width
-    
-# --- Sidebar ---
-sidebar(page='classement')
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -91,7 +96,7 @@ with col_checkboxes:
     if st.button('Générer plus de graphes'):
         st.session_state.plot_calc_start += st.session_state.plot_calc_incr
         st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
-        st.session_state.with_plots = False
+        st.session_state.gen_more_plots = True
 
 with col_low_games_count:
     st.markdown(get_low_game_count(conn, st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
@@ -139,19 +144,22 @@ if st.session_state.topTTFL_df.empty:
 
 else:
     table_placeholder = st.empty()
-    if not st.session_state.with_plots:
+    if ('plots' not in st.session_state.topTTFL_df.columns 
+        or st.session_state.gen_more_plots):
+        # or (st.session_state.topTTFL_df['plots'] == IMG_PLUS_DE_GRAPHES).all()):
         
-        if st.session_state.plot_calc_start == 0:
-            st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES                
+        if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
+            st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
+            st.session_state.display_df = st.session_state.topTTFL_df.copy()
         
-        st.session_state.topTTFL_df.loc[
+        st.session_state.display_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
-        topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+        topTTFL_html = df_to_html(st.session_state.display_df)
         table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
-        chunk_size = 5
+        chunk_size = 5 # On calcule et on ajoute les graphes dans le df complet
         for i in range(st.session_state.plot_calc_start, 
                         min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
                         chunk_size):
@@ -160,17 +168,20 @@ else:
                                                     st.session_state.selected_date.strftime('%d/%m/%Y'),
                                                     parallelize = False)
             st.session_state.topTTFL_df.iloc[i:i+chunk_size] = chunk_with_plots
-            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+            
+            # On met à jour les graphes dans le df display
+            plots_to_update = st.session_state.topTTFL_df.set_index('Joueur')['plots']
+            st.session_state.display_df['plots'] = st.session_state.display_df['Joueur'].map(plots_to_update)
+
+            topTTFL_html = df_to_html(st.session_state.display_df)
             table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
-    joueurs_pas_dispo = get_joueurs_pas_dispo(conn, st.session_state.selected_date.strftime('%d/%m/%Y'))
-    joueurs_blesses = get_joueurs_blesses(conn)
-
-    filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
-    if filter_JDP:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_pas_dispo)]
-    if filter_inj:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_blesses)]
-
-    filtered_topTTFL_html = df_to_html(filtered_topTTFL_df)
-    table_placeholder.markdown(filtered_topTTFL_html, unsafe_allow_html=True)
+    st.session_state.display_df = apply_df_filters(conn,
+                                           st.session_state.selected_date.strftime('%d/%m/%Y'),
+                                           st.session_state.plot_calc_start,
+                                           st.session_state.plot_calc_stop,
+                                           filter_JDP,
+                                           filter_inj)
+    
+    display_df_html = df_to_html(st.session_state.display_df)
+    table_placeholder.markdown(display_df_html, unsafe_allow_html=True)

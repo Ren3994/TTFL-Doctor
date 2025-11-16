@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.classement_TTFL_utils import custom_CSS
+from streamlit_interface.classement_TTFL_utils import custom_CSS, apply_df_filters
 from streamlit_interface.JDP_utils import JoueursDejaPick
 from streamlit_interface.streamlit_utils import config
 from streamlit_interface.sidebar import sidebar
@@ -52,4 +52,5 @@ edited_df = st.data_editor(st.session_state.jdp_df,
 
 if st.button("💾 Sauvegarder"):
     st.session_state.jdp_df = st.session_state.JDP.saveJDP(edited_df)
+    apply_df_filters.clear()
     st.rerun()

@@ -62,21 +62,23 @@ def get_joueurs_pas_dispo(conn, date) :
 
     return joueurs_pas_dispo
 
-def get_joueurs_blesses(conn):
-    injury_report = run_sql_query(conn,
+@st.cache_data(show_spinner=False)
+def get_joueurs_blesses(_conn):
+    injury_report = run_sql_query(_conn,
                                   table="injury_report", 
                                   select='player_name', 
                                   filters="""simplified_status != 'Probable'""")
     
     return injury_report['player_name'].tolist()
 
-def get_low_game_count(conn, date) :
+@st.cache_data(show_spinner=False)
+def get_low_game_count(_conn, date) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt + timedelta(days=30)
     n_games = 3
 
-    games_per_day = run_sql_query(conn, 
+    games_per_day = run_sql_query(_conn, 
                                   table="schedule", 
                                   select=['gameDate', 
                                           'GROUP_CONCAT(homeTeam) AS homes', 
@@ -279,8 +281,8 @@ def st_image_crisp(path, width=40):
 
 @st.cache_data(show_spinner=False)
 def cached_get_top_TTFL(date):
-    topTTFL_df, with_plots = get_top_TTFL(date)
-    return topTTFL_df, with_plots
+    topTTFL_df = get_top_TTFL(date)
+    return topTTFL_df
 
 def on_text_change():
     """Parse text input into a date object."""
@@ -305,13 +307,26 @@ def next_date():
     update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
 
 def update_session_state_df(date):
-    topTTFL_df, with_plots = cached_get_top_TTFL(date)
+    topTTFL_df = cached_get_top_TTFL(date)
     st.session_state.topTTFL_df = topTTFL_df
-    st.session_state.with_plots = with_plots
     st.session_state.plot_calc_incr = 20
     st.session_state.plot_calc_start = 0
     st.session_state.plot_calc_stop = 30
     st.session_state.games_TBD = False
+    st.session_state.gen_more_plots = False
+
+@st.cache_data(show_spinner=False)
+def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj):
+    joueurs_pas_dispo = get_joueurs_pas_dispo(_conn, date)
+    joueurs_blesses = get_joueurs_blesses(_conn)
+
+    filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
+    if filter_JDP:
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_pas_dispo)]
+    if filter_inj:
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_blesses)]
+    
+    return filtered_topTTFL_df
 
 custom_CSS = """
     <style>
