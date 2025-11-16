@@ -6,9 +6,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.classement_TTFL_utils import get_joueurs_blesses, get_low_game_count, get_deadline, cached_get_top_TTFL, apply_df_filters
+from streamlit_interface.plotting_utils import cached_generate_plot_row
 from update_manager.injury_report_manager import update_injury_report
-from update_manager.nba_api_manager import update_nba_data
 from streamlit_interface.streamlit_utils import config, conn_db
+from update_manager.nba_api_manager import update_nba_data
 from streamlit_interface.sidebar import sidebar
 from data.sql_functions import update_tables
 
@@ -33,6 +35,13 @@ if not st.session_state.data_ready:
 
     st.title('🏀 TTFL Doctor')
     conn = conn_db()
+
+    get_deadline.clear()
+    get_joueurs_blesses.clear()
+    get_low_game_count.clear()
+    cached_get_top_TTFL.clear()
+    apply_df_filters.clear()
+    cached_generate_plot_row.clear()
 
     with st.spinner('Mise à jour des données'):
         progress = st.progress(0)

@@ -111,7 +111,21 @@ def get_low_game_count(_conn, date) :
             result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p
     else:
         result_str = ''.join(['&nbsp;'] * 15) + f'Pas de jours avec moins de {n_games} matchs'
+   
+    return result_str
 
+@st.cache_data(show_spinner=False)
+def get_deadline(_conn, date):
+    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    df = run_sql_query(_conn, table='schedule', select=['gameDate', 'gameDateTime'], filters=f"gameDate = '{date}'")
+    df['gameDateTime'] = pd.to_datetime(df['gameDateTime']).dt.tz_localize(None)
+    df_before_midnight = df[df['gameDateTime'] - date_dt < timedelta(days=1)]
+    if len(df_before_midnight) > 0:
+        deadline = df_before_midnight.loc[df_before_midnight['gameDateTime'].dt.hour.idxmin(), 'gameDateTime'].strftime('%Hh%M')
+        result_str = '<b>' + ''.join(['&nbsp;'] * 33)  + f'Deadline : {deadline}</b>'
+    else:
+        result_str = ''
+    
     return result_str
 
 def df_to_html(
@@ -313,7 +327,6 @@ def update_session_state_df(date):
     st.session_state.plot_calc_start = 0
     st.session_state.plot_calc_stop = 30
     st.session_state.games_TBD = False
-    st.session_state.gen_more_plots = False
 
 @st.cache_data(show_spinner=False)
 def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj):

@@ -11,12 +11,8 @@ from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_utils import config, custom_error, conn_db
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
-# from streamlit_interface.update import update_all_data
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
-
-# ---------- Run updates if needed ----------
-# last_update = update_all_data()
 
 if 'data_ready' not in st.session_state:
     st.switch_page('streamlit_main.py')
@@ -27,9 +23,6 @@ sidebar(page='classement')
 # ---------- Initialize session state ----------
 conn = conn_db()
 config(page='classement')
-
-# st.session_state.last_update = last_update
-
 
 st.session_state.selected_date = st.session_state.get("selected_date", date.today())
 
@@ -98,10 +91,11 @@ with col_checkboxes:
     if st.button('Générer plus de graphes'):
         st.session_state.plot_calc_start += st.session_state.plot_calc_incr
         st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
-        st.session_state.gen_more_plots = True
 
 with col_low_games_count:
     st.markdown(get_low_game_count(conn, st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
+    deadline = get_deadline(conn, st.session_state.selected_date.strftime("%d/%m/%Y"))
+    st.markdown(deadline, unsafe_allow_html=True)
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
@@ -147,7 +141,6 @@ if st.session_state.topTTFL_df.empty:
 else:
     table_placeholder = st.empty()
     if ('plots' not in st.session_state.topTTFL_df.columns 
-        or st.session_state.gen_more_plots
         or (st.session_state.topTTFL_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 
