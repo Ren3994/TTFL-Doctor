@@ -81,8 +81,10 @@ with col_next:
     st.button("▶️", on_click=next_date)
 
 with col_checkboxes:
-    if (st.session_state.local_instance) or ('username_str' in st.session_state and st.session_state.username_str != ''):
-        filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
+    if ((st.session_state.local_instance) or
+        ('username_str' in st.session_state and st.session_state.username_str != '') or
+        (st.session_state.get('temp_jdp_df', False))):
+            filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
     else:
         filter_JDP = False
 

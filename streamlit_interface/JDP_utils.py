@@ -75,7 +75,7 @@ class JoueursDejaPick():
         
         return good_df
     
-    def saveJDP(self, df:pd.DataFrame):
+    def saveJDP(self, df:pd.DataFrame, save=True):
 
         df = self.db_cols(df)
         df = self.completeCols(df)
@@ -83,25 +83,24 @@ class JoueursDejaPick():
         df_db = df.copy()
         df_db = df_db[['joueur', 'datePick']]
         
-        if st.session_state.local_instance:
-            df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
-        else:
-            df_db = df_db[df_db['joueur'] != '']
-            picks = dict(zip(df_db['datePick'], df_db['joueur']))
-            if 'username' in st.session_state and st.session_state.username != '':
-                username_clean = re.sub(r'\W+', '', st.session_state.username)
-                if username_clean in self.existing_users:
-                    update = (self.supabase.table("ttfl_doctor_user_picks")
-                                            .update({"picks" : picks})
-                                            .eq("username", username_clean)
-                                            .execute()
-                            )
-                else:
-                    insert = (self.supabase.table("ttfl_doctor_user_picks")
-                                             .insert({"username" : username_clean, 
-                                                     "picks" : picks})
-                                             .execute()
-                                )
+        if save:
+            if st.session_state.local_instance:
+                df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
+            else:
+                df_db = df_db[df_db['joueur'] != '']
+                picks = dict(zip(df_db['datePick'], df_db['joueur']))
+                if 'username' in st.session_state and st.session_state.username != '':
+                    username_clean = re.sub(r'\W+', '', st.session_state.username)
+                    if username_clean in self.existing_users:
+                        update = (self.supabase.table("ttfl_doctor_user_picks")
+                                                .update({"picks" : picks})
+                                                .eq("username", username_clean)
+                                                .execute())
+                    else:
+                        insert = (self.supabase.table("ttfl_doctor_user_picks")
+                                                .insert({"username" : username_clean, 
+                                                        "picks" : picks})
+                                                .execute())
 
         df = self.display_cols(df)
         return df

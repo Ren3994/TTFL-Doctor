@@ -27,43 +27,37 @@ def sidebar(page):
             st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
         if not st.session_state.local_instance:
-            col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
+            col_username_input, col_accept_username = st.sidebar.columns([2.1, 1], gap='small')
             with col_username_input:
-                if 'username_str' not in st.session_state:
+                if st.session_state.get('username_str', 'None') in ['', 'None']:
                     st.text_input(
                         label="Nom d'utilisateur",
                         placeholder="Nom d'utilisateur",
                         key="username",
                         label_visibility='collapsed',
-                        width=200,
-                    )
+                        width=200)
                 else:
-                    if st.session_state.username_str == '':
-                        st.text_input(
-                            label="Nom d'utilisateur",
-                            placeholder="Nom d'utilisateur",
-                            key="username",
-                            label_visibility='collapsed',
-                            width=200,
-                        )
-                    else:
-                        st.text_input(
-                            label="Nom d'utilisateur",
-                            value=st.session_state.username_str,
-                            key="username",
-                            label_visibility='collapsed',
-                            width=200,
-                        )
+                    st.text_input(
+                        label="Nom d'utilisateur",
+                        value=st.session_state.username_str,
+                        key="username",
+                        label_visibility='collapsed',
+                        width=200)
+                    
             with col_accept_username:
                 if st.button('Login'):
                     st.session_state.JDP = JoueursDejaPick()
                     st.session_state.jdp_df = st.session_state.JDP.initJDP()
                     st.session_state.username_str = st.session_state.username
+                    st.session_state.JDP_save_error = False
+                    st.session_state.temp_jdp_df = False
             
-            if 'username' in st.session_state:
+            if 'username' in st.session_state and st.session_state.username != '':
                 st.session_state.JDP = JoueursDejaPick()
                 st.session_state.jdp_df = st.session_state.JDP.initJDP()
                 st.session_state.username_str = st.session_state.username
+                st.session_state.JDP_save_error = False
+                st.session_state.temp_jdp_df = False
 
         if st.session_state.data_ready:
             if st.sidebar.button("Mettre à jour les données"):
