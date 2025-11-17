@@ -27,7 +27,7 @@ def sidebar(page):
             st.sidebar.write(f"MàJ : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
         if not st.session_state.local_instance:
-            col_username_input, col_accept_username = st.sidebar.columns([2.1, 1], gap='small')
+            col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
                 if st.session_state.get('username_str', 'None') in ['', 'None']:
                     st.text_input(
