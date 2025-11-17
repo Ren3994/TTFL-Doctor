@@ -86,7 +86,12 @@ with col_checkboxes:
         (st.session_state.get('temp_jdp_df', False))):
             filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
     else:
-        filter_JDP = False
+        filter_JDP = st.checkbox("Masquer les joueurs déjà pick", 
+                                 value=False, 
+                                 disabled=True, 
+                                 help=("Rentrez des picks dans la page "
+                                 "\"Historique des picks\" pour pouvoir les filtrer")
+                                )
 
     filter_inj = st.checkbox("Masquer les joueurs blessés", value=False)
     
