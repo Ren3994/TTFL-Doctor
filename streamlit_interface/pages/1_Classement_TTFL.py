@@ -81,6 +81,7 @@ with col_next:
     st.button("▶️", on_click=next_date)
 
 with col_checkboxes:
+    st.write(f'--{st.session_state.username}--{st.session_state.username_str}--')
     if ((st.session_state.local_instance) or
         ('username_str' in st.session_state and st.session_state.username_str != '') or
         (st.session_state.get('temp_jdp_df', False))):
