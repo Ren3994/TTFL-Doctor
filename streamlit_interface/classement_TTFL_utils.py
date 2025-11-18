@@ -352,6 +352,14 @@ custom_CSS = """
         margin-top: -3.8rem;
         margin-left: -2.5rem
     }
+    /* --- Center text inputs --- */
+    div[data-testid="stTextInput"] {
+        display: flex;
+        justify-content: center;
+    }
+    div[data-testid="stTextInput"] input {
+        text-align: center !important;
+    }
     </style>
     """
 
