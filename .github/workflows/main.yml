@@ -1,0 +1,29 @@
+name: Keep Streamlit Alive
+
+on:
+  schedule:
+    - cron: "0 */10 * * *"   # every 10 hours (GitHub Actions cron runs in UTC)
+  workflow_dispatch:         # manual run button in Actions tab
+
+permissions:
+  contents: write            # allows GITHUB_TOKEN to push commits (explicit)
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # use GITHUB_TOKEN from the runner
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Make empty commit and push
+        run: |
+          git commit --allow-empty -m "chore(keepalive): keepalive $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          git push
