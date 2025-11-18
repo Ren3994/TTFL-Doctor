@@ -7,25 +7,30 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from data.sql_functions import run_sql_query, update_tables, get_missing_gameids
 from streamlit_interface.plotting_utils import cached_generate_plot_row
 from update_manager.injury_report_manager import update_injury_report
-from data.sql_functions import run_sql_query, update_tables
 from update_manager.nba_api_manager import update_nba_data
 from streamlit_interface.streamlit_utils import conn_db
 from streamlit_interface.classement_TTFL_utils import *
 
 def need_to_fetch_new_boxscores():
     conn = conn_db()
-    df = run_sql_query(conn, 
+    df_missing_games = get_missing_gameids(conn)
+    if not df_missing_games.empty:
+        return True
+    
+    df_upcoming_games = run_sql_query(conn, 
                        table='schedule', 
                        select='gameDateTimeUTC', 
                        filters=['gameStatus != 3', 
                                 "gameId LIKE '002%'"])
-    if df.empty:
+    if df_upcoming_games.empty:
         return False
-    df['gameDateTimeUTC'] = pd.to_datetime(df['gameDateTimeUTC'], utc=True)
-    df = df.sort_values('gameDateTimeUTC')
-    next_game_time = df.at[0, 'gameDateTimeUTC']
+    
+    df_upcoming_games['gameDateTimeUTC'] = pd.to_datetime(df_upcoming_games['gameDateTimeUTC'], utc=True)
+    df_upcoming_games = df_upcoming_games.sort_values('gameDateTimeUTC')
+    next_game_time = df_upcoming_games.at[0, 'gameDateTimeUTC']
     next_game_end = next_game_time + timedelta(hours=3)
     now_utc = datetime.now(UTC)
     return now_utc >= next_game_end
