@@ -153,33 +153,18 @@ def check_boxscores_integrity(conn):
     remove_duplicates_from_boxscores(conn)
 
 def update_tables(conn, progress=None):
-    if progress is not None:
-        progress.progress(82/100)
+
     conn.execute("PRAGMA journal_mode = WAL;")
-    if progress is not None:
-        progress.progress(84/100)
+
     update_helper_tables(conn)
-    if progress is not None:
-        progress.progress(88/100)
     update_home_away_rel_TTFL(conn)
-    if progress is not None:
-        progress.progress(90/100)
     update_avg_TTFL_per_pos(conn)
-    if progress is not None:
-        progress.progress(92/100)
+    update_avg_TTFL_per_pos_per_opp(conn)
     update_rel_player_avg_ttfl_v_opp(conn)
-    if progress is not None:
-        progress.progress(94/100)
     update_absent_teammate_rel_impact(conn)
-    if progress is not None:
-        progress.progress(96/100)
     updates_games_missed_by_players(conn)
-    if progress is not None:
-        progress.progress(98/100)
     update_opp_pos_avg_per_game(conn)
-    if progress is not None:
-        progress.progress(100/100)
-        
+    
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
 
@@ -244,6 +229,36 @@ def update_avg_TTFL_per_pos(conn):
     """
     df = pd.read_sql_query(query, conn)
     save_to_db(conn, df, "avg_TTFL_per_pos", if_exists="replace")
+
+def update_avg_TTFL_per_pos_per_opp(conn):
+    query="""
+    WITH
+        -- Expand composite positions so each player can count for G, F and/or C
+        position_expansion AS (
+            SELECT playerName, 'G' AS pos FROM player_positions WHERE position LIKE '%G%'
+            UNION ALL
+            SELECT playerName, 'F' AS pos FROM player_positions WHERE position LIKE '%F%'
+            UNION ALL
+            SELECT playerName, 'C' AS pos FROM player_positions WHERE position LIKE '%C%'
+        ),
+        boxscores_exp_pos AS (
+        SELECT
+                b.TTFL,
+                b.opponent,
+                pe.pos AS position
+            FROM boxscores b
+            JOIN position_expansion pe
+                ON b.playerName = pe.playerName
+        )
+    SELECT
+        position,
+        opponent,
+        AVG(TTFL) AS avg_TTFL
+        FROM boxscores_exp_pos
+        GROUP BY opponent, position
+    """
+    df = pd.read_sql_query(query, conn)
+    save_to_db(conn, df, "avg_TTFL_per_pos_per_opp", if_exists="replace")
 
 def update_rel_player_avg_ttfl_v_opp(conn):
     
@@ -635,13 +650,14 @@ def topTTFL_query(conn, game_date):
     SELECT 
     gmbp.did_not_play, 
     opapg.opp_pos, 
-    AVG(100 * (opapg.opp_pos_avg_TTFL - posat.avg_TTFL) / posat.avg_TTFL) AS avg_rel_TTFL_per_opp_pos
+    AVG(100 * (opapg.opp_pos_avg_TTFL - atpppo.avg_TTFL) / atpppo.avg_TTFL) AS avg_rel_TTFL_per_opp_pos
     FROM games_missed_by_players gmbp
     JOIN opp_pos_avg_per_gameId opapg
         ON gmbp.gameId = opapg.gameId
         AND gmbp.team = opapg.teamTricode
-    JOIN pos_avg_TTFL posat
-        ON opapg.opp_pos = posat.position
+    JOIN avg_TTFL_per_pos_per_opp atpppo
+        ON opapg.opp_pos = atpppo.position
+        AND opapg.opp_team = atpppo.opponent
     GROUP BY gmbp.did_not_play, opapg.opp_pos
     ),
 
@@ -677,7 +693,7 @@ def topTTFL_query(conn, game_date):
     r.playerName AS inj_opp_player,
     ir.simplified_status,
     pat.avg_TTFL AS opp_player_TTFL,
-    partpop.avg_rel_TTFL_per_opp_pos
+    COALESCE(partpop.avg_rel_TTFL_per_opp_pos, 0) AS avg_rel_TTFL_per_opp_pos
 
     FROM all_players ap
     JOIN rosters r
@@ -686,7 +702,7 @@ def topTTFL_query(conn, game_date):
         ON ir.player_name = r.playerName
     JOIN player_avgTTFL pat
         ON r.playerName = pat.playerName
-    JOIN player_avg_rel_TTFL_per_opp_pos partpop
+    LEFT JOIN player_avg_rel_TTFL_per_opp_pos partpop
         ON r.playerName = partpop.did_not_play
         AND ap.pos = partpop.opp_pos
     ),
