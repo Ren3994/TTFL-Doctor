@@ -1,7 +1,4 @@
-from streamlit_js_eval import streamlit_js_eval
-from datetime import date
 import streamlit as st
-import uuid
 import sys
 import os
 
@@ -9,43 +6,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_utils import config, custom_error, conn_db
+from streamlit_interface.streamlit_update_manager import update_all_data
+from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.classement_TTFL_utils import *
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 
-if 'data_ready' not in st.session_state:
-    st.switch_page('streamlit_main.py')
-
-# --- Sidebar ---
-sidebar(page='classement')
-
 # ---------- Initialize session state ----------
+PAGENAME = 'classement'
+update_all_data()
+init_session_state(page=PAGENAME)
+sidebar(page=PAGENAME)
+config(page=PAGENAME)
 conn = conn_db()
-config(page='classement')
-
-st.session_state.selected_date = st.session_state.get("selected_date", date.today())
-
-st.session_state.date_text = st.session_state.get(
-    "date_text",
-    st.session_state.selected_date.strftime("%d/%m/%Y"))
-
-if st.session_state.date_text == "" or not st.session_state.date_text:
-    st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-
-if "topTTFL_df" not in st.session_state:
-    update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
-
-if 'games_TBD' not in st.session_state:
-    st.session_state.games_TBD = False
-
-if 'scr_key' not in st.session_state:
-    st.session_state.scr_key = str(uuid.uuid4())
-
-if "screen_width" not in st.session_state:
-    width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
-    if width:
-        st.session_state.screen_width = width
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)

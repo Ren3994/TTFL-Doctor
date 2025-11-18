@@ -31,7 +31,7 @@ def generate_all_plots(df, date, parallelize=False):
         return df
     
 @st.cache_data(show_spinner=False)
-def cached_generate_plot_row(requested_date, 
+def cached_generate_plot_row(requested_date,
                              joueur, 
                              graph_dates, 
                              graph_opps, 

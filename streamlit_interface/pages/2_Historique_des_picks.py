@@ -5,30 +5,17 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.classement_TTFL_utils import custom_CSS, apply_df_filters
-from streamlit_interface.JDP_utils import JoueursDejaPick
+from streamlit_interface.session_state_manager import init_session_state
+from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.streamlit_utils import config
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
-config(page='JDP')
-
-if 'data_ready' not in st.session_state:
-    st.switch_page('streamlit_main.py')
-
-if "JDP" not in st.session_state:
-    st.session_state.JDP = JoueursDejaPick()
-
-if "jdp_df" not in st.session_state:
-    st.session_state.jdp_df = st.session_state.JDP.initJDP()
-
-if "JDP_save_error" not in st.session_state:
-     st.session_state.JDP_save_error = False
-    
-if 'temp_jdp_df' not in st.session_state:
-     st.session_state.temp_jdp_df = False
-
-# --- Sidebar ---
-sidebar(page='JDP')
+PAGENAME = 'JDP'
+update_all_data()
+init_session_state(page=PAGENAME)
+sidebar(page=PAGENAME)
+config(page=PAGENAME)
 
 # ---------- UI ------------
 st.markdown(custom_CSS, unsafe_allow_html=True)

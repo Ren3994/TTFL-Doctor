@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
 from rapidfuzz import fuzz, process
+from datetime import timedelta
 import streamlit as st
 import pandas as pd
-import sqlite3
 import sys
 import os
 import re
@@ -52,7 +51,8 @@ class JoueursDejaPick():
         game_dates_completed = run_sql_query(conn=self.conn,
                                              table='schedule', 
                                              select='DISTINCT gameDate',
-                                             filters='gameStatus = 3')
+                                             filters=['gameStatus = 3', 
+                                                      "gameId LIKE '002%'"])
         
         good_df = (game_dates_completed
                    .merge(good_df, 

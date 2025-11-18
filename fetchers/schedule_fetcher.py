@@ -41,12 +41,11 @@ def get_schedule():
             schedule['gameDateTimeUTC'] = pd.to_datetime(schedule['gameDateTimeUTC'], errors='coerce')
 
             schedule['gameDate'] = schedule['gameDate'].dt.strftime('%d/%m/%Y')
-            schedule['gameDateTimeUTC'] = schedule['gameDateTimeUTC'].dt.tz_convert('Europe/Paris')
+            schedule['gameDateTime'] = schedule['gameDateTimeUTC'].dt.tz_convert('Europe/Paris')
 
             schedule.rename(columns={
                 "homeTeam_teamName": "homeTeam",
-                "awayTeam_teamName": "awayTeam",
-                "gameDateTimeUTC" : "gameDateTime"
+                "awayTeam_teamName": "awayTeam"
             }, inplace=True)
 
             schedule['homeTeam'] = schedule['homeTeam'].replace(NAME2TRICODE)

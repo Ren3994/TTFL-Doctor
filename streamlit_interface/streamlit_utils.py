@@ -12,7 +12,7 @@ from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH
 
 @st.cache_resource 
 def conn_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False) 
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) 
     return conn
 
 @st.cache_resource

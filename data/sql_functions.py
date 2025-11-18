@@ -152,7 +152,7 @@ def check_boxscores_integrity(conn):
     check_boxscores_null_games(conn)
     remove_duplicates_from_boxscores(conn)
 
-def update_tables(conn, progress):
+def update_tables(conn, progress=None):
     if progress is not None:
         progress.progress(82/100)
     conn.execute("PRAGMA journal_mode = WAL;")
@@ -1013,10 +1013,7 @@ def get_games_for_date(conn, game_date_str):
 
     df["pair_key"] = df.apply(lambda x: tuple(sorted([x["homeTeam"], x["awayTeam"]])), axis=1)
 
-    # Drop duplicate pairs, keeping the first occurrence
     df_unique = df.drop_duplicates(subset="pair_key").copy()
-
-    # Clean up
     df_unique = df_unique.drop(columns=["pair_key"])
 
     return df_unique
