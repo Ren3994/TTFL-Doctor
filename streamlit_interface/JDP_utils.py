@@ -100,6 +100,7 @@ class JoueursDejaPick():
                                                 .insert({"username" : username_clean, 
                                                         "picks" : picks})
                                                 .execute())
+                        self.existing_users = fetch_supabase_users(self.supabase)
 
         df = self.display_cols(df)
         return df
