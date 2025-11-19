@@ -54,11 +54,14 @@ if st.session_state.top_nuit is None:
 elif st.session_state.top_nuit == 'hier':
     st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
 else:
-    col_search, col_ok, col_spacer = st.columns([5, 2, 7], gap='small', width=500)
+    col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
     with col_search:
         st.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
     with col_ok:
         st.button('OK')
+    with col_clear:
+        st.button('Clear', on_click=clear_search)
+            
     if st.session_state.top_nuit == 'did_not_play':
         st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit} le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}')
     else:

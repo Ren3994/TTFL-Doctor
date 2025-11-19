@@ -156,7 +156,7 @@ def df_to_html(
     center_table=True,
     color_tooltip_pct=True,
     highlight_index=None,
-    col_header_labels=[]
+    col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'}
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
     
@@ -244,17 +244,18 @@ def df_to_html(
         html += "<th>Rang</th>"
 
     for col in show_cols:
+        col_label = col
+        if col in col_header_labels:
+            col_label = col_header_labels[col]
         if col in col_header_tooltips:
             html += (
                 '<th>'
-                f'<div class="tooltip"><span class="header-text">{col}<sup>?</sup></span>'
+                f'<div class="tooltip"><span class="header-text">{col_label}<sup>?</sup></span>'
                 f'<span class="tooltiptext">{col_header_tooltips[col]}</span></div>'
                 '</th>'
             )
-        elif col in col_header_labels:
-            html += f'<th><span class="header-text">{col_header_labels[col]}</span></th>'
         else:
-            html += f'<th><span class="header-text">{col}</span></th>'
+            html += f'<th><span class="header-text">{col_label}</span></th>'
 
     html += "</tr></thead><tbody>"
 

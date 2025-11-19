@@ -14,13 +14,17 @@ from data.sql_functions import run_sql_query
 def get_top_de_la_nuit(date, name):
     conn = conn_db()                        
     df = run_sql_query(conn,
-                    table='boxscores', 
+                    table='boxscores b', 
                     filters=[f"gameDate = '{date}'"], 
-                    select=['playerName', 'teamTricode', 'minutes', 'points', 
+                    select=['b.playerName', 'minutes', 'points', 
                             'assists', 'reboundsTotal', 'steals', 'blocks', 'turnovers',
                             'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade',
                             'threePointersAttempted', 'freeThrowsMade', 'freeThrowsAttempted',
-                            'plusMinusPoints',  'TTFL', 'win'])
+                            'plusMinusPoints',  'TTFL', 'win', 'pat.avg_TTFL'],
+                    joins=[{
+                        'table' : 'player_avg_TTFL pat',
+                        'on' : 'b.playerName = pat.playerName'
+                    }])
     if df.empty:
         current_date = datetime.today()
         if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
@@ -50,8 +54,16 @@ def get_top_de_la_nuit(date, name):
     df['Win'] = np.where(df['win'] == 1, 'W', 'L')
     df['plusMinusPoints'] = np.select([df['plusMinusPoints'] < 0], [df['plusMinusPoints'].astype(int)],
                                       '+' + df['plusMinusPoints'].astype(int).astype(str))
+    
+    df['perf'] = np.select([df['avg_TTFL'] == 0, df['TTFL'] < df['avg_TTFL']],
+                           ['0', (100 * (df['TTFL'] - df['avg_TTFL']) / df['avg_TTFL']).round(1).astype(str) + '%'], 
+                           '+' + (100 * (df['TTFL'] - df['avg_TTFL']) / df['avg_TTFL']).round(1).astype(str) + '%')
+    
+    df['perf_str'] = np.select([df['perf'] == '0'], 
+                               ['<span style="text-decoration:overline">TTFL</span> : 0'],
+                               '<span style="text-decoration:overline">TTFL</span> : ' + 
+                               df['avg_TTFL'].astype(str) + ' (' + df['perf'] + ')')
         
-
     df = df.drop(columns=['fieldGoalsMade', 
                           'fieldGoalsAttempted', 'threePointersMade', 
                           'threePointersAttempted', 'freeThrowsMade', 
@@ -72,10 +84,10 @@ def get_top_de_la_nuit(date, name):
 
     if len(joueurs_pas_dispo) > 0:
         df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
-        show_cols = ['Joueur', 'teamTricode', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm', 'Dispo']
     else:
-        show_cols = ['Joueur', 'teamTricode', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
         
     picks = st.session_state.get('jdp_df', None)
@@ -90,14 +102,16 @@ def get_top_de_la_nuit(date, name):
                              tooltips={
                                  'FG' : 'FGpct',
                                  'FG3' : 'FG3pct',
-                                 'FT' : 'FTpct'
+                                 'FT' : 'FTpct',
+                                 'TTFL' : 'perf_str'
                              },
                              col_header_tooltips=[],
                              image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
-                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L',
-                                                  'teamTricode' : 'Équipe'}
+                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
+                                                #   'teamTricode' : 'Équipe', 
+                                                #   'TTFL' : '<span style="text-decoration:overline">TTFL</span>'}
                              )
     
     return html_df
@@ -110,19 +124,22 @@ def on_text_change_nuit():
         st.session_state.selected_date_nuit = new_date
         st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
         st.session_state.text_parse_error_nuit = False
-        update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+        update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
+                        st.session_state.get('search_player_nuit', ''))
     except ValueError:
         st.session_state.text_parse_error_nuit = True
 
 def prev_date_nuit():
     st.session_state.selected_date_nuit -= timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
-    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
+                    st.session_state.get('search_player_nuit', ''))
 
 def next_date_nuit():
     st.session_state.selected_date_nuit += timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
-    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
+                    st.session_state.get('search_player_nuit', ''))
 
 def update_top_nuit(date, name):
     st.session_state.top_nuit = get_top_de_la_nuit(date, name)
@@ -133,3 +150,6 @@ def on_search_player_nuit():
         st.session_state.search_player_nuit = ''
     else:
         st.session_state.search_player_nuit = match_player(player_name)
+
+def clear_search():
+    st.session_state.search_player_nuit = ''
