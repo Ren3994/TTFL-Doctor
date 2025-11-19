@@ -53,7 +53,7 @@ def get_joueurs_pas_dispo(conn, date) :
         JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
         joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
     else:
-        if 'jdp_df' in st.session_state:
+        if 'jdp_df' in st.session_state and not (st.session_state.jdp_df['Joueur'] == '').all():
             JDP = st.session_state.jdp_df[['Joueur', 'Date du pick']].copy()
             JDP['Date du pick'] = pd.to_datetime(JDP['Date du pick'], errors='coerce', dayfirst=True)
             joueurs_pas_dispo = JDP[JDP['Date du pick'] > limite]['Joueur'].tolist()
@@ -154,12 +154,17 @@ def df_to_html(
     text_color="#C5C5C5",
     header_text_color="#CAC8C8",
     center_table=True,
+    color_tooltip_pct=True,
+    highlight_index=None,
+    col_header_labels=[]
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
     
     header_bkg_color = "#252b32"
     zebra_even_color, zebra_odd_color = "#222222", "#111111"
     shadow_color = "rgba(28,41,54,0.6)"
+    highlight_color = "#82471D"
+    best_pick_color = "#FFD900A0"
 
     css = f"""
     <style>
@@ -238,7 +243,6 @@ def df_to_html(
     if show_index:
         html += "<th>Classement</th>"
 
-
     for col in show_cols:
         if col in col_header_tooltips:
             html += (
@@ -247,13 +251,19 @@ def df_to_html(
                 f'<span class="tooltiptext">{col_header_tooltips[col]}</span></div>'
                 '</th>'
             )
+        elif col in col_header_labels:
+            html += f'<th><span class="header-text">{col_header_labels[col]}</span></th>'
         else:
             html += f'<th><span class="header-text">{col}</span></th>'
 
     html += "</tr></thead><tbody>"
 
     for i, row in enumerate(df.itertuples(index=False), start=1):
-        html += "<tr>"
+        if highlight_index is not None and i == highlight_index:
+            html += ('<tr style="background-color:'
+                     f'{best_pick_color if i == 1 else highlight_color};">')
+        else:
+            html += "<tr>"
         if show_index:
             html += f"<td>{i}</td>"
         for col in show_cols:
@@ -273,7 +283,7 @@ def df_to_html(
                 html += (
                     '<td><div class="tooltip">'
                     f"{cell_value}"
-                    f'<span class="tooltiptext">{accentuate_pct(tooltip_value)}</span>'
+                    f'<span class="tooltiptext">{accentuate_pct(tooltip_value) if color_tooltip_pct else tooltip_value}</span>'
                     "</div></td>"
                 )
             else:

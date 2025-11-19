@@ -1,5 +1,5 @@
 from streamlit_js_eval import streamlit_js_eval
-from datetime import date
+from datetime import date, timedelta
 import streamlit as st
 import uuid
 import sys
@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import update_session_state_df
+from streamlit_interface.top_nuit_utils import update_top_nuit
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def init_session_state(page):
@@ -42,7 +43,7 @@ def init_session_state(page):
             if width:
                 st.session_state.screen_width = width
     
-    if page == 'JDP':
+    if page in ['JDP', 'top_nuit']:
         if "JDP" not in st.session_state:
             st.session_state.JDP = JoueursDejaPick()
 
@@ -54,3 +55,16 @@ def init_session_state(page):
             
         if 'temp_jdp_df' not in st.session_state:
             st.session_state.temp_jdp_df = False
+    
+    if page == 'top_nuit':
+        st.session_state.selected_date_nuit = st.session_state.get("selected_date_nuit", 
+                                                      date.today() - timedelta(days=1))
+
+        st.session_state.date_text_nuit = st.session_state.get("date_text_nuit",
+                    st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+
+        if st.session_state.date_text_nuit == "" or not st.session_state.date_text_nuit:
+            st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+
+        if 'top_nuit' not in st.session_state:
+            update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))

@@ -16,6 +16,7 @@ def sidebar(page):
 
     st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
     st.sidebar.page_link('pages/2_Historique_des_picks.py', label='2 - Historique des picks')
+    st.sidebar.page_link('pages/3_Top_de_la_nuit.py', label='3 - Top de la nuit')
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
@@ -67,6 +68,7 @@ def sidebar(page):
             if st.sidebar.button('Switch instance'):
                 st.session_state.local_instance = not st.session_state.local_instance
                 st.session_state.pop('jdp_df', None)
+                st.session_state.pop('JDP', None)
                 st.rerun()
                 
             if st.sidebar.button("🛑 Quitter"):

@@ -1,0 +1,119 @@
+from datetime import datetime, timedelta
+import streamlit as st
+import numpy as np
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo
+from data.sql_functions import run_sql_query
+
+def get_top_de_la_nuit(date):
+    conn = conn_db()                        
+    df = run_sql_query(conn,
+                    table='boxscores', 
+                    filters=[f"gameDate = '{date}'"], 
+                    select=['playerName', 'minutes', 'points', 
+                            'assists', 'reboundsTotal', 'steals', 'blocks', 'turnovers',
+                            'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade',
+                            'threePointersAttempted', 'freeThrowsMade', 'freeThrowsAttempted',
+                            'plusMinusPoints',  'TTFL', 'win'])
+    if df.empty:
+        current_date = datetime.today()
+        if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
+            return 'hier'
+        return None
+    
+    df = df.sort_values(by=['TTFL'], ascending=False).reset_index(drop=True)
+    df['FG'] = df['fieldGoalsMade'].astype(str) + '/' + df['fieldGoalsAttempted'].astype(str)
+    df['FG3'] = df['threePointersMade'].astype(str) + '/' + df['threePointersAttempted'].astype(str)
+    df['FT'] = df['freeThrowsMade'].astype(str) + '/' + df['freeThrowsAttempted'].astype(str)
+
+    df['FGpct'] = np.select([df['fieldGoalsAttempted'] == 0, df['fieldGoalsAttempted'] == df['fieldGoalsMade']], 
+                            ['', '100%'], 
+                (100 * df['fieldGoalsMade'] / df['fieldGoalsAttempted']).round(1).astype(str) + '%')
+    df['FG3pct'] = np.select([df['threePointersAttempted'] == 0, df['threePointersAttempted'] == df['threePointersMade']], 
+                             ['', '100%'], 
+                (100 * df['threePointersMade'] / df['threePointersAttempted']).round(1).astype(str) + '%')
+    df['FTpct'] = np.select([df['freeThrowsAttempted'] == 0, df['freeThrowsAttempted'] == df['freeThrowsMade']], 
+                            ['', '100%'], 
+                (100 * df['freeThrowsMade'] / df['freeThrowsAttempted']).round(1).astype(str) + '%')
+
+    df['Win'] = np.where(df['win'] == 1, 'W', 'L')
+    df['plusMinusPoints'] = df['plusMinusPoints'].astype(int)
+
+    df = df.drop(columns=['fieldGoalsMade', 
+                          'fieldGoalsAttempted', 'threePointersMade', 
+                          'threePointersAttempted', 'freeThrowsMade', 
+                          'freeThrowsAttempted', 'win'])
+    df.rename(columns={
+                "playerName": "Joueur",
+                "minutes": "Mins",
+                "points": "Pts",
+                "assists": "Ast",
+                "reboundsTotal": "Reb",
+                "steals": "Stl",
+                "blocks": "Blk",
+                "turnovers": "Tov",
+                "plusMinusPoints": "Pm",
+            }, inplace=True)
+    
+    joueurs_pas_dispo = get_joueurs_pas_dispo(conn, date)
+
+    if len(joueurs_pas_dispo) > 0:
+        df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
+        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+                                        'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm', 'Dispo']
+    else:
+        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+                                        'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
+        
+    picks = st.session_state.get('jdp_df', None)
+    idx_pick = None
+    if picks is not None and not (picks['Joueur'] == '').all():
+        series = picks.loc[picks['Date du pick'] == date, 'Joueur']
+        pick = series.iloc[0] if not series.empty else None
+        if pick is not None and pick != '':
+            idx_pick = df.index[df['Joueur'] == pick] + 1            
+   
+    html_df = df_to_html(df, show_cols=show_cols, 
+                             tooltips={
+                                 'FG' : 'FGpct',
+                                 'FG3' : 'FG3pct',
+                                 'FT' : 'FTpct'
+                             },
+                             col_header_tooltips=[],
+                             image_tooltips=[],
+                             color_tooltip_pct=False,
+                             highlight_index=idx_pick,
+                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
+                             )
+    
+    return html_df
+
+def on_text_change_nuit():
+    """Parse text input into a date object."""
+    text_value = st.session_state.date_text_nuit.strip()
+    try:
+        new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
+        st.session_state.selected_date_nuit = new_date
+        st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+        st.session_state.text_parse_error_nuit = False
+        update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+    except ValueError:
+        st.session_state.text_parse_error_nuit = True
+
+def prev_date_nuit():
+    st.session_state.selected_date_nuit -= timedelta(days=1)
+    st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+
+def next_date_nuit():
+    st.session_state.selected_date_nuit += timedelta(days=1)
+    st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+
+def update_top_nuit(date):
+    st.session_state.top_nuit = get_top_de_la_nuit(date)
