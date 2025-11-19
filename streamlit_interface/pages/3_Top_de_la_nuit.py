@@ -28,9 +28,11 @@ if mobile:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
     cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_date, col_next = cols_top[0], cols_top[1], cols_top[2]
+    col_search, col_ok, col_clear = st.columns([7, 2.5, 3])
 else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
     col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
+    col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
 with col_prev:
     st.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
 
@@ -54,7 +56,6 @@ if st.session_state.top_nuit is None:
 elif st.session_state.top_nuit == 'hier':
     st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
 else:
-    col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
     with col_search:
         st.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
     with col_ok:
