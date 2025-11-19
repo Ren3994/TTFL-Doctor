@@ -47,11 +47,19 @@ with col_date:
     if st.session_state.get("text_parse_error_nuit", False):
         custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
 
-update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
+update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.session_state.get('search_player_nuit', ''))
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
 elif st.session_state.top_nuit == 'hier':
     st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
 else:
-    st.markdown(st.session_state.top_nuit, unsafe_allow_html=True)
+    col_search, col_ok, col_spacer = st.columns([5, 2, 7], gap='small', width=500)
+    with col_search:
+        st.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
+    with col_ok:
+        st.button('OK')
+    if st.session_state.top_nuit == 'did_not_play':
+        st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit} le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}')
+    else:
+        st.markdown(st.session_state.top_nuit, unsafe_allow_html=True)

@@ -18,6 +18,8 @@ def init_session_state(page):
         elif env == 'cloud':
             st.session_state.local_instance = False
     
+    st.session_state.username = st.session_state.get('username', '')
+    
     if page == 'classement':
     
         st.session_state.selected_date = st.session_state.get("selected_date", date.today())
@@ -34,6 +36,7 @@ def init_session_state(page):
         if 'games_TBD' not in st.session_state:
             st.session_state.games_TBD = False
 
+    if page in ['classement', 'top_nuit']:
         if 'scr_key' not in st.session_state:
             st.session_state.scr_key = str(uuid.uuid4())
 

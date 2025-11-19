@@ -10,8 +10,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
-def sidebar(page):
+def on_username_change():
+    st.session_state.JDP = JoueursDejaPick()
+    st.session_state.jdp_df = st.session_state.JDP.initJDP()
+    st.session_state.JDP_save_error = False
+    st.session_state.temp_jdp_df = False
 
+def sidebar(page):
+    
     st.sidebar.header('Navigation')
 
     st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
@@ -27,36 +33,17 @@ def sidebar(page):
         if not st.session_state.local_instance:
             col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
-                if st.session_state.get('username_str', 'None') in ['', 'None']:
-                    st.text_input(
-                        label="Nom d'utilisateur",
-                        placeholder="Nom d'utilisateur",
-                        key="username",
-                        label_visibility='collapsed',
-                        width=200)
-                else:
-                    st.text_input(
-                        label="Nom d'utilisateur",
-                        value=st.session_state.username_str,
-                        key="username",
-                        label_visibility='collapsed',
-                        width=200)
-                    
+                st.text_input(
+                    label="Nom d'utilisateur",
+                    placeholder="Nom d'utilisateur",
+                    key="username",
+                    on_change=on_username_change,
+                    label_visibility='collapsed',
+                    width=200)
+
             with col_accept_username:
-                if st.button('Login'):
-                    st.session_state.JDP = JoueursDejaPick()
-                    st.session_state.jdp_df = st.session_state.JDP.initJDP()
-                    st.session_state.username_str = st.session_state.username
-                    st.session_state.JDP_save_error = False
-                    st.session_state.temp_jdp_df = False
-            
-            if 'username' in st.session_state and st.session_state.username != '':
-                st.session_state.JDP = JoueursDejaPick()
-                st.session_state.jdp_df = st.session_state.JDP.initJDP()
-                st.session_state.username_str = st.session_state.username
-                st.session_state.JDP_save_error = False
-                st.session_state.temp_jdp_df = False
-    
+                st.button('Login')
+                
     if st.secrets.environment == 'local':
         if page != 'main':
             st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)

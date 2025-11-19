@@ -10,12 +10,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH
 
-@st.cache_resource 
+@st.cache_resource(show_spinner=False)
 def conn_db():
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) 
     return conn
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def conn_supabase():
     url = st.secrets.get("SUPABASE_URL", "unknown")
     key = st.secrets.get("SUPABASE_KEY", "unknown")

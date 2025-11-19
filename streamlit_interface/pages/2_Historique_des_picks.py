@@ -46,7 +46,7 @@ save_col, error_col, spacer_col1, spacer_col2 = st.columns([2.5, 5.2, 2, 2])
 with save_col:
     if st.button("💾 Sauvegarder"):
         if (st.session_state.local_instance or
-            st.session_state.get('username_str', 'None') not in ['', 'None']):
+            st.session_state.get('username', '') != ''):
                 st.session_state.jdp_df = st.session_state.JDP.saveJDP(edited_df)
         else:
              st.session_state.jdp_df = st.session_state.JDP.saveJDP(edited_df, save=False)

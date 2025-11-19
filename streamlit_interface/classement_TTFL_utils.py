@@ -241,7 +241,7 @@ def df_to_html(
     html = css + '<table class="custom-table-dark">'
     html += "<thead><tr>"
     if show_index:
-        html += "<th>Classement</th>"
+        html += "<th>Rang</th>"
 
     for col in show_cols:
         if col in col_header_tooltips:

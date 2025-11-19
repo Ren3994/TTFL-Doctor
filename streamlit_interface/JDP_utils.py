@@ -36,14 +36,13 @@ class JoueursDejaPick():
             df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
         else:
             df = pd.DataFrame(columns=['joueur', 'datePick'])
-            if 'username' in st.session_state:
-                username_clean = re.sub(r'\W+', '', st.session_state.username)
-                if username_clean in self.existing_users:
-                    df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
-                                                    .select("picks")
-                                                    .eq("username", username_clean)
-                                                    .execute()
-                                            ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
+            username_clean = re.sub(r'\W+', '', st.session_state.get('username', ''))
+            if username_clean in self.existing_users:
+                df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
+                                                .select("picks")
+                                                .eq("username", username_clean)
+                                                .execute()
+                                        ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
         return df
             
     def initJDP(self) -> pd.DataFrame:
@@ -89,7 +88,7 @@ class JoueursDejaPick():
             else:
                 df_db = df_db[df_db['joueur'] != '']
                 picks = dict(zip(df_db['datePick'], df_db['joueur']))
-                if 'username' in st.session_state and st.session_state.username != '':
+                if st.session_state.get('username', '') != '':
                     username_clean = re.sub(r'\W+', '', st.session_state.username)
                     if username_clean in self.existing_users:
                         update = (self.supabase.table("ttfl_doctor_user_picks")
@@ -200,7 +199,11 @@ def clean_player_names(df, colname, names_list):
     df[colname] = clean_names
     return df
 
-def match_player(input_name, names_list):
+def match_player(input_name, names_list=None):
+
+    if names_list is None:
+        conn=conn_db()
+        names_list=run_sql_query(conn, table='boxscores', select='DISTINCT playerName')['playerName'].tolist()
 
     if input_name in names_list:
         return input_name

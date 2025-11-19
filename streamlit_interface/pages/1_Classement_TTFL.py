@@ -56,7 +56,7 @@ with col_next:
 
 with col_checkboxes:
     if ((st.session_state.local_instance) or
-        ('username' in st.session_state and st.session_state.username != '') or
+        (st.session_state.get('username', '') != '') or
         (st.session_state.get('temp_jdp_df', False))):
             filter_JDP = st.checkbox("Masquer les joueurs déjà pick", value=True)
     else:

@@ -6,16 +6,17 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_db
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo
+from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
-def get_top_de_la_nuit(date):
+def get_top_de_la_nuit(date, name):
     conn = conn_db()                        
     df = run_sql_query(conn,
                     table='boxscores', 
                     filters=[f"gameDate = '{date}'"], 
-                    select=['playerName', 'minutes', 'points', 
+                    select=['playerName', 'teamTricode', 'minutes', 'points', 
                             'assists', 'reboundsTotal', 'steals', 'blocks', 'turnovers',
                             'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade',
                             'threePointersAttempted', 'freeThrowsMade', 'freeThrowsAttempted',
@@ -25,6 +26,11 @@ def get_top_de_la_nuit(date):
         if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
             return 'hier'
         return None
+    
+    if name != '':
+        df = df[df['playerName'] == name]
+        if df.empty:
+            return 'did_not_play'
     
     df = df.sort_values(by=['TTFL'], ascending=False).reset_index(drop=True)
     df['FG'] = df['fieldGoalsMade'].astype(str) + '/' + df['fieldGoalsAttempted'].astype(str)
@@ -42,7 +48,9 @@ def get_top_de_la_nuit(date):
                 (100 * df['freeThrowsMade'] / df['freeThrowsAttempted']).round(1).astype(str) + '%')
 
     df['Win'] = np.where(df['win'] == 1, 'W', 'L')
-    df['plusMinusPoints'] = df['plusMinusPoints'].astype(int)
+    df['plusMinusPoints'] = np.select([df['plusMinusPoints'] < 0], [df['plusMinusPoints'].astype(int)],
+                                      '+' + df['plusMinusPoints'].astype(int).astype(str))
+        
 
     df = df.drop(columns=['fieldGoalsMade', 
                           'fieldGoalsAttempted', 'threePointersMade', 
@@ -64,10 +72,10 @@ def get_top_de_la_nuit(date):
 
     if len(joueurs_pas_dispo) > 0:
         df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
-        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'teamTricode', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm', 'Dispo']
     else:
-        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'teamTricode', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
         
     picks = st.session_state.get('jdp_df', None)
@@ -75,7 +83,7 @@ def get_top_de_la_nuit(date):
     if picks is not None and not (picks['Joueur'] == '').all():
         series = picks.loc[picks['Date du pick'] == date, 'Joueur']
         pick = series.iloc[0] if not series.empty else None
-        if pick is not None and pick != '':
+        if pick is not None and pick != '' and pick in df['Joueur'].tolist():
             idx_pick = df.index[df['Joueur'] == pick] + 1            
    
     html_df = df_to_html(df, show_cols=show_cols, 
@@ -88,7 +96,8 @@ def get_top_de_la_nuit(date):
                              image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
-                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
+                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L',
+                                                  'teamTricode' : 'Équipe'}
                              )
     
     return html_df
@@ -115,5 +124,12 @@ def next_date_nuit():
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
     update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
 
-def update_top_nuit(date):
-    st.session_state.top_nuit = get_top_de_la_nuit(date)
+def update_top_nuit(date, name):
+    st.session_state.top_nuit = get_top_de_la_nuit(date, name)
+
+def on_search_player_nuit():
+    player_name = st.session_state.search_player_nuit
+    if player_name == '':
+        st.session_state.search_player_nuit = ''
+    else:
+        st.session_state.search_player_nuit = match_player(player_name)
