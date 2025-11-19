@@ -27,7 +27,7 @@ mobile = st.session_state.get("screen_width", 1000) <= 500
 if mobile:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
     cols_top = st.columns([1, 5, 1], gap="small")
-    col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
+    col_prev, col_date, col_next = cols_top[0], cols_top[1], cols_top[2]
 else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
     col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]

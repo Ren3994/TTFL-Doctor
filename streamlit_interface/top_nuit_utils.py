@@ -111,7 +111,6 @@ def get_top_de_la_nuit(date, name):
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
                                                 #   'teamTricode' : 'Équipe', 
-                                                #   'TTFL' : '<span style="text-decoration:overline">TTFL</span>'}
                              )
     
     return html_df
