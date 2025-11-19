@@ -8,7 +8,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import update_session_state_df
-from streamlit_interface.top_nuit_utils import update_top_nuit
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def init_session_state(page):
@@ -65,6 +64,3 @@ def init_session_state(page):
 
         if st.session_state.date_text_nuit == "" or not st.session_state.date_text_nuit:
             st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
-
-        if 'top_nuit' not in st.session_state:
-            update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))

@@ -23,7 +23,14 @@ config(page=PAGENAME)
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Scores TTFL de la nuit</div>', unsafe_allow_html=True)
 
-col_spacer1, col_prev, col_date, col_next, col5 = st.columns([4, 0.7, 1.5, 0.7, 4])
+mobile = st.session_state.get("screen_width", 1000) <= 500
+if mobile:
+    st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
+    cols_top = st.columns([1, 5, 1], gap="small")
+    col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
+else:
+    cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
+    col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
 with col_prev:
     st.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
 
@@ -39,6 +46,8 @@ with col_date:
         width=120)
     if st.session_state.get("text_parse_error_nuit", False):
         custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
+
+update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
