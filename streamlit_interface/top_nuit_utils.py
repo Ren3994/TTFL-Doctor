@@ -16,11 +16,11 @@ def get_top_de_la_nuit(date, name):
     df = run_sql_query(conn,
                     table='boxscores b', 
                     filters=[f"gameDate = '{date}'"], 
-                    select=['b.playerName', 'minutes', 'points', 
-                            'assists', 'reboundsTotal', 'steals', 'blocks', 'turnovers',
-                            'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade',
-                            'threePointersAttempted', 'freeThrowsMade', 'freeThrowsAttempted',
-                            'plusMinusPoints',  'TTFL', 'win', 'pat.avg_TTFL'],
+                    select=['b.playerName', 'minutes', 'points', 'pat.avg_TTFL', 'reboundsTotal',
+                            'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
+                            'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
+                            'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
+                            'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win'],
                     joins=[{
                         'table' : 'player_avg_TTFL pat',
                         'on' : 'b.playerName = pat.playerName'
@@ -40,6 +40,7 @@ def get_top_de_la_nuit(date, name):
     df['FG'] = df['fieldGoalsMade'].astype(str) + '/' + df['fieldGoalsAttempted'].astype(str)
     df['FG3'] = df['threePointersMade'].astype(str) + '/' + df['threePointersAttempted'].astype(str)
     df['FT'] = df['freeThrowsMade'].astype(str) + '/' + df['freeThrowsAttempted'].astype(str)
+    df['rebSplit'] = 'Off : ' + df['reboundsOffensive'].astype(str) + ' - Def : ' + df['reboundsDefensive'].astype(str)
 
     df['FGpct'] = np.select([df['fieldGoalsAttempted'] == 0, df['fieldGoalsAttempted'] == df['fieldGoalsMade']], 
                             ['', '100%'], 
@@ -77,7 +78,7 @@ def get_top_de_la_nuit(date, name):
                 "steals": "Stl",
                 "blocks": "Blk",
                 "turnovers": "Tov",
-                "plusMinusPoints": "Pm",
+                "plusMinusPoints": "Pm"
             }, inplace=True)
     
     joueurs_pas_dispo = get_joueurs_pas_dispo(conn, date)
@@ -103,7 +104,8 @@ def get_top_de_la_nuit(date, name):
                                  'FG' : 'FGpct',
                                  'FG3' : 'FG3pct',
                                  'FT' : 'FTpct',
-                                 'TTFL' : 'perf_str'
+                                 'TTFL' : 'perf_str',
+                                 'Reb' : 'rebSplit'
                              },
                              col_header_tooltips=[],
                              image_tooltips=[],

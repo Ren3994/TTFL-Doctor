@@ -37,7 +37,7 @@ raw_stats = [
     'points', 'assists', 'reboundsTotal', 'turnovers', 'steals', 'blocks', 'stocks',
     'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade', 'threePointersAttempted',
     'freeThrowsMade', 'freeThrowsAttempted', 'fg_pct', 'three_pct', 'ft_pct',
-    'plusMinusPoints', 'EFG', 'TS', 'ast_to_tov', 'TTFL'
+    'plusMinusPoints', 'EFG', 'TS', 'ast_to_tov', 'TTFL', 'reboundsOffensive', 'reboundsDefensive'
 ]
 
 per36_stats = [

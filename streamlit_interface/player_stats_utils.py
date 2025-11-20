@@ -22,6 +22,8 @@ def get_all_player_stats():
                            'AVG(blocks) AS blocks',
                            '(AVG(steals) + AVG(blocks)) AS stocks',
                            'AVG(reboundsTotal) AS reboundsTotal',
+                           'AVG(reboundsOffensive) AS reboundsOffensive',
+                           'AVG(reboundsDefensive) AS reboundsDefensive',
                            'AVG(turnovers) AS turnovers',
                            'AVG(fieldGoalsMade) AS fieldGoalsMade',
                            'AVG(fieldGoalsAttempted) AS fieldGoalsAttempted',

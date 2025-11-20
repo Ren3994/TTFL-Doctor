@@ -130,7 +130,8 @@ def update_helper_tables(conn):
     conn.commit()
 
 def remove_duplicates_from_boxscores(conn):
-     conn.execute("""
+    try:
+        conn.execute("""
         WITH dupes AS (
             SELECT b1.rowid
             FROM boxscores b1
@@ -142,11 +143,18 @@ def remove_duplicates_from_boxscores(conn):
         DELETE FROM boxscores
         WHERE rowid IN (SELECT rowid FROM dupes);
         """)
-     conn.commit()
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e):
+            tqdm.write('No boxscore table')
 
 def check_boxscores_null_games(conn):
-    conn.execute("""DELETE FROM boxscores WHERE teamTTFL = 0""")
-    conn.commit()        
+    try:
+        conn.execute("""DELETE FROM boxscores WHERE teamTTFL = 0""")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        if "no such table" in str(e):
+            tqdm.write('No boxscore table')
 
 def check_boxscores_integrity(conn):
     check_boxscores_null_games(conn)
