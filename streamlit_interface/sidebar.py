@@ -9,12 +9,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
+from streamlit_interface.classement_TTFL_utils import apply_df_filters
 
 def on_username_change():
     st.session_state.JDP = JoueursDejaPick()
     st.session_state.jdp_df = st.session_state.JDP.initJDP()
     st.session_state.JDP_save_error = False
     st.session_state.temp_jdp_df = False
+    apply_df_filters.clear()
 
 def sidebar(page):
     

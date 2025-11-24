@@ -85,10 +85,10 @@ def get_top_de_la_nuit(date, name):
 
     if len(joueurs_pas_dispo) > 0:
         df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
-        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm', 'Dispo']
     else:
-        show_cols = ['Joueur', 'TTFL', 'Pts', 'Ast', 'Reb', 'Stl', 
+        show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
         
     picks = st.session_state.get('jdp_df', None)

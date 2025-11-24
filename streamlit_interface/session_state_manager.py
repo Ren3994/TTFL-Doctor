@@ -19,6 +19,7 @@ def init_session_state(page):
             st.session_state.local_instance = False
     
     st.session_state.username = st.session_state.get('username', '')
+    st.session_state.screen_width = st.session_state.get('screen_width', 1366)
     
     if page == 'classement':
     
