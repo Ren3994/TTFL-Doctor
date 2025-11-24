@@ -125,12 +125,7 @@ else:
         or (st.session_state.topTTFL_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 
-            'plots'] == IMG_PLUS_DE_GRAPHES).any()
-        or (st.session_state.topTTFL_df.loc[
-            st.session_state.plot_calc_start:
-            st.session_state.plot_calc_stop - 1, 
-            'plots'] == IMG_CHARGEMENT).any()
-            ):
+            'plots'] == IMG_PLUS_DE_GRAPHES).any()):
         
         if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
@@ -155,6 +150,7 @@ else:
             
             # On met à jour les graphes dans le df display
             plots_to_update = st.session_state.topTTFL_df.set_index('Joueur')['plots']
+            plots_to_update = plots_to_update.groupby(level=0).first()
             st.session_state.display_df['plots'] = st.session_state.display_df['Joueur'].map(plots_to_update)
 
             topTTFL_html = df_to_html(st.session_state.display_df)
