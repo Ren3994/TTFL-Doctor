@@ -125,7 +125,12 @@ else:
         or (st.session_state.topTTFL_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 
-            'plots'] == IMG_PLUS_DE_GRAPHES).any()):
+            'plots'] == IMG_PLUS_DE_GRAPHES).any()
+        or (st.session_state.topTTFL_df.loc[
+            st.session_state.plot_calc_start:
+            st.session_state.plot_calc_stop - 1, 
+            'plots'] == IMG_CHARGEMENT).any()
+            ):
         
         if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
