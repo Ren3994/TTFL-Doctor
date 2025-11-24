@@ -62,7 +62,7 @@ def get_schedule():
         
     if schedule is None:
         tqdm.write('Impossible de télécharger le calendrier')
-        return
+        return None
 
     return schedule
 

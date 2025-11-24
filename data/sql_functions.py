@@ -9,16 +9,15 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fetchers.player_position_fetcher import fetch_player_positions
+from fetchers.team_stats_fetcher import get_team_stats
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
 
-def init_db(conn, progress=None):
+def init_db(conn):
     try :
         schedule = get_schedule()
         if schedule is not None:
             save_to_db(conn, schedule, "schedule", if_exists="replace")
-            if progress is not None:
-                progress.progress(20/100)
         else :
             tqdm.write("Schedule is None. Table could not be saved.")
     except:
@@ -27,8 +26,6 @@ def init_db(conn, progress=None):
     rosters = get_rosters()
     if rosters is not None:
         save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
-        if progress is not None:
-            progress.progress(30/100)
     else:
         tqdm.write("Rosters is None. Table could not be saved.")
 
@@ -38,9 +35,14 @@ def init_db(conn, progress=None):
         save_to_db(conn, rosters_with_pos, 'rosters', if_exists='replace')
     else:
         tqdm.write("Rosters with positions is None. Table could not be saved.")
+    
+    team_stats = get_team_stats()
+    if team_stats is not None:
+        save_to_db(conn, team_stats, 'team_stats', if_exists='replace')
+    else:
+        tqdm.write('Team stats table is None. Table could not be saved')
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team_player ON rosters(teamTricode, playerName);")
-    return progress
 
 def check_pos_table_exists(conn):
         cursor=conn.cursor()
@@ -113,8 +115,11 @@ def update_helper_tables(conn):
                   table="boxscores", 
                   select=[
                       'teamTricode',
-                      'AVG(opponentTTFL) AS avg_opp_TTFL', 
+                      'AVG(teamTTFL) AS avg_team_TTFL',
+                      'AVG(opponentTTFL) AS avg_opp_TTFL',
+                      'AVG(AVG(teamTTFL)) OVER () AS overall_avg_team_TTFL',
                       'AVG(AVG(opponentTTFL)) OVER () AS overall_avg_opp_TTFL',
+                      '100 * (AVG(teamTTFL) - AVG(AVG(teamTTFL)) OVER ()) / AVG(AVG(teamTTFL)) OVER () AS rel_team_avg_TTFL',
                       '100 * (AVG(opponentTTFL) - AVG(AVG(opponentTTFL)) OVER ()) / AVG(AVG(opponentTTFL)) OVER () AS rel_opp_avg_TTFL'
                       ],
                   group_by='teamTricode', 

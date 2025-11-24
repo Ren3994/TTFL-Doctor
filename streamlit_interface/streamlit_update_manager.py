@@ -42,7 +42,7 @@ def cached_update_injury_report():
     ij_last_update = datetime.now(ZoneInfo("Europe/Paris"))
     return ij_last_update
 
-def update_all_data():
+def update_all_data(force_update=False):
     conn = conn_db()
     
     default_ts = datetime(2000, 1, 1, tzinfo=ZoneInfo("Europe/Paris"))
@@ -52,7 +52,7 @@ def update_all_data():
     ij_updated = ij_prev_update != st.session_state.last_update
     need_to_update = need_to_fetch_new_boxscores()
 
-    if need_to_update:
+    if need_to_update or force_update:
         update_status = st.empty()
         with update_status.container():
             with st.spinner('Téléchargement des matchs...'):
@@ -62,7 +62,7 @@ def update_all_data():
                 cached_generate_plot_row.clear()
         update_status.empty()
     
-    if ij_updated or need_to_update:
+    if ij_updated or need_to_update or force_update:
         update_tables(conn)
         get_joueurs_blesses.clear()
         cached_get_top_TTFL.clear()

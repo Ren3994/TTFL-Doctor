@@ -7,9 +7,10 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.streamlit_update_manager import update_all_data
+from streamlit_interface.classement_TTFL_utils import apply_df_filters
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
-from streamlit_interface.classement_TTFL_utils import apply_df_filters
 
 def on_username_change():
     st.session_state.JDP = JoueursDejaPick()
@@ -61,6 +62,9 @@ def sidebar(page):
                 st.session_state.pop('jdp_df', None)
                 st.session_state.pop('JDP', None)
                 st.rerun()
+            
+            if st.sidebar.button('Force update'):
+                update_all_data(force_update=True)
                 
             if st.sidebar.button("🛑 Quitter"):
                 cleanup_db()
