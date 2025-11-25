@@ -54,10 +54,10 @@ else:
                             color_tooltip_pct=False)
         st.markdown(html_df, unsafe_allow_html=True)
 
-for i in range(int(remaining), -1, -1):
-    pct = (15 - i) / 15
-    progress_bar.progress(value=pct, width=300)
-    progress_text.text(f"MàJ dans {i} secondes")
-    time.sleep(1)
+    for i in range(int(remaining), -1, -1):
+        pct = (15 - i) / 15
+        progress_bar.progress(value=pct, width=300)
+        progress_text.text(f"MàJ dans {i} secondes")
+        time.sleep(1)
 
-st.rerun()
+    st.rerun()
