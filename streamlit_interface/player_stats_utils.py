@@ -44,7 +44,10 @@ def get_all_player_stats():
                            '(AVG(reboundsTotal) * 36 * 60 / AVG(seconds)) AS reb_per36',
                            '(AVG(assists) * 36 * 60 / AVG(seconds)) AS ast_per36',
                            '(AVG(turnovers) * 36 * 60 / AVG(seconds)) AS tov_per36',
-                           'AVG(TTFL) AS TTFL'],
+                           'AVG(TTFL) AS TTFL',
+                           'AVG(TTFL) / (AVG(seconds) / 60) AS ttfl_per_min',
+                           '36 * AVG(TTFL) / (AVG(seconds) / 60) AS ttfl_per_36'
+],
                            group_by=['playerName', 'teamTricode'],
                            order_by='AVG(TTFL) DESC')
     return avg_player_stats

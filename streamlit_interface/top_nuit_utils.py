@@ -16,7 +16,7 @@ def get_top_de_la_nuit(date, name):
     df = run_sql_query(conn,
                     table='boxscores b', 
                     filters=[f"gameDate = '{date}'"], 
-                    select=['b.playerName', 'minutes', 'points', 'pat.avg_TTFL', 'reboundsTotal',
+                    select=['b.playerName', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
                             'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
                             'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
                             'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
@@ -64,11 +64,13 @@ def get_top_de_la_nuit(date, name):
                                ['<span style="text-decoration:overline">TTFL</span> : 0'],
                                '<span style="text-decoration:overline">TTFL</span> : ' + 
                                df['avg_TTFL'].astype(str) + ' (' + df['perf'] + ')')
+    
+    df['ttfl_per_min'] = 'TTFL/min : ' + (df['TTFL'] / (df['seconds'] / 60)).round(1).astype(str)
         
     df = df.drop(columns=['fieldGoalsMade', 
                           'fieldGoalsAttempted', 'threePointersMade', 
                           'threePointersAttempted', 'freeThrowsMade', 
-                          'freeThrowsAttempted', 'win'])
+                          'freeThrowsAttempted', 'win', 'seconds'])
     df.rename(columns={
                 "playerName": "Joueur",
                 "minutes": "Mins",
@@ -105,13 +107,15 @@ def get_top_de_la_nuit(date, name):
                                  'FG3' : 'FG3pct',
                                  'FT' : 'FTpct',
                                  'TTFL' : 'perf_str',
-                                 'Reb' : 'rebSplit'
+                                 'Reb' : 'rebSplit',
+                                 'Mins' : 'ttfl_per_min'
                              },
                              col_header_tooltips=[],
                              image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
+                                                #   'ttfl_per_min' : 'TTFL/min'}
                                                 #   'teamTricode' : 'Équipe', 
                              )
     

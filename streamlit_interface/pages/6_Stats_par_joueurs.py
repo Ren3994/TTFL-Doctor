@@ -34,14 +34,14 @@ use_per36 = st.checkbox("Show per-36 stats", value=False)
 
 # --- Define columns for raw vs per36 stats ---
 raw_stats = [
-    'points', 'assists', 'reboundsTotal', 'turnovers', 'steals', 'blocks', 'stocks',
+    'TTFL', 'ttfl_per_min', 'points', 'assists', 'reboundsTotal', 'turnovers', 'steals', 'blocks', 'stocks',
     'fieldGoalsMade', 'fieldGoalsAttempted', 'threePointersMade', 'threePointersAttempted',
     'freeThrowsMade', 'freeThrowsAttempted', 'fg_pct', 'three_pct', 'ft_pct',
-    'plusMinusPoints', 'EFG', 'TS', 'ast_to_tov', 'TTFL', 'reboundsOffensive', 'reboundsDefensive'
+    'plusMinusPoints', 'EFG', 'TS', 'ast_to_tov', 'reboundsOffensive', 'reboundsDefensive'
 ]
 
 per36_stats = [
-    'pts_per36', 'ast_per36', 'reb_per36', 'tov_per36', 'stl_per36', 'stocks_per36'
+    'pts_per36', 'ast_per36', 'reb_per36', 'tov_per36', 'stl_per36', 'stocks_per36', 'ttfl_per_36'
 ]
 
 default_stats = raw_stats if not use_per36 else per36_stats
@@ -50,7 +50,7 @@ default_stats = raw_stats if not use_per36 else per36_stats
 selected_stats = st.multiselect(
     "Select stats to display",
     options=default_stats,
-    default=default_stats[:8]  # show first 8 by default
+    default=default_stats[:10]  # show first 8 by default
 )
 
 # Always include identifying columns
