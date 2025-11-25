@@ -26,8 +26,9 @@ def sidebar(page):
     st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
     st.sidebar.page_link('pages/2_Historique_des_picks.py', label='2 - Historique des picks')
     st.sidebar.page_link('pages/3_Top_de_la_nuit.py', label='3 - Top de la nuit')
-    st.sidebar.page_link('pages/4_Stats_par_equipes.py', label='4 - Stats par équipes (WIP)')
-    st.sidebar.page_link('pages/5_Stats_par_joueurs.py', label='5 - Stats par joueurs (WIP)')
+    st.sidebar.page_link('pages/4_Scores_TTFL_en_direct.py', label='4 - Scores TTFL en direct (WIP)')
+    st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes (WIP)')
+    st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
