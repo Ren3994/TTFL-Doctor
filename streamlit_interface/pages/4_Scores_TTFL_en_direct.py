@@ -43,7 +43,7 @@ else:
         awayTeam = game_info['awayTeam']
         teams = [awayTeam, homeTeam]
         logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=50) for team in teams]
-        scores = [game_info['homeScore'], game_info['awayScore']]
+        scores = [game_info['awayScore'], game_info['homeScore']]
         st.markdown(f"<div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin-bottom:2rem;margin-top:2rem;'><div>{logos[0]}</div><div style='font-size:20px;text-align:center;font-weight:bold;'>{teams[0]} {scores[0]} - {scores[1]} {teams[1]} </div><div>{logos[1]} </div>{game_info['time']}</div>", unsafe_allow_html=True)
         html_df = df_to_html(live_game, show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                             show_index=False,
