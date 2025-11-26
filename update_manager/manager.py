@@ -9,9 +9,9 @@ from streamlit_interface.streamlit_utils import launch_GUI
 
 def run_TTFL_Doctor():
 
-    if not check_internet_connection():
-        tqdm.write('Pas de connection internet')
-        return
+    # if not check_internet_connection():
+    #     tqdm.write('Pas de connection internet')
+    #     return
 
     # --- Lance le GUI Streamlit
     launch_GUI()

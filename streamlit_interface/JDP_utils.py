@@ -189,7 +189,12 @@ class JoueursDejaPick():
             pass
         return df
 
-def clean_player_names(df, colname, names_list):
+def clean_player_names(df, colname, names_list=None):
+    
+    if names_list is None:
+        conn=conn_db()
+        names_list=run_sql_query(conn, table='boxscores', select='DISTINCT playerName')['playerName'].tolist()
+
     clean_names = []
     for name in df[colname] :
         if name == '':
