@@ -137,7 +137,7 @@ else:
                                            filter_JDP,
                                            filter_inj)
         
-        st.session_state.display_df.loc[
+        st.session_state.topTTFL_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
