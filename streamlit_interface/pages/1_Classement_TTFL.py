@@ -31,7 +31,7 @@ if mobile:
     cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
     col_checkboxes, col_low_games_count = st.columns([1])[0], st.columns([1])[0]
-    games_per_row = 1
+    games_per_row = 2
 else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
     col_prev, col_input, col_next = cols_top[1], cols_top[2], cols_top[3]
