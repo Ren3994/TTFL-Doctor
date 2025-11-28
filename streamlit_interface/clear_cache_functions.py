@@ -32,3 +32,4 @@ def clear_after_JDP_update():
     apply_df_filters.clear()
     get_joueurs_pas_dispo.clear()
     get_top_de_la_nuit.clear()
+    cached_get_top_TTFL.clear()
