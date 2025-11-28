@@ -128,23 +128,18 @@ else:
             st.session_state.plot_calc_stop - 1, 
             'plots'] == IMG_PLUS_DE_GRAPHES).any()):
         
-        if 'plots' not in st.session_state.topTTFL_df.columns: # Si aucun graphe n'existe
+        if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
-            st.session_state.display_df = apply_df_filters(conn,
-                                           st.session_state.selected_date.strftime('%d/%m/%Y'),
-                                           st.session_state.plot_calc_start,
-                                           st.session_state.plot_calc_stop,
-                                           filter_JDP,
-                                           filter_inj)
+            st.session_state.display_df = st.session_state.topTTFL_df.copy()
         
-        st.session_state.topTTFL_df.loc[
+        st.session_state.display_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
         topTTFL_html = df_to_html(st.session_state.display_df)
         table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
-        chunk_size = 5 # On calcule et on ajoute les graphes dans le df original
+        chunk_size = 5 # On calcule et on ajoute les graphes dans le df complet
         for i in range(st.session_state.plot_calc_start, 
                         min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
                         chunk_size):
