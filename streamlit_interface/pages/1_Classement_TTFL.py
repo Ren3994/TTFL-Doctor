@@ -128,7 +128,7 @@ else:
             st.session_state.plot_calc_stop - 1, 
             'plots'] == IMG_PLUS_DE_GRAPHES).any()):
         
-        if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
+        if 'plots' not in st.session_state.topTTFL_df.columns: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
             st.session_state.display_df = apply_df_filters(conn,
                                            st.session_state.selected_date.strftime('%d/%m/%Y'),
