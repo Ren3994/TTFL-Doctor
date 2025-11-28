@@ -130,6 +130,8 @@ else:
         
         if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
+        
+        if 'display_df' not in st.session_state:
             st.session_state.display_df = st.session_state.topTTFL_df.copy()
         
         st.session_state.display_df.loc[
