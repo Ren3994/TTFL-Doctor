@@ -1,7 +1,7 @@
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 import streamlit as st
-import isodate
 import pandas as pd
+import isodate
 import time
 import sys
 import os

@@ -16,7 +16,7 @@ def get_top_de_la_nuit(date, name):
     conn = conn_db()                        
     df = run_sql_query(conn,
                     table='boxscores b', 
-                    filters=[f"gameDate = '{date}'"], 
+                    filters=[f"gameDate = '{date}'", 'seconds > 0'],
                     select=['b.playerName', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
                             'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
                             'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 

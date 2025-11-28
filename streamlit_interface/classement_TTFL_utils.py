@@ -352,37 +352,3 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, f
         filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_blesses)]
     
     return filtered_topTTFL_df
-
-custom_CSS = """
-    <style>
-    /* --- Title styling --- */
-    .date-title {
-        text-align: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: -3rem;
-        margin-top: -3.8rem;
-        margin-left: -2.5rem
-    }
-    /* --- Center text inputs --- */
-    div[data-testid="stTextInput"] {
-        display: flex;
-        justify-content: center;
-    }
-    div[data-testid="stTextInput"] input {
-        text-align: center !important;
-    }
-    </style>
-    """
-
-custom_mobile_CSS = """
-        <style>
-        /* Allow columns to shrink on small screens */
-        @media (max-width: 600px) {
-            .stColumn {
-                flex: 1 !important;
-                min-width: 0 !important;
-            }
-        }
-        </style>
-        """

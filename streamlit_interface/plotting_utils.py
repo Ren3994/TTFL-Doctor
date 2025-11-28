@@ -27,7 +27,13 @@ def generate_all_plots(df, date, parallelize=False):
                 graph_TTFLs = row['graph_TTFLs']
                 graph_wins = row['graph_wins']
                 avgTTFL = float(row['TTFL'].split('±')[0])
-                df.loc[i, 'plots'] = cached_generate_plot_row(date, joueur, graph_dates, graph_opps, graph_TTFLs, graph_wins, avgTTFL)
+                df.loc[i, 'plots'] = cached_generate_plot_row(date, 
+                                                              joueur, 
+                                                              graph_dates, 
+                                                              graph_opps, 
+                                                              graph_TTFLs, 
+                                                              graph_wins, 
+                                                              avgTTFL)
         return df
     
 @st.cache_data(show_spinner=False)

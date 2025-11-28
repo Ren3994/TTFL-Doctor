@@ -51,6 +51,13 @@ def sidebar(page):
 
             with col_accept_username:
                 st.button('Login')
+
+            if st.session_state.get('username', '') != '':
+                st.sidebar.write(f'Utilisateur : {st.session_state.username}')
+                if st.sidebar.button('Se déconnecter'):
+                    st.session_state.pop("username", None)
+                    on_username_change()
+                    st.rerun()
                 
     if st.secrets.environment == 'local':
         if page != 'main':

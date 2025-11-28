@@ -5,10 +5,10 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.classement_TTFL_utils import custom_CSS, st_image_crisp, df_to_html
+from streamlit_interface.streamlit_utils import config, custom_CSS, custom_mobile_CSS
+from streamlit_interface.classement_TTFL_utils import st_image_crisp, df_to_html
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
-from streamlit_interface.streamlit_utils import config, conn_db
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
 
@@ -31,6 +31,7 @@ else:
 
     mobile = st.session_state.get("screen_width", 1000) <= 500
     if mobile:
+        st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
         col_progress = st.columns([1])[0]
         games_per_row = 2
     else:

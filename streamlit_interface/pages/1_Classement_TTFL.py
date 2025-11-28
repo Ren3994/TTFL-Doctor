@@ -4,8 +4,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from streamlit_interface.streamlit_utils import config, custom_error, conn_db, custom_CSS, custom_mobile_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from streamlit_interface.streamlit_utils import config, custom_error, conn_db
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
@@ -130,7 +130,12 @@ else:
         
         if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
-            st.session_state.display_df = st.session_state.topTTFL_df.copy()
+            st.session_state.display_df = apply_df_filters(conn,
+                                           st.session_state.selected_date.strftime('%d/%m/%Y'),
+                                           st.session_state.plot_calc_start,
+                                           st.session_state.plot_calc_stop,
+                                           filter_JDP,
+                                           filter_inj)
         
         st.session_state.display_df.loc[
             st.session_state.plot_calc_start:
@@ -139,7 +144,7 @@ else:
         topTTFL_html = df_to_html(st.session_state.display_df)
         table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
-        chunk_size = 5 # On calcule et on ajoute les graphes dans le df complet
+        chunk_size = 5 # On calcule et on ajoute les graphes dans le df original
         for i in range(st.session_state.plot_calc_start, 
                         min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
                         chunk_size):
