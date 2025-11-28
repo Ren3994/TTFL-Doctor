@@ -43,13 +43,14 @@ def accentuate_pct(text: str) -> str:
 
     return re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
 
-def get_joueurs_pas_dispo(conn, date) :
+@st.cache_data(show_spinner=False)
+def get_joueurs_pas_dispo(_conn, date) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt - timedelta(days=30)
 
     if st.session_state.local_instance:
-        JDP = run_sql_query(conn, table="joueurs_deja_pick")
+        JDP = run_sql_query(_conn, table="joueurs_deja_pick")
         JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
         joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
     else:

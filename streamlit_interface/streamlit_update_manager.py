@@ -7,12 +7,20 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from streamlit_interface.clear_cache_functions import clear_after_db_update, clear_after_injury_update
 from data.sql_functions import run_sql_query, update_tables, get_missing_gameids
-from streamlit_interface.plotting_utils import cached_generate_plot_row
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
 from streamlit_interface.streamlit_utils import conn_db
-from streamlit_interface.classement_TTFL_utils import *
+
+@st.cache_data(show_spinner=False)
+def get_cached_upcoming_games():
+    upcoming_games = run_sql_query(conn=conn_db(), 
+                       table='schedule', 
+                       select='gameDateTimeUTC', 
+                       filters=['gameStatus != 3', 
+                                "gameId LIKE '002%'"])
+    return upcoming_games
 
 def need_to_fetch_new_boxscores():
     conn = conn_db()
@@ -20,11 +28,7 @@ def need_to_fetch_new_boxscores():
     if not df_missing_games.empty:
         return True
     
-    df_upcoming_games = run_sql_query(conn, 
-                       table='schedule', 
-                       select='gameDateTimeUTC', 
-                       filters=['gameStatus != 3', 
-                                "gameId LIKE '002%'"])
+    df_upcoming_games = get_cached_upcoming_games()
     if df_upcoming_games.empty:
         return False
     
@@ -56,14 +60,15 @@ def update_all_data(force_update=False):
         update_status = st.empty()
         with update_status.container():
             with st.spinner('Téléchargement des matchs...'):
+
                 update_nba_data(conn=conn)
-                get_low_game_count.clear()
-                get_deadline.clear()
-                cached_generate_plot_row.clear()
+
+                get_cached_upcoming_games.clear()
+                clear_after_db_update()
+
         update_status.empty()
     
     if ij_updated or need_to_update or force_update:
+
         update_tables(conn)
-        get_joueurs_blesses.clear()
-        cached_get_top_TTFL.clear()
-        apply_df_filters.clear()
+        clear_after_injury_update()

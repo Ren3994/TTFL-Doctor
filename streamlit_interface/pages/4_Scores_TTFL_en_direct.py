@@ -5,12 +5,12 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
-from streamlit_interface.streamlit_utils import config, conn_db
+from streamlit_interface.classement_TTFL_utils import custom_CSS, st_image_crisp, df_to_html
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
-from streamlit_interface.classement_TTFL_utils import *
+from streamlit_interface.streamlit_utils import config, conn_db
 from streamlit_interface.sidebar import sidebar
+from misc.misc import RESIZED_LOGOS_PATH
 
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'

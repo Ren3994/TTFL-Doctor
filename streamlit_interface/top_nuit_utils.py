@@ -11,6 +11,7 @@ from streamlit_interface.streamlit_utils import conn_db
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
+@st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, name):
     conn = conn_db()                        
     df = run_sql_query(conn,

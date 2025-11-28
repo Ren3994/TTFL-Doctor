@@ -12,6 +12,44 @@ from streamlit_interface.streamlit_utils import conn_db, conn_supabase, fetch_su
 from data.sql_functions import run_sql_query
 from misc.misc import NICKNAMES
 
+@st.cache_data(show_spinner=False)
+def get_cached_game_dates_completed():
+    gdc = run_sql_query(conn=conn_db(),
+                        table='schedule', 
+                        select='DISTINCT gameDate',
+                        filters=['gameStatus = 3', 
+                                "gameId LIKE '002%'"])
+    return gdc
+
+@st.cache_data(show_spinner=False)
+def get_cached_scoresTTFL():
+    scores = run_sql_query(
+                    conn=conn_db(),
+                    table="boxscores",
+                    select=['playerName', 'gameDate', 'TTFL'],
+                    filters='seconds > 0'
+        )
+    return scores
+
+@st.cache_data(show_spinner=False)
+def get_cached_avg_TTFL():
+    avg_TTFL = run_sql_query(conn=conn_db(),
+                                table='player_avg_TTFL', 
+                                select=['playerName', 'avg_TTFL'])
+    return avg_TTFL
+
+@st.cache_data(show_spinner=False)
+def get_cached_player_list():
+    player_list = run_sql_query(conn=conn_db(), 
+                                table='boxscores', 
+                                select='DISTINCT playerName')
+    return player_list['playerName'].tolist()
+
+@st.cache_data(show_spinner=False)
+def get_cached_pat():
+    pat = run_sql_query(conn=conn_db(), table='player_avg_TTFL')
+    return pat
+
 class JoueursDejaPick():
     def __init__(self):
         self.conn = conn_db()
@@ -47,11 +85,7 @@ class JoueursDejaPick():
             
     def initJDP(self) -> pd.DataFrame:
         good_df = self.loadJDP()
-        game_dates_completed = run_sql_query(conn=self.conn,
-                                             table='schedule', 
-                                             select='DISTINCT gameDate',
-                                             filters=['gameStatus = 3', 
-                                                      "gameId LIKE '002%'"])
+        game_dates_completed = get_cached_game_dates_completed()
         
         good_df = (game_dates_completed
                    .merge(good_df, 
@@ -100,21 +134,15 @@ class JoueursDejaPick():
                                                 .insert({"username" : username_clean, 
                                                         "picks" : picks})
                                                 .execute())
+                        fetch_supabase_users.clear()
                         self.existing_users = fetch_supabase_users(self.supabase)
 
         df = self.display_cols(df)
         return df
     
     def completeCols(self, df:pd.DataFrame):
-        scoresTTFL = run_sql_query(
-                    conn=self.conn,
-                    table="boxscores",
-                    select=['playerName', 'gameDate', 'TTFL'],
-                    filters='seconds > 0'
-        )
-        avg_TTFL = run_sql_query(conn=self.conn,
-                                 table='player_avg_TTFL', 
-                                 select=['playerName', 'avg_TTFL'])
+        scoresTTFL = get_cached_scoresTTFL()
+        avg_TTFL = get_cached_avg_TTFL()
         
         for col in ['TTFL', 'avg_TTFL', 'gameDate']:
             if col in df.columns:
@@ -192,8 +220,7 @@ class JoueursDejaPick():
 def clean_player_names(df, colname, names_list=None):
     
     if names_list is None:
-        conn=conn_db()
-        names_list=run_sql_query(conn, table='boxscores', select='DISTINCT playerName')['playerName'].tolist()
+        names_list = get_cached_player_list()
 
     clean_names = []
     for name in df[colname] :
@@ -208,8 +235,7 @@ def clean_player_names(df, colname, names_list=None):
 def match_player(input_name, names_list=None):
 
     if names_list is None:
-        conn=conn_db()
-        names_list=run_sql_query(conn, table='boxscores', select='DISTINCT playerName')['playerName'].tolist()
+        names_list = get_cached_player_list()
 
     if input_name in names_list:
         return input_name
@@ -224,19 +250,18 @@ def match_player(input_name, names_list=None):
     if input_upper in splits and len(splits[input_upper]) == 1:
         return splits[input_upper][0]
     if input_upper in abbv_map:
-        conn = conn_db()
-        pat = run_sql_query(conn=conn, table='player_avg_TTFL')
+        pat = get_cached_pat()
         filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
         return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     if input_upper in splits:
-        conn = conn_db()
-        pat = run_sql_query(conn=conn, table='player_avg_TTFL')
+        pat = get_cached_pat()
         filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
         return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     
     match, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
     return match
 
+@st.cache_data(show_spinner=False)
 def generate_dicts(names_list):
     abbreviations = {}
     splits = {}

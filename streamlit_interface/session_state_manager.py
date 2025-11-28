@@ -23,7 +23,6 @@ def init_session_state(page):
         st.session_state.screen_width = st.session_state.get('screen_width', 1366)
     
     if page == 'classement':
-    
         st.session_state.selected_date = st.session_state.get("selected_date", date.today())
 
         st.session_state.date_text = st.session_state.get("date_text",
