@@ -32,10 +32,10 @@ else:
     mobile = st.session_state.get("screen_width", 1000) <= 500
     if mobile:
         col_progress = st.columns([1])[0]
-        games_per_row = 1
+        games_per_row = 2
     else:
         col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
-        games_per_row = 3
+        games_per_row = 4
     with col_progress:
         progress_bar = st.progress(value=0, width=300)
         progress_text = st.empty()
@@ -61,7 +61,7 @@ else:
         away = game["awayTeam"]
         scores = [game["awayScore"], game["homeScore"]]
         logos = [
-            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=40)
+            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30)
             for team in [away, home]
         ]
 
@@ -69,7 +69,7 @@ else:
             f"""
             <div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin:1rem 0;'>
                 <div>{logos[0]}</div>
-                <div style='font-size:16px;font-weight:bold;'>
+                <div style='font-size:16px;'>
                     {away} {scores[0]} - {scores[1]} {home}
                 </div>
                 <div>{logos[1]}</div>
