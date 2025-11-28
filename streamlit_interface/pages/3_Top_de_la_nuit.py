@@ -33,11 +33,12 @@ else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
     col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
+    
 with col_prev:
     st.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
 
 with col_next:
-    st.button("◀️", on_click=next_date_nuit, key='next_button_nuit')
+    st.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 
 with col_date:
     st.text_input(
