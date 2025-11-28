@@ -36,7 +36,7 @@ else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
     col_prev, col_input, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_checkboxes, col_low_games_count = cols_top[0], cols_top[4]
-    games_per_row = 3
+    games_per_row = 4
 
 with col_prev:
     st.button("◀️", on_click=prev_date)
@@ -82,32 +82,33 @@ st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_all
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
-cols_per_game = 3
-total_cols = games_per_row * cols_per_game
+games_tonight = st.empty()
 
 for i in range(0, len(games_for_date), games_per_row):
-    chunk = games_for_date[i : i + games_per_row]
-    cols = st.columns(total_cols)
+    games_tonight_row = st.empty()
+    row_games = games_for_date[i:i + games_per_row]
+    cols = games_tonight_row.columns(games_per_row)
 
-    for j, game in enumerate(chunk):
-        home = game["homeTeam"]
-        away = game["awayTeam"]
+    for col, game in zip(cols, row_games):
+        ha = [game["homeTeam"], game["awayTeam"]]
+        logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30) for team in ha]
 
-        if home == 'TBD' or away == 'TBD':
+        if ha[0] == 'TBD' or ha[1] == 'TBD':
             st.session_state.games_TBD = True
-
-        home_logo_path = os.path.join(RESIZED_LOGOS_PATH, f"{home}.png")
-        away_logo_path = os.path.join(RESIZED_LOGOS_PATH, f"{away}.png")
-
-        base = j * cols_per_game
-        with cols[base]:
-            home_logo = st_image_crisp(home_logo_path, width=30)
-            st.markdown(home_logo, unsafe_allow_html=True)
-        with cols[base + 1]:
-            st.markdown(f"{home} - {away}")
-        with cols[base + 2]:
-            away_logo = st_image_crisp(away_logo_path, width=30)
-            st.markdown(away_logo, unsafe_allow_html=True)
+        
+        with col:
+            st.markdown(
+            f"""
+            <div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin:5px;margin-top:0'>
+                <div>{logos[0]}</div>
+                <div style='font-size:16px;'>
+                    {ha[0]} - {ha[1]}
+                </div>
+                <div>{logos[1]}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)

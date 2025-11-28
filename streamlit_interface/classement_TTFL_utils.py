@@ -317,7 +317,6 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-        st.session_state.text_parse_error = False
         update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
     except ValueError:
         st.session_state.text_parse_error = True
@@ -339,6 +338,7 @@ def update_session_state_df(date):
     st.session_state.plot_calc_start = 0
     st.session_state.plot_calc_stop = 30
     st.session_state.games_TBD = False
+    st.session_state.text_parse_error = False
 
 @st.cache_data(show_spinner=False)
 def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj):

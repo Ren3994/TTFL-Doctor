@@ -15,16 +15,9 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 games_info, live_games, timestamp = get_live_games()
-init_session_state(page=PAGENAME)
+init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
-conn = conn_db()
-
-if 'live_scores_update_timestamp' not in st.session_state:
-    st.session_state.live_scores_update_timestamp = timestamp
-else:
-    if st.session_state.live_scores_update_timestamp != timestamp:
-        st.session_state.live_scores_update_timestamp = timestamp
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -35,13 +28,18 @@ if len(live_games) == 0:
 else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     remaining = max(0, 15 - int(elapsed))
-    
-    col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
+
+    mobile = st.session_state.get("screen_width", 1000) <= 500
+    if mobile:
+        col_progress = st.columns([1])[0]
+        games_per_row = 1
+    else:
+        col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
+        games_per_row = 3
     with col_progress:
         progress_bar = st.progress(value=0, width=300)
         progress_text = st.empty()
 
-    games_per_row = 3
     infoholders = [None] * len(games_info)
     buttonholders = [None] * len(games_info)
     for i in range(0, len(games_info), games_per_row):
@@ -49,7 +47,7 @@ else:
         for j in range(games_per_row):
             idx = i + j
             if idx >= len(games_info):
-                continue
+                break
 
             with cols[j]:
                 infoholders[idx] = st.empty()

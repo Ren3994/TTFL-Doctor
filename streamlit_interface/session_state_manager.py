@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.classement_TTFL_utils import update_session_state_df
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
-def init_session_state(page):
+def init_session_state(page, arg=None):
     if 'local_instance' not in st.session_state:
         env = st.secrets.get("environment", "unknown")
         if env == 'local':
@@ -37,7 +37,7 @@ def init_session_state(page):
         if 'games_TBD' not in st.session_state:
             st.session_state.games_TBD = False
 
-    if page in ['classement', 'top_nuit']:
+    if page in ['classement', 'top_nuit', 'live_scores']:
         if 'scr_key' not in st.session_state:
             st.session_state.scr_key = str(uuid.uuid4())
 
@@ -68,3 +68,10 @@ def init_session_state(page):
 
         if st.session_state.date_text_nuit == "" or not st.session_state.date_text_nuit:
             st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+    
+    if page == 'live_scores':
+        if 'live_scores_update_timestamp' not in st.session_state:
+            st.session_state.live_scores_update_timestamp = arg
+        else:
+            if st.session_state.live_scores_update_timestamp != arg:
+                st.session_state.live_scores_update_timestamp = arg
