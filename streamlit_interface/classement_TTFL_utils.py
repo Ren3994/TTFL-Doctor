@@ -165,7 +165,7 @@ def df_to_html(
     zebra_even_color, zebra_odd_color = "#222222", "#111111"
     shadow_color = "rgba(28,41,54,0.6)"
     highlight_color = "#82471D"
-    best_pick_color = "#FFD900A0"
+    best_pick_color = "#FFD900A0" if len(df) > 1 else "#82471D"
 
     css = f"""
     <style>
