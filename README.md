@@ -9,9 +9,9 @@ Site hébergé sur streamlit community cloud : [TTFL Doctor](https://ttfl-doctor
 ## Pages disponibles : 
 
 ### 1. Classement TTFL du jour 
-Donne le classement des joueurs TTFL jouant ce soir avec des informations sur les blessures et les stats TTFL.
+Donne le classement par moyenne TTFL décroissante de tous les joueurs jouant ce soir avec des informations sur les blessures et des stats TTFL.
 
-<img width="1336" height="994" alt="Classement" src="https://github.com/user-attachments/assets/61937031-4c11-48d3-8ee2-c877bec24cf5" /><br><br>
+<img width="1352" height="720" alt="Classement" src="https://github.com/user-attachments/assets/923abc67-06be-4def-95d7-f802645eb58c" /><br><br>
 
 Cliquer sur les flèches à droite et à gauche de la date, ou simplement rentrer une nouvelle date dans la case permet de naviguer entre les différentes journées de matchs.
 
@@ -32,11 +32,39 @@ Gestion des picks : des rangées sont automatiquement ajoutées pour les soirs o
 
 Les initiales des joueurs (SGA, KAT, ...), juste prénom/nom quand ils sont uniques (Jimmy, Chet, ...), et certains surnoms (Chef, Joker, Spida, ...) devraient aussi fonctionner. Pas besoin de capitaliser. Les fautes d'orthographe ou de frappe devraient aussi pouvoir être ignorées.
 
-<img width="1364" height="739" alt="JDP" src="https://github.com/user-attachments/assets/ec3cc5f5-e094-4cf5-a469-26d0c58a5bbb" /><br><br>
+<img width="1356" height="671" alt="JDP" src="https://github.com/user-attachments/assets/9f03139f-d781-4dca-9474-fac363ecc864" /><br><br>
+
+### 3. Top de la nuit
+
+Donne les scores de tous les joueurs ayant joué lors de la nuit du jour renseigné dans la case. Si les picks sont renseignés dans la page Historique des picks, alors le pick sera surligné et la colonne 'Dispo' montre les joueurs qui auraient pu être pris à la place.
+
+<br><img width="1354" height="703" alt="top nuit" src="https://github.com/user-attachments/assets/5eaab812-2178-4aff-a2fe-470bec9450ee" />
+
+### 4. Scores TTFL en direct
+
+Montre les boxscores classiques en direct (mis à jour toutes les 15s) avec une colonne TTFL. Cliquez sur le bouton d'un match pour afficher le boxscore et recliquez pour le cacher.
+
+<img width="1351" height="744" alt="live boxscores" src="https://github.com/user-attachments/assets/b2fabd28-d5d5-4cd8-bec2-74af8ac160eb" />
+
+### 5. Stats par équipes (en construction)
+
+Donne les stats par équipes (offensive rating, defensive rating, TS%, EFG%, pace, ...) plus différentes stats de TTFL d'équipe (quelles équipes fait les meilleurs scores, quelles équipes sont les meilleurs spots TTFL, ...). 
+
+Cliquer sur les en-têtes des colonnes permet de classer le tableau par ordre croissant/décroissant par rapport à cette colonne.
+
+<img width="1360" height="732" alt="team_stats" src="https://github.com/user-attachments/assets/0bbbc069-bb0b-47b1-83aa-451201368929" />
+
+### 6. Stats par joueurs (en construction)
+
+Donne les stats des joueurs. Classable par colonnes.
+
+<img width="1364" height="757" alt="player_stats" src="https://github.com/user-attachments/assets/9230316f-d507-401a-b428-bfbcd07d6cda" />
 
 ## Installation
 
-App développée avec python 3.13.3
+Vous pouvez juste utiliser l'appli hébergée sur streamlit : ([TTFL Doctor](https://ttfl-doctor.streamlit.app)).
+
+Ou alors cloner le repo et travailler avec une version locale (app développée avec python 3.13.3).
 
 ### Clonage
 ```bash
@@ -50,6 +78,17 @@ pip install -r requirements.txt
 ```
 
 ## Utilisation
+
+### Version en ligne
+
+Il suffit d'accéder au site. Pensez à renseigner vos picks dans la page 'Historique des picks' pour profiter de toutes les fonctionnalités.
+
+### Version locale
+
+Il faudra créer un fichier streamlit_interface/.streamlit/secrets.toml avec dedans :
+```bash
+environment = "local"
+```
 
 Lancer main.py. Le GUI se lancera et les données se mettront à jour. Selon la dernière fois où la base de donnée a été mise à jour, cela peut prendre quelques minutes. En règle générale, cela ne prend que quelques secondes.
 
