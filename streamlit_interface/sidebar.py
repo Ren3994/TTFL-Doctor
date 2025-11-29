@@ -22,23 +22,22 @@ def on_username_change():
     clear_after_JDP_update()
 
 def sidebar(page):
-    
-    st.sidebar.header('Navigation')
-
-    st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
-    st.sidebar.page_link('pages/2_Historique_des_picks.py', label='2 - Historique des picks')
-    st.sidebar.page_link('pages/3_Top_de_la_nuit.py', label='3 - Top de la nuit')
-    st.sidebar.page_link('pages/4_Scores_TTFL_en_direct.py', label='4 - Scores TTFL en direct')
-    st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes (WIP)')
-    st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
-
-    st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
     if page != 'main':
+
+        if st.sidebar.button('Recharger la page'):
+            st.rerun()
+
         if "last_update" in st.session_state:
             st.sidebar.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
         if not st.session_state.local_instance:
+
+            if st.session_state.get('username', '') != '':
+                st.sidebar.write(f'Utilisateur : {st.session_state.username}')
+            else:
+                st.sidebar.write('Pas d\'utilisateur connecté')
+
             col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
                 st.text_input(
@@ -52,12 +51,21 @@ def sidebar(page):
             with col_accept_username:
                 st.button('Login')
 
-            if st.session_state.get('username', '') != '':
-                st.sidebar.write(f'Utilisateur : {st.session_state.username}')
-                if st.sidebar.button('Se déconnecter'):
-                    st.session_state.pop("username", None)
-                    on_username_change()
-                    st.rerun()
+            if st.sidebar.button('Se déconnecter'):
+                st.session_state.pop("username", None)
+                on_username_change()
+                st.rerun()
+
+    st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+    
+    st.sidebar.header('Navigation')
+
+    st.sidebar.page_link('pages/1_Classement_TTFL.py', label='1 - Classement TTFL')
+    st.sidebar.page_link('pages/2_Historique_des_picks.py', label='2 - Historique des picks')
+    st.sidebar.page_link('pages/3_Top_de_la_nuit.py', label='3 - Top de la nuit')
+    st.sidebar.page_link('pages/4_Scores_TTFL_en_direct.py', label='4 - Scores TTFL en direct')
+    st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes (WIP)')
+    st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
                 
     if st.secrets.environment == 'local':
         if page != 'main':
