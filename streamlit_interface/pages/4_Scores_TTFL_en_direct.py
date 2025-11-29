@@ -103,7 +103,7 @@ else:
             html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                             show_index=False,
                                             tooltips={},
-                                            col_header_labels={'Equipe' : 'Équipe'}, 
+                                            col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
                                             col_header_tooltips=[],
                                             image_tooltips=[],
                                             color_tooltip_pct=False)

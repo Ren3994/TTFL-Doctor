@@ -1,6 +1,7 @@
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 import streamlit as st
 import pandas as pd
+import numpy as np
 import isodate
 import time
 import sys
@@ -71,7 +72,9 @@ def get_live_games():
                         fg3a = str(hp['statistics']['threePointersAttempted'])
                         ftm = str(hp['statistics']['freeThrowsMade'])
                         fta = str(hp['statistics']['freeThrowsAttempted'])
-                        pm = hp['statistics']['plusMinusPoints']
+                        pm = np.select([hp['statistics']['plusMinusPoints'] < 0], 
+                                       [str(int(hp['statistics']['plusMinusPoints']))],
+                                       '+' + str(int(hp['statistics']['plusMinusPoints'])))
                         pf = hp['statistics']['foulsPersonal']
                         ttfl = (pts + ast + reb + stl + blk + int(fgm) + int(fg3m) + int(ftm)
                                     - tov - (int(fga)-int(fgm)) - (int(fg3a)-int(fg3m)) - (int(fta)-int(ftm)))
