@@ -33,10 +33,10 @@ else:
     if mobile:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
         col_progress = st.columns([1])[0]
-        games_per_row = 2
+        games_per_row = 1
     else:
         col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
-        games_per_row = 4
+        games_per_row = 3
     with col_progress:
         progress_bar = st.progress(value=0, width=300)
         progress_text = st.empty()
@@ -62,7 +62,7 @@ else:
         away = game["awayTeam"]
         scores = [game["awayScore"], game["homeScore"]]
         logos = [
-            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30)
+            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=50)
             for team in [away, home]
         ]
 
@@ -86,12 +86,14 @@ else:
             else f"Cacher boxscore de {away} - {home}"
         )
 
-        buttonholders[idx].button(
-            btn_text,
-            key=f"btn_{idx}",
-            on_click=lambda k=idx: st.session_state.update(
-                {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]})
-        )
+        with buttonholders[idx].container():
+            col1, colbutton = st.columns([1, 5])
+            with colbutton:
+                st.button(btn_text,
+                    key=f"btn_{idx}",
+                    on_click=lambda k=idx: st.session_state.update(
+                        {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]})
+                )
 
     for idx in range(len(games_info)):
         if st.session_state[f"boxscore_{idx}"]:
