@@ -87,7 +87,10 @@ else:
         )
 
         with buttonholders[idx].container():
-            col1, colbutton = st.columns([1, 5])
+            if mobile:
+                colbutton = st.columns([1])[0]
+            else:
+                col1, colbutton = st.columns([1, 5])
             with colbutton:
                 st.button(btn_text,
                     key=f"btn_{idx}",
