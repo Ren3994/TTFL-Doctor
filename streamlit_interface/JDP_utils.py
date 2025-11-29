@@ -227,7 +227,10 @@ def clean_player_names(df, colname, names_list=None):
         if name == '':
             clean_names.append('')
         else:
-            clean_names.append(match_player(name, names_list))
+            if name[-1] == '*':
+                clean_names.append(f'{match_player(name, names_list)}*')
+            else:
+                clean_names.append(match_player(name, names_list))
     
     df[colname] = clean_names
     return df
