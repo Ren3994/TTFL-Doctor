@@ -1,3 +1,4 @@
+import streamlit as st
 import sys
 import os
 
@@ -22,6 +23,7 @@ def clear_after_db_update():
     get_cached_scoresTTFL.clear()
     get_cached_avg_TTFL.clear()
     get_cached_player_list.clear()
+    st.session_state.calculated = []
 
 def clear_after_injury_update():
     get_joueurs_blesses.clear()

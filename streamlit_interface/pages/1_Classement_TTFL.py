@@ -121,43 +121,33 @@ if st.session_state.topTTFL_df.empty:
         st.subheader(f"Les équipes de des matchs du {st.session_state.selected_date.strftime('%d/%m/%Y')} n'ont pas encore été déterminées")
 
 else:
-    table_placeholder = st.empty()
-    if ('plots' not in st.session_state.topTTFL_df.columns 
-        or (st.session_state.topTTFL_df.loc[
-            st.session_state.plot_calc_start:
-            st.session_state.plot_calc_stop - 1, 
-            'plots'] == IMG_PLUS_DE_GRAPHES).any()):
-        
-        if st.session_state.plot_calc_start == 0: # Si aucun graphe n'existe
-            st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
-        
-        if 'display_df' not in st.session_state:
-            st.session_state.display_df = st.session_state.topTTFL_df.copy()
-        
-        st.session_state.display_df.loc[
-            st.session_state.plot_calc_start:
-            st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
+    tableholder = st.empty()
+    if ('plots' not in st.session_state.topTTFL_df or
+        st.session_state.plot_calc_start != 0):
 
-        topTTFL_html = df_to_html(st.session_state.display_df)
-        table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
+        statusholder = st.empty()
+        with st.spinner('Génération des graphes...'):
+            if st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated:
+                progress = st.progress(0)
+        
+            if st.session_state.plot_calc_start == 0:
+                st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
+                        
+            st.session_state.topTTFL_df.loc[
+                st.session_state.plot_calc_start:
+                st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
-        chunk_size = 5 # On calcule et on ajoute les graphes dans le df complet
-        for i in range(st.session_state.plot_calc_start, 
-                        min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop), 
-                        chunk_size):
-            chunk = st.session_state.topTTFL_df.iloc[i:i+chunk_size]
-            chunk_with_plots = generate_all_plots(chunk, 
-                                                    st.session_state.selected_date.strftime('%d/%m/%Y'),
-                                                    parallelize = False)
-            st.session_state.topTTFL_df.iloc[i:i+chunk_size] = chunk_with_plots
-            
-            # On met à jour les graphes dans le df display
-            plots_to_update = st.session_state.topTTFL_df.set_index('Joueur')['plots']
-            plots_to_update = plots_to_update.groupby(level=0).first()
-            st.session_state.display_df['plots'] = st.session_state.display_df['Joueur'].map(plots_to_update)
+            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+            st.markdown(topTTFL_html, unsafe_allow_html=True)
 
-            topTTFL_html = df_to_html(st.session_state.display_df)
-            table_placeholder.markdown(topTTFL_html, unsafe_allow_html=True)
+            for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
+                st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
+                                                        st.session_state.selected_date.strftime('%d/%m/%Y'))
+                
+                if st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated:
+                    progress.progress((i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start))
+                    
+            statusholder.empty()
 
     st.session_state.display_df = apply_df_filters(conn,
                                            st.session_state.selected_date.strftime('%d/%m/%Y'),
@@ -167,4 +157,5 @@ else:
                                            filter_inj)
     
     display_df_html = df_to_html(st.session_state.display_df)
-    table_placeholder.markdown(display_df_html, unsafe_allow_html=True)
+    tableholder.markdown(display_df_html, unsafe_allow_html=True)
+    st.session_state.calculated.append(st.session_state.selected_date.strftime('%d/%m/%Y'))

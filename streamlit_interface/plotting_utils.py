@@ -18,23 +18,22 @@ from misc.misc import RESIZED_LOGOS_PATH
 def load_logo(path):
     return mpimg.imread(path)
 
-def generate_all_plots(df, date, parallelize=False):
-    if not parallelize:
-        for i, row in df.iterrows():
-                joueur = row['Joueur']
-                graph_dates = row['graph_dates']
-                graph_opps = row['graph_opps']
-                graph_TTFLs = row['graph_TTFLs']
-                graph_wins = row['graph_wins']
-                avgTTFL = float(row['TTFL'].split('±')[0])
-                df.loc[i, 'plots'] = cached_generate_plot_row(date, 
-                                                              joueur, 
-                                                              graph_dates, 
-                                                              graph_opps, 
-                                                              graph_TTFLs, 
-                                                              graph_wins, 
-                                                              avgTTFL)
-        return df
+def generate_all_plots(row_nographs, date, parallelize=False):
+    row = row_nographs.copy()
+    joueur = row['Joueur']
+    graph_dates = row['graph_dates']
+    graph_opps = row['graph_opps']
+    graph_TTFLs = row['graph_TTFLs']
+    graph_wins = row['graph_wins']
+    avgTTFL = float(row['TTFL'].split('±')[0])
+    row['plots'] = cached_generate_plot_row(date, 
+                                            joueur, 
+                                            graph_dates, 
+                                            graph_opps, 
+                                            graph_TTFLs, 
+                                            graph_wins, 
+                                            avgTTFL)
+    return row
     
 @st.cache_data(show_spinner=False)
 def cached_generate_plot_row(requested_date,

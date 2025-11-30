@@ -37,6 +37,9 @@ def init_session_state(page, arg=None):
 
         if 'games_TBD' not in st.session_state:
             st.session_state.games_TBD = False
+        
+        if 'calculated' not in st.session_state:
+            st.session_state.calculated = []
 
     if page in ['classement', 'top_nuit', 'live_scores']:
         if 'scr_key' not in st.session_state:
