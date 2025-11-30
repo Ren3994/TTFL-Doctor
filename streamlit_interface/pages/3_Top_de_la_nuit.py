@@ -29,7 +29,7 @@ if mobile:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
     cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_date, col_next = cols_top[0], cols_top[1], cols_top[2]
-    col_checkbox = st.columns([1])[0]
+    col_toggle = st.columns([1])[0]
     col_search, col_ok, col_clear = st.columns([10, 1, 1], gap="small")
     buttons_per_row = 4
 else:
@@ -56,7 +56,7 @@ with col_date:
         custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
 
 with col_checkbox:
-    st.checkbox('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
+    st.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
 
 update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.session_state.get('search_player_nuit', ''), st.session_state.byteam)
 
