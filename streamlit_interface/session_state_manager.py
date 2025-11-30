@@ -47,6 +47,7 @@ def init_session_state(page, arg=None):
 
         if "screen_width" not in st.session_state:
             width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
+            st.stop()
             if width:
                 st.session_state.screen_width = width
     
