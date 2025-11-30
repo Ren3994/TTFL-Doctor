@@ -5,8 +5,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, custom_CSS, custom_mobile_CSS
-from streamlit_interface.classement_TTFL_utils import st_image_crisp, df_to_html
+from streamlit_interface.streamlit_utils import config, st_image_crisp, custom_CSS, custom_mobile_CSS
+from streamlit_interface.classement_TTFL_utils import df_to_html
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.sidebar import sidebar

@@ -3,12 +3,13 @@ import streamlit as st
 import pandas as pd
 import subprocess
 import sqlite3
+import base64
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH
+from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH, TBD_LOGO_PATH
 
 @st.cache_resource(show_spinner=False)
 def conn_db():
@@ -34,6 +35,19 @@ def config(page):
     page_title="TTFL Doctor",
     page_icon="🏀",
     layout="wide")
+
+@st.cache_data(show_spinner=False)
+def st_image_crisp(path, width=40, raw=False):
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except:
+        with open(TBD_LOGO_PATH, "rb") as f:
+            data=f.read()
+    encoded = base64.b64encode(data).decode()
+    if raw:
+        return encoded
+    return f"""<img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>"""
 
 def custom_error(error_text, fontsize, center_text=True):
     st.markdown(f"""

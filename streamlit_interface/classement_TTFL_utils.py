@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
-import base64
 import sys
 import os
 import re
@@ -165,7 +164,7 @@ def df_to_html(
     zebra_even_color, zebra_odd_color = "#222222", "#111111"
     shadow_color = "rgba(28,41,54,0.6)"
     highlight_color = "#82471D"
-    best_pick_color = "#FFD900A0" if len(df) > 1 else "#82471D"
+    best_pick_color = "#FFD900A0" if len(df) > 30 else "#82471D"
 
     css = f"""
     <style>
@@ -293,17 +292,6 @@ def df_to_html(
         html += "</tr>"
     html += "</tbody></table>"
     return html
-
-@st.cache_data(show_spinner=False)
-def st_image_crisp(path, width=40):
-    try:
-        with open(path, "rb") as f:
-            data = f.read()
-    except:
-        with open(TBD_LOGO_PATH, "rb") as f:
-            data=f.read()
-    encoded = base64.b64encode(data).decode()
-    return f"""<img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>"""
 
 @st.cache_data(show_spinner=False)
 def cached_get_top_TTFL(date):

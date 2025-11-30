@@ -21,6 +21,7 @@ def init_session_state(page, arg=None):
     st.session_state.username = st.session_state.get('username', '')
     if 'screen_width' in st.session_state:
         st.session_state.screen_width = st.session_state.get('screen_width', 1366)
+    st.session_state.byteam = st.session_state.get('byteam', False)
     
     if page == 'classement':
         st.session_state.selected_date = st.session_state.get("selected_date", date.today())

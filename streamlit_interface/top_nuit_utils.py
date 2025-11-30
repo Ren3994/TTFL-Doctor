@@ -12,12 +12,12 @@ from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def get_top_de_la_nuit(date, name):
+def get_top_de_la_nuit(date, name, byteam):
     conn = conn_db()                        
     df = run_sql_query(conn,
                     table='boxscores b', 
                     filters=[f"gameDate = '{date}'", 'seconds > 0'],
-                    select=['b.playerName', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
+                    select=['b.playerName', 'b.teamTricode', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
                             'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
                             'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
                             'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
@@ -36,7 +36,8 @@ def get_top_de_la_nuit(date, name):
         df = df[df['playerName'] == name]
         if df.empty:
             return 'did_not_play'
-    
+        
+    teams = df['teamTricode'].unique()
     df = df.sort_values(by=['TTFL'], ascending=False).reset_index(drop=True)
     df['FG'] = df['fieldGoalsMade'].astype(str) + '/' + df['fieldGoalsAttempted'].astype(str)
     df['FG3'] = df['threePointersMade'].astype(str) + '/' + df['threePointersAttempted'].astype(str)
@@ -93,34 +94,47 @@ def get_top_de_la_nuit(date, name):
     else:
         show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
                                         'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
+    
+    dfs = {}
+    if byteam:
+        for team in teams:
+            dfs[team] = df[df['teamTricode'] == team].reset_index(drop=True)
+    else:
+        dfs['all'] = df
+    
+    html_dfs = {}
+    for team, dfteam in dfs.items():
+        idx_pick = None
+        picks = st.session_state.get('jdp_df', None)
+        if picks is not None and not (picks['Joueur'] == '').all():
+            series = picks.loc[picks['Date du pick'] == date, 'Joueur']
+            pick = series.iloc[0] if not series.empty else None
         
-    picks = st.session_state.get('jdp_df', None)
-    idx_pick = None
-    if picks is not None and not (picks['Joueur'] == '').all():
-        series = picks.loc[picks['Date du pick'] == date, 'Joueur']
-        pick = series.iloc[0] if not series.empty else None
-        if pick is not None and pick != '' and pick in df['Joueur'].tolist():
-            idx_pick = df.index[df['Joueur'] == pick] + 1            
+            if pick is not None and pick != '' and pick in dfteam['Joueur'].tolist():
+                idx_pick = dfteam.index[dfteam['Joueur'] == pick] + 1
    
-    html_df = df_to_html(df, show_cols=show_cols, 
+        html_df = df_to_html(dfteam, show_cols=show_cols, 
                              tooltips={
-                                 'FG' : 'FGpct',
-                                 'FG3' : 'FG3pct',
-                                 'FT' : 'FTpct',
-                                 'TTFL' : 'perf_str',
-                                 'Reb' : 'rebSplit',
-                                 'Mins' : 'ttfl_per_min'
-                             },
+                                        'FG' : 'FGpct',
+                                        'FG3' : 'FG3pct',
+                                        'FT' : 'FTpct',
+                                        'TTFL' : 'perf_str',
+                                        'Reb' : 'rebSplit',
+                                        'Mins' : 'ttfl_per_min'
+                                    },
                              col_header_tooltips=[],
                              image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
-                                                #   'ttfl_per_min' : 'TTFL/min'}
-                                                #   'teamTricode' : 'Équipe', 
                              )
-    
-    return html_df
+            
+        html_dfs[team] = html_df
+        
+    if 'all' in html_dfs.keys():
+        return html_dfs['all']
+    else:
+        return html_dfs
 
 def on_text_change_nuit():
     """Parse text input into a date object."""
@@ -131,7 +145,9 @@ def on_text_change_nuit():
         st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
         st.session_state.text_parse_error_nuit = False
         update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                        st.session_state.get('search_player_nuit', ''))
+                        st.session_state.get('search_player_nuit', ''),
+                        st.session_state.get('byteam', False))
+        clear_boxscore_vars()
     except ValueError:
         st.session_state.text_parse_error_nuit = True
 
@@ -139,16 +155,20 @@ def prev_date_nuit():
     st.session_state.selected_date_nuit -= timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
     update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                    st.session_state.get('search_player_nuit', ''))
+                    st.session_state.get('search_player_nuit', ''),
+                    st.session_state.get('byteam', False))
+    clear_boxscore_vars()
 
 def next_date_nuit():
     st.session_state.selected_date_nuit += timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
     update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                    st.session_state.get('search_player_nuit', ''))
+                    st.session_state.get('search_player_nuit', ''),
+                    st.session_state.get('byteam', False))
+    clear_boxscore_vars()
 
-def update_top_nuit(date, name):
-    st.session_state.top_nuit = get_top_de_la_nuit(date, name)
+def update_top_nuit(date, name, byteam):
+    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam)
 
 def on_search_player_nuit():
     player_name = st.session_state.search_player_nuit
@@ -159,3 +179,8 @@ def on_search_player_nuit():
 
 def clear_search():
     st.session_state.search_player_nuit = ''
+
+def clear_boxscore_vars():
+    for key in list(st.session_state.keys()):
+        if key.startswith('boxscore_nuit_'):
+            st.session_state[key] = False
