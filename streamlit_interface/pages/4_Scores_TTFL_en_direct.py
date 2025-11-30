@@ -1,3 +1,5 @@
+from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
+from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import time
 import sys
@@ -41,17 +43,16 @@ else:
         progress_bar = st.progress(value=0, width=300)
         progress_text = st.empty()
 
-    infoholders = [None] * len(games_info)
     buttonholders = [None] * len(games_info)
     for i in range(0, len(games_info), games_per_row):
         cols = st.columns(games_per_row)
+        vspace()
         for j in range(games_per_row):
             idx = i + j
             if idx >= len(games_info):
                 break
 
             with cols[j]:
-                infoholders[idx] = st.empty()
                 buttonholders[idx] = st.empty()
 
     tableholders = [st.empty() for _ in games_info]
@@ -62,36 +63,36 @@ else:
         away = game["awayTeam"]
         scores = [game["awayScore"], game["homeScore"]]
         logos = [
-            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=50)
+            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True)
             for team in [away, home]
         ]
 
-        infoholders[idx].markdown(
-            f"""
-            <div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin:1rem 0;'>
-                <div>{logos[0]}</div>
-                <div style='font-size:16px;'>
-                    {away} {scores[0]} - {scores[1]} {home}
-                </div>
-                <div>{logos[1]}</div>
-                <div>{game["time"]}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
         btn_text = (
-            f"Montrer boxscore de {away} - {home}"
-            if not st.session_state[f"boxscore_{idx}"]
-            else f"Cacher boxscore de {away} - {home}"
+            f'![icon](data:image/png;base64,{logos[0]})'
+            f'&nbsp;&nbsp;&nbsp;{away} {scores[0]} - {scores[1]} {home}&nbsp;&nbsp;&nbsp;'
+            f'![icon](data:image/png;base64,{logos[1]})'
+            f'&nbsp;&nbsp;&nbsp;({game["time"]})'
         )
 
         with buttonholders[idx].container():
-            if mobile:
-                colbutton = st.columns([1])[0]
-            else:
-                col1, colbutton = st.columns([1, 5])
-            with colbutton:
+            selected_color = "#202A4E"
+            hover_color = "#2E385C"
+            default_hover_color = '#262831'
+            button_css = f"""
+                    div.stButton button:hover {{
+                        background-color: {default_hover_color};
+                    }}
+                """
+            if st.session_state[f"boxscore_{idx}"]:
+                button_css = f"""
+                    div.stButton button {{
+                        background-color: {selected_color};
+                    }}
+                    div.stButton button:hover {{
+                        background-color: {hover_color};
+                    }}
+                """
+            with sc(f"custom_button_css_{idx}",  css_styles=button_css):
                 st.button(btn_text,
                     key=f"btn_{idx}",
                     on_click=lambda k=idx: st.session_state.update(
