@@ -28,7 +28,8 @@ st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allo
 mobile = st.session_state.get("screen_width", 1000) <= 500
 if mobile:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
-    cols_top = st.columns([1, 5, 1], gap="small")
+    with st.container(horizontal=True, horizontal_alignment=True):
+        cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
     col_checkboxes, col_low_games_count = st.columns([1])[0], st.columns([1])[0]
     games_per_row = 2
