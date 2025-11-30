@@ -36,7 +36,7 @@ else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
     col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
-    col_checkbox = cols_top[0]
+    col_toggle = cols_top[0]
     buttons_per_row = 12
     
 with col_prev:
@@ -55,7 +55,7 @@ with col_date:
     if st.session_state.get("text_parse_error_nuit", False):
         custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
 
-with col_checkbox:
+with col_toggle:
     st.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
 
 update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.session_state.get('search_player_nuit', ''), st.session_state.byteam)
