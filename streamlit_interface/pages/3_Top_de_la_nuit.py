@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, custom_error, st_image_crisp, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import config, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.top_nuit_utils import *
@@ -37,7 +37,7 @@ else:
     col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
     col_toggle = cols_top[0]
-    buttons_per_row = 12
+    buttons_per_row = 8
     
 with col_prev:
     st.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
@@ -88,27 +88,12 @@ else:
                     st.session_state.setdefault(f"boxscore_nuit_{team}", False)
                     if i < len(st.session_state.top_nuit):
                         with col:
-                            selected_color = "#202A4E"
-                            hover_color = "#2E385C"
-                            default_hover_color = '#262831'
-                            button_css = f"""
-                                    div.stButton button:hover {{
-                                        background-color: {default_hover_color};
-                                    }}
-                                """
-                            if st.session_state[f'boxscore_nuit_{team}']:
-                                button_css = f"""
-                                    div.stButton button {{
-                                        background-color: {selected_color};
-                                    }}
-                                    div.stButton button:hover {{
-                                        background-color: {hover_color};
-                                    }}
-                                """
-                            with sc(f"custom_button_css_{team}",  css_styles=button_css):
+                            with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
+                                st.session_state[f'boxscore_nuit_{team}']
+                            )):
                                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
                                         on_click=lambda k=team: st.session_state.update(
-                                        {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}), width=60)
+                                        {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}))
                                 
             for team, top in st.session_state.top_nuit.items():
                 if st.session_state[f'boxscore_nuit_{team}']:

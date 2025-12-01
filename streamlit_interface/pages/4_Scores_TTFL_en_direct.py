@@ -7,7 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, st_image_crisp, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import config, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.classement_TTFL_utils import df_to_html
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
@@ -80,24 +80,9 @@ else:
         )
 
         with buttonholders[idx].container():
-            selected_color = "#202A4E"
-            hover_color = "#2E385C"
-            default_hover_color = '#262831'
-            button_css = f"""
-                    div.stButton button:hover {{
-                        background-color: {default_hover_color};
-                    }}
-                """
-            if st.session_state[f"boxscore_{idx}"]:
-                button_css = f"""
-                    div.stButton button {{
-                        background-color: {selected_color};
-                    }}
-                    div.stButton button:hover {{
-                        background-color: {hover_color};
-                    }}
-                """
-            with sc(f"custom_button_css_{idx}",  css_styles=button_css):
+            with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
+                st.session_state[f"boxscore_{idx}"])
+            ):
                 st.button(btn_text,
                     key=f"btn_{idx}",
                     on_click=lambda k=idx: st.session_state.update(

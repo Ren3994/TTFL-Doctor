@@ -74,6 +74,29 @@ def SEO():
     """
     st.markdown(SEO_text, unsafe_allow_html=True)
 
+def custom_button_css(selected, fontsize=22):
+    bkg_color = "#565763" if selected else '#131720'
+    hover_color = "#70727B" if selected else '#262831'
+    fontsize = f'{fontsize}px'
+    text_color = "#FFFFFF"
+    button_css = [f"""
+        div.stButton button {{
+            background-color: {bkg_color};
+        }}""", f"""
+        div.stButton > button > div > p {{
+            font-size: {fontsize} !important;
+            color: {text_color} !important;
+        }}""", f"""
+        div.stButton > button > div > p > img {{
+            width: 50px !important;
+            height: 50px !important;
+        }}""", f"""
+        div.stButton button:hover {{
+            background-color: {hover_color};
+        }}
+    """]
+    return button_css
+
 custom_CSS = """
     <style>
     /* --- Title styling --- */

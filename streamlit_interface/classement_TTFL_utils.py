@@ -332,7 +332,7 @@ def update_session_state_df(date):
     st.session_state.text_parse_error = False
 
 @st.cache_data(show_spinner=False)
-def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj):
+def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
     joueurs_pas_dispo = get_joueurs_pas_dispo(_conn, date)
     joueurs_blesses = get_joueurs_blesses(_conn)
 
@@ -342,4 +342,12 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, f
     if filter_inj:
         filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_blesses)]
     
+    if len(selected_games) > 0:
+        selected_teams = []
+        for matchup in selected_games:
+            selected_teams.append(matchup.split('-')[0])
+            selected_teams.append(matchup.split('-')[1])
+
+        filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['Lieu'].isin(selected_teams)]
+
     return filtered_topTTFL_df

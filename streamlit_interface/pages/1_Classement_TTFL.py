@@ -1,10 +1,12 @@
+from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
+from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, custom_error, conn_db, st_image_crisp, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import config, custom_error, conn_db, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
@@ -86,29 +88,34 @@ games_tonight = st.empty()
 
 for i in range(0, len(games_for_date), games_per_row):
     games_tonight_row = st.empty()
+    vspace()
     row_games = games_for_date[i:i + games_per_row]
     cols = games_tonight_row.columns(games_per_row)
 
     for col, game in zip(cols, row_games):
         ha = [game["homeTeam"], game["awayTeam"]]
-        logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30) for team in ha]
+        idx = f'{ha[0]}-{ha[1]}'
+        st.session_state.setdefault(f"classement_{idx}", False)
+        
+        logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True) for team in ha]
 
         if ha[0] == 'TBD' or ha[1] == 'TBD':
             st.session_state.games_TBD = True
         
         with col:
-            st.markdown(
-            f"""
-            <div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin:5px;margin-top:0'>
-                <div>{logos[0]}</div>
-                <div style='font-size:16px;'>
-                    {ha[0]} - {ha[1]}
-                </div>
-                <div>{logos[1]}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+            btn_text = (
+                f'![icon](data:image/png;base64,{logos[0]})'
+                f'{ha[0]} - {ha[1]}'
+                f'![icon](data:image/png;base64,{logos[1]})'
+            )
+            with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
+                st.session_state[f"classement_{idx}"])
+            ):
+                st.button(btn_text,
+                    key=f"btn_{idx}",
+                    on_click=lambda k=idx: st.session_state.update(
+                        {f"classement_{k}": not st.session_state[f"classement_{k}"]})
+                )
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
@@ -155,12 +162,20 @@ else:
 
     statusholder.empty()
     tableholder.empty()
+
+    selected_games = []
+    for key in list(st.session_state.keys()):
+        if key.startswith('classement_'):
+            if st.session_state[key]:
+                selected_games.append(key[11:])
+
     st.session_state.display_df = apply_df_filters(conn,
                                            st.session_state.selected_date.strftime('%d/%m/%Y'),
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,
                                            filter_JDP,
-                                           filter_inj)
+                                           filter_inj,
+                                           selected_games)
     
     display_df_html = df_to_html(st.session_state.display_df)
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
