@@ -85,3 +85,6 @@ def init_session_state(page, arg=None):
         else:
             if st.session_state.live_scores_update_timestamp != arg:
                 st.session_state.live_scores_update_timestamp = arg
+        
+        if 'progress_pct' not in st.session_state:
+            st.session_state.progress_pct = 0

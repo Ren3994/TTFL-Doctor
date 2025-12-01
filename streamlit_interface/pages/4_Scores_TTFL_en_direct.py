@@ -16,6 +16,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
+REFRESH_RATE, TTL = 30, 15
 games_info, live_games, timestamp = get_live_games()
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
@@ -29,7 +30,8 @@ if len(live_games) == 0:
     st.subheader('Aucun match en cours.')
 else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
-    remaining = max(0, 15 - int(elapsed))
+    real_start_pct = min(1, elapsed / TTL)
+    start_pct = max(real_start_pct, st.session_state.progress_pct)
 
     mobile = st.session_state.get("mobile_layout", False)
     if mobile != st.session_state.mobile_layout:
@@ -43,7 +45,7 @@ else:
         col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
         games_per_row = 3
     with col_progress:
-        progress_bar = st.progress(value=0, width=300)
+        progress_bar = st.progress(value=start_pct, width=300)
         progress_text = st.empty()
 
     buttonholders = [None] * len(games_info)
@@ -115,13 +117,12 @@ else:
         else:
             tableholders[idx].empty()
     
-    refresh_rate = 30
-    total_steps = int(remaining * refresh_rate)
-    for i in range(total_steps, -1, -1):
-        pct = (total_steps - i) / total_steps
+    total_steps = int(TTL * REFRESH_RATE)
+    for step in range(int(start_pct * total_steps), total_steps + 1):
+        pct = step / total_steps
         progress_bar.progress(value=pct, width=300)
-        seconds_remaining = i / refresh_rate
+        seconds_remaining = max(0, TTL - (pct * TTL))
         progress_text.text(f"MàJ dans {seconds_remaining:.0f}s")
-        time.sleep(1 / refresh_rate)
+        time.sleep(1 / REFRESH_RATE)
         
     st.rerun()
