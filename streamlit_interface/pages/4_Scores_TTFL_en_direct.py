@@ -31,7 +31,10 @@ else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     remaining = max(0, 15 - int(elapsed))
 
-    mobile = st.session_state.get("screen_width", 1000) <= 500
+    mobile = st.session_state.get("mobile_layout", False)
+    if mobile != st.session_state.mobile_layout:
+        st.session_state.mobile_layout = mobile
+        st.rerun()
     if mobile:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
         col_progress = st.columns([1])[0]

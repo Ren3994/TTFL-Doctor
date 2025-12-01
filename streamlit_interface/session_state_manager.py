@@ -45,12 +45,17 @@ def init_session_state(page, arg=None):
         if 'scr_key' not in st.session_state:
             st.session_state.scr_key = str(uuid.uuid4())
 
-        if "screen_width" not in st.session_state:
+        if "screen_width" not in st.session_state or st.session_state.get('screen_width', 1000) == 1000:
             width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
-            st.stop()
             if width:
                 st.session_state.screen_width = width
     
+        if 'layout' not in st.session_state and st.session_state.get('screen_width', 1000) != 1000:
+            if st.session_state.screen_width < 500:
+                st.session_state.mobile_layout = True
+            else:
+                st.session_state.mobile_layout = False
+
     if page in ['JDP', 'top_nuit']:
         if "JDP" not in st.session_state:
             st.session_state.JDP = JoueursDejaPick()
