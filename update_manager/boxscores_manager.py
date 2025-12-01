@@ -123,7 +123,7 @@ def clean_boxscores(df):
         'freeThrowsMade', 'freeThrowsAttempted', 'plusMinusPoints', 'TTFL',
         'teamPoints', 'opponentPoints', 'win', 'teamTTFL', 'opponentTTFL',
         'homeTeam', 'visitorTeam', 'seconds', 'gameDate',
-        'reboundsOffensive', 'reboundsDefensive'
+        'reboundsOffensive', 'reboundsDefensive', 'position'
     ]    
     cols_to_remap = ['opponent', 'homeTeam', 'visitorTeam']
     
@@ -137,5 +137,7 @@ def clean_boxscores(df):
     df_clean = df[cols_to_keep].copy()
     df_clean[cols_to_remap] = df_clean[cols_to_remap].replace(NAME2TRICODE)
     df_clean.loc[:, int_cols] = df_clean[int_cols].astype(int)
+    df_clean['position'] = df_clean['position'].apply(normalize_position)
+    df_clean.rename(columns={'position' : 'position_boxscores'}, inplace=True)
     
     return df_clean

@@ -165,10 +165,53 @@ def check_boxscores_integrity(conn):
     check_boxscores_null_games(conn)
     remove_duplicates_from_boxscores(conn)
 
+def add_missing_pos_to_rosters(conn):
+    conn.execute("""
+    UPDATE rosters
+    SET position = (
+        SELECT new_position FROM (
+            SELECT 
+                b.playerName,
+                CASE 
+                    WHEN COUNT(DISTINCT NULLIF(b.position_boxscores, '')) = 0 THEN '?'
+                    WHEN COUNT(DISTINCT NULLIF(b.position_boxscores, '')) = 1 THEN MAX(NULLIF(b.position_boxscores, ''))
+                    ELSE REPLACE(
+                        GROUP_CONCAT(DISTINCT NULLIF(b.position_boxscores, '')),
+                        ',', '-'
+                    )
+                END AS new_position
+            FROM boxscores b
+            GROUP BY b.playerName
+        ) AS bps
+        WHERE bps.playerName = rosters.playerName
+    )
+    WHERE position IS NULL
+    AND EXISTS (
+        SELECT 1 FROM (
+            SELECT 
+                b.playerName,
+                CASE 
+                    WHEN COUNT(DISTINCT NULLIF(b.position_boxscores, '')) = 0 THEN '?'
+                    WHEN COUNT(DISTINCT NULLIF(b.position_boxscores, '')) = 1 THEN MAX(NULLIF(b.position_boxscores, ''))
+                    ELSE REPLACE(
+                        GROUP_CONCAT(DISTINCT NULLIF(b.position_boxscores, '')),
+                        ',', '-'
+                    )
+                END AS new_position
+            FROM boxscores b
+            GROUP BY b.playerName
+        ) AS bps
+        WHERE bps.playerName = rosters.playerName
+            AND bps.new_position IS NOT NULL
+    )
+    """)
+    conn.commit()
+
 def update_tables(conn, progress=None):
 
     conn.execute("PRAGMA journal_mode = WAL;")
 
+    add_missing_pos_to_rosters(conn)
     update_helper_tables(conn)
     update_home_away_rel_TTFL(conn)
     update_avg_TTFL_per_pos(conn)
@@ -220,11 +263,13 @@ def update_avg_TTFL_per_pos(conn):
     WITH
         -- Expand composite positions so each player can count for G, F and/or C
         position_expansion AS (
-            SELECT playerName, 'G' AS pos FROM player_positions WHERE position LIKE '%G%'
+            SELECT playerName, 'G' AS pos FROM rosters WHERE position LIKE '%G%'
             UNION ALL
-            SELECT playerName, 'F' AS pos FROM player_positions WHERE position LIKE '%F%'
+            SELECT playerName, 'F' AS pos FROM rosters WHERE position LIKE '%F%'
             UNION ALL
-            SELECT playerName, 'C' AS pos FROM player_positions WHERE position LIKE '%C%'
+            SELECT playerName, 'C' AS pos FROM rosters WHERE position LIKE '%C%'
+            UNION ALL
+            SELECT playerName, '?' AS pos FROM rosters WHERE position = '?'
         ),
         boxscores_exp_pos AS (
         SELECT
@@ -248,11 +293,13 @@ def update_avg_TTFL_per_pos_per_opp(conn):
     WITH
         -- Expand composite positions so each player can count for G, F and/or C
         position_expansion AS (
-            SELECT playerName, 'G' AS pos FROM player_positions WHERE position LIKE '%G%'
+            SELECT playerName, 'G' AS pos FROM rosters WHERE position LIKE '%G%'
             UNION ALL
-            SELECT playerName, 'F' AS pos FROM player_positions WHERE position LIKE '%F%'
+            SELECT playerName, 'F' AS pos FROM rosters WHERE position LIKE '%F%'
             UNION ALL
-            SELECT playerName, 'C' AS pos FROM player_positions WHERE position LIKE '%C%'
+            SELECT playerName, 'C' AS pos FROM rosters WHERE position LIKE '%C%'
+            UNION ALL
+            SELECT playerName, '?' AS pos FROM rosters WHERE position = '?'
         ),
         boxscores_exp_pos AS (
         SELECT
@@ -418,11 +465,13 @@ def update_opp_pos_avg_per_game(conn):
     WITH
     -- Expand composite positions so each player can count for G, F and/or C
     position_expansion AS (
-        SELECT playerName, 'G' AS pos FROM player_positions WHERE position LIKE '%G%'
+        SELECT playerName, 'G' AS pos FROM rosters WHERE position LIKE '%G%'
         UNION ALL
-        SELECT playerName, 'F' AS pos FROM player_positions WHERE position LIKE '%F%'
+        SELECT playerName, 'F' AS pos FROM rosters WHERE position LIKE '%F%'
         UNION ALL
-        SELECT playerName, 'C' AS pos FROM player_positions WHERE position LIKE '%C%'
+        SELECT playerName, 'C' AS pos FROM rosters WHERE position LIKE '%C%'
+        UNION ALL
+        SELECT playerName, '?' AS pos FROM rosters WHERE position = '?'
     ),
     boxscores_exp_pos AS (
     SELECT
@@ -488,11 +537,13 @@ def topTTFL_query(conn, game_date):
     --   Luka Doncic  |   G
     --   Luka Doncic  |   F
 
-    SELECT playerName, 'G' AS pos FROM player_positions WHERE position LIKE '%G%'
+    SELECT playerName, 'G' AS pos FROM rosters WHERE position LIKE '%G%'
     UNION ALL
-    SELECT playerName, 'F' AS pos FROM player_positions WHERE position LIKE '%F%'
+    SELECT playerName, 'F' AS pos FROM rosters WHERE position LIKE '%F%'
     UNION ALL
-    SELECT playerName, 'C' AS pos FROM player_positions WHERE position LIKE '%C%'
+    SELECT playerName, 'C' AS pos FROM rosters WHERE position LIKE '%C%'
+    UNION ALL
+    SELECT playerName, '?' AS pos FROM rosters WHERE position = '?'
     ),
 
     home_players AS (
@@ -1046,3 +1097,8 @@ def get_games_for_date(conn, game_date_str):
     df_unique = df_unique.drop(columns=["pair_key"])
 
     return df_unique
+
+if __name__ == '__main__':
+    from misc.misc import DB_PATH
+    with sqlite3.connect(DB_PATH) as conn:
+        check_pos_table_exists(conn)

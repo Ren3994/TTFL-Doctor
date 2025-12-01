@@ -122,6 +122,7 @@ if st.session_state.topTTFL_df.empty:
 
 else:
     tableholder = st.empty()
+    statusholder = st.empty()
     if ('plots' not in st.session_state.topTTFL_df or
         st.session_state.plot_calc_start != 0 or
         (st.session_state.topTTFL_df.loc[
@@ -129,10 +130,9 @@ else:
             st.session_state.plot_calc_stop - 1,
             'plots'] == IMG_CHARGEMENT).any()
         ):
-
-        statusholder = st.empty()
         with st.spinner('Génération des graphes...'):
-            if st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated:
+            if (st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated or
+                st.session_state.plot_calc_start != 0):
                 progress = statusholder.progress(0)
         
             if st.session_state.plot_calc_start == 0:
@@ -149,11 +149,12 @@ else:
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
                                                         st.session_state.selected_date.strftime('%d/%m/%Y'))
                 
-                if st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated:
+                if (st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated or
+                    st.session_state.plot_calc_start != 0):
                     progress.progress((i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start))
 
-            statusholder.empty()
-
+    statusholder.empty()
+    tableholder.empty()
     st.session_state.display_df = apply_df_filters(conn,
                                            st.session_state.selected_date.strftime('%d/%m/%Y'),
                                            st.session_state.plot_calc_start,
