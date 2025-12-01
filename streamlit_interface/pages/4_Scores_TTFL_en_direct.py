@@ -34,7 +34,7 @@ else:
     start_pct = max(real_start_pct, st.session_state.progress_pct)
 
     mobile = st.session_state.get("mobile_layout", False)
-    if mobile != st.session_state.mobile_layout:
+    if mobile != st.session_state.get("mobile_layout", False):
         st.session_state.mobile_layout = mobile
         st.rerun()
     if mobile:
