@@ -151,7 +151,7 @@ else:
                 
                 if (st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):
-                    progress.progress((i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start))
+                    progress.progress(min(1, (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
 
     statusholder.empty()
     tableholder.empty()
