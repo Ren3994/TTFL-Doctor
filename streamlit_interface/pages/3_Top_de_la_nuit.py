@@ -89,8 +89,7 @@ else:
                     if i < len(st.session_state.top_nuit):
                         with col:
                             with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
-                                st.session_state[f'boxscore_nuit_{team}']
-                            )):
+                                st.session_state[f'boxscore_nuit_{team}'])):
                                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
                                         on_click=lambda k=team: st.session_state.update(
                                         {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}))

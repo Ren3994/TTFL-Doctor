@@ -330,6 +330,7 @@ def update_session_state_df(date):
     st.session_state.plot_calc_stop = 30
     st.session_state.games_TBD = False
     st.session_state.text_parse_error = False
+    clear_classement_vars()
 
 @st.cache_data(show_spinner=False)
 def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
@@ -351,3 +352,8 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, f
         filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['Lieu'].isin(selected_teams)]
 
     return filtered_topTTFL_df
+
+def clear_classement_vars():
+    for key in list(st.session_state.keys()):
+        if key.startswith('classement_'):
+            st.session_state.pop(key, None)
