@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
-from misc.misc import TBD_LOGO_PATH
+from misc.misc import FRENCHIES
 
 def accentuate_pct(text: str) -> str:
     def color_for_value(value: float) -> str:
@@ -156,7 +156,8 @@ def df_to_html(
     center_table=True,
     color_tooltip_pct=True,
     highlight_index=None,
-    col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'}
+    col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
+    highlight_frenchies=True
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
     
@@ -269,6 +270,8 @@ def df_to_html(
             html += f"<td>{i}</td>"
         for col in show_cols:
             cell_value = getattr(row, col)
+            if highlight_frenchies and cell_value in FRENCHIES:
+                cell_value = f"{cell_value} &nbsp;🇫🇷"
 
             if image_tooltips and col in image_tooltips:
                 img_col = image_tooltips[col]
