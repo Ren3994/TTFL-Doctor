@@ -133,7 +133,7 @@ else:
         statusholder = st.empty()
         with st.spinner('Génération des graphes...'):
             if st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated:
-                progress = st.progress(0)
+                progress = statusholder.progress(0)
         
             if st.session_state.plot_calc_start == 0:
                 st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
