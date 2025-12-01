@@ -92,7 +92,8 @@ else:
                                 st.session_state[f'boxscore_nuit_{team}'])):
                                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
                                         on_click=lambda k=team: st.session_state.update(
-                                        {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}))
+                                        {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}),
+                                        width=80)
                                 
             for team, top in st.session_state.top_nuit.items():
                 if st.session_state[f'boxscore_nuit_{team}']:

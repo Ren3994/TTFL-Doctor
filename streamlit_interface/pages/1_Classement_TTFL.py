@@ -34,11 +34,13 @@ if mobile:
     col_prev, col_input, col_next = cols_top[0], cols_top[1], cols_top[2]
     col_checkboxes, col_low_games_count = st.columns([1])[0], st.columns([1])[0]
     games_per_row = 2
+    button_fontsize = 16
 else:
     cols_top = st.columns([4, 0.7, 1.5, 0.7, 5], gap="small")
     col_prev, col_input, col_next = cols_top[1], cols_top[2], cols_top[3]
     col_checkboxes, col_low_games_count = cols_top[0], cols_top[4]
     games_per_row = 4
+    button_fontsize = 18
 
 with col_prev:
     st.button("◀️", on_click=prev_date)
@@ -109,8 +111,7 @@ for i in range(0, len(games_for_date), games_per_row):
                 f'![icon](data:image/png;base64,{logos[1]})'
             )
             with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
-                st.session_state[f"classement_{idx}"])
-            ):
+                st.session_state[f"classement_{idx}"], fontsize=button_fontsize)):
                 st.button(btn_text,
                     key=f"btn_{idx}",
                     on_click=lambda k=idx: st.session_state.update(
