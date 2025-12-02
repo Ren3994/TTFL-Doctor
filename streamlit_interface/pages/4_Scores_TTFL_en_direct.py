@@ -17,7 +17,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
-games_info, live_games, timestamp = get_live_games()
+upcoming_games, games_info, live_games, timestamp = get_live_games()
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
@@ -25,6 +25,42 @@ config(page=PAGENAME)
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Scores TTFL en direct</div>', unsafe_allow_html=True)
+mobile = st.session_state.get("mobile_layout", False)
+if mobile != st.session_state.get("mobile_layout", False):
+    st.session_state.mobile_layout = mobile
+    st.rerun()
+if mobile:
+    upcoming_games_per_row = 1
+else:
+    upcoming_games_per_row = 3
+
+if len(upcoming_games) > 0:
+    st.subheader('Matchs à venir :')
+    for i in range(0, len(upcoming_games), upcoming_games_per_row):
+        cols = st.columns(upcoming_games_per_row)
+        for j in range(upcoming_games_per_row):
+            idx = i + j
+            if idx >= len(upcoming_games):
+                break
+            upcoming_game = upcoming_games[idx]
+            ha = [upcoming_game['homeTeam'], upcoming_game['awayTeam']]
+            gameTime = upcoming_game['gameTimeParis']
+            logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30)
+                    for team in ha]
+
+            with cols[j]:
+                st.markdown(f"""
+                    <div style='display:flex;justify-content:center;align-items:center;gap:1rem;margin:5px;margin-top:0'>
+                        <div>{logos[0]}</div>
+                        <div style='font-size:16px;'>
+                            {ha[0]} - {ha[1]}
+                        </div>
+                        <div>{logos[1]}</div>
+                        <div>{gameTime}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+    
+    vspace(2)
 
 if len(live_games) == 0:
     st.subheader('Aucun match en cours.')
@@ -32,20 +68,22 @@ else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     real_start_pct = min(1, elapsed / TTL)
     start_pct = max(real_start_pct, st.session_state.progress_pct)
-
-    mobile = st.session_state.get("mobile_layout", False)
-    if mobile != st.session_state.get("mobile_layout", False):
-        st.session_state.mobile_layout = mobile
-        st.rerun()
     if mobile:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
-        col_progress = st.columns([1])[0]
+        col_subheader, col_progress, col_progress_text = (st.columns([1])[0], 
+                                                          st.columns([1])[0], 
+                                                          st.columns([1])[0])
         games_per_row = 1
     else:
-        col_spacer1, col_progress, col_spacer2 = st.columns([2, 3, 1])
+        col_subheader, col_progress_text, col_progress = st.columns([4, 2, 5], gap='small')
         games_per_row = 3
+    with col_subheader:
+        st.subheader('Matchs en cours :')
+    col_progress.space('small')
     with col_progress:
         progress_bar = st.progress(value=start_pct, width=300)
+    col_progress_text.space('small')
+    with col_progress_text:
         progress_text = st.empty()
 
     buttonholders = [None] * len(games_info)
@@ -74,9 +112,9 @@ else:
 
         btn_text = (
             f'![icon](data:image/png;base64,{logos[0]})'
-            f'&nbsp;&nbsp;&nbsp;{away} {scores[0]} - {scores[1]} {home}&nbsp;&nbsp;&nbsp;'
+            f'{away} {scores[0]} - {scores[1]} {home}'
             f'![icon](data:image/png;base64,{logos[1]})'
-            f'&nbsp;&nbsp;&nbsp;({game["time"]})'
+            f'({game["time"]})'
         )
 
         with buttonholders[idx].container():
@@ -86,7 +124,8 @@ else:
                 st.button(btn_text,
                     key=f"btn_{idx}",
                     on_click=lambda k=idx: st.session_state.update(
-                        {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]})
+                        {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
+                    width=245
                 )
 
     for idx in range(len(games_info)):

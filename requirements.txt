@@ -149,7 +149,7 @@ st-annotated-text==4.0.2
 st-theme==1.2.3
 stack-data==0.6.3
 storage3==2.24.0
-streamlit==1.50.0
+streamlit==1.51.0
 streamlit-aggrid==1.1.9
 streamlit-autorefresh==1.0.1
 streamlit-avatar==0.1.3

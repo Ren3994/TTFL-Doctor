@@ -75,8 +75,8 @@ def SEO():
     st.markdown(SEO_text, unsafe_allow_html=True)
 
 def custom_button_css(selected, fontsize=18):
-    bkg_color = "#565763" if selected else '#131720'
-    hover_color = "#70727B" if selected else '#262831'
+    bkg_color = "#44454E" if selected else '#131720'
+    hover_color = "#53555C" if selected else '#262831'
     fontsize = f'{fontsize}px'
     text_color = "#FFFFFF"
     button_css = [f"""
