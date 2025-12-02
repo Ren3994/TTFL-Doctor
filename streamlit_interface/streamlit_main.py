@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 import sys
 import os
 
@@ -13,5 +14,7 @@ init_session_state(PAGENAME)
 config(page=PAGENAME)
 SEO('header')
 SEO('footer')
+
+time.sleep(0.1)
 
 st.switch_page('pages/1_Classement_TTFL.py')
