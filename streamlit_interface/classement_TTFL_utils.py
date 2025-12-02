@@ -271,7 +271,7 @@ def df_to_html(
         for col in show_cols:
             cell_value = getattr(row, col)
             if highlight_frenchies and (
-                cell_value in FRENCHIES or cell_value[:-1] in FRENCHIES):
+                cell_value in FRENCHIES or str(cell_value)[:-1] in FRENCHIES):
                 cell_value = f"{cell_value} &nbsp;🇫🇷"
 
             if image_tooltips and col in image_tooltips:
