@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.top_nuit_utils import *
@@ -62,8 +62,10 @@ update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.ses
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
+    vspace(50)
 elif st.session_state.top_nuit == 'hier':
     st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
+    vspace(50)
 else:
     with col_search:
         st.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
@@ -98,3 +100,5 @@ else:
             for team, top in st.session_state.top_nuit.items():
                 if st.session_state[f'boxscore_nuit_{team}']:
                     st.markdown(top, unsafe_allow_html=True)
+
+SEO('footer')

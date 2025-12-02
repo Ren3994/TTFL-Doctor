@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.streamlit_utils import config, custom_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_CSS
 from streamlit_interface.team_stats_utils import get_team_stats
 from streamlit_interface.sidebar import sidebar
 
@@ -136,3 +136,5 @@ st.data_editor(team_stats, disabled=True, hide_index=True,
                        help="True Shooting Percentage : pourcentage de réussite aux tirs prenant en compte les tirs à 3 points et les lancers francs.",
                    ),
                })
+
+SEO('footer')

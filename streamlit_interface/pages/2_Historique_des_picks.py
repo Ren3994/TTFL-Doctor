@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
-from streamlit_interface.streamlit_utils import config, custom_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_CSS
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
@@ -60,3 +60,4 @@ with error_col:
     if st.session_state.JDP_save_error:
          st.error("Rentrez un nom d'utilisateur avant de sauvegarder pour que vos picks soit enregistrés pour la prochaine fois")
     
+SEO('footer')

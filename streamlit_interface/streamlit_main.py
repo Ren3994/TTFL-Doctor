@@ -11,6 +11,7 @@ from streamlit_interface.streamlit_utils import config, SEO
 PAGENAME = 'main'
 init_session_state(PAGENAME)
 config(page=PAGENAME)
-SEO()
+SEO('header')
+SEO('footer')
 
 st.switch_page('pages/1_Classement_TTFL.py')

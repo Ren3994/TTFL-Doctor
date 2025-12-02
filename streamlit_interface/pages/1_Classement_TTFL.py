@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import config, custom_error, conn_db, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_error, conn_db, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
@@ -181,3 +181,5 @@ else:
     display_df_html = df_to_html(st.session_state.display_df)
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
     st.session_state.calculated.append(st.session_state.selected_date.strftime('%d/%m/%Y'))
+
+SEO('footer')

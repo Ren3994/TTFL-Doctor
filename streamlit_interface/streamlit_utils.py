@@ -63,16 +63,37 @@ def custom_error(error_text, fontsize, center_text=True):
             </div>
             """, unsafe_allow_html=True)
     
-def SEO():
-    SEO_text = """
-    <meta name="description" content="TTFL Doctor : Tableau des picks du soir avec statistiques détaillées pour la TrashTalk Fantasy League. Informations sur les blessures, impacts des blessures des coéquipiers et des adversaires, et tous types de statistiques. Optimisez vos picks et évitez les 🥕 !">
-    <meta name="keywords" content="trashtalk, trashtalk fantasy league, ttfl, best pick, fantasy nba, fantasy league, statistiques ttfl, stats ttfl, picks fantasy, blessures">
-    <meta property="og:title" content="Stats et Données pour la TrashTalk Fantasy League">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="ttfl-doctor.streamlit.app">
-    <meta name="google-site-verification" content="KU6FOvGrqSJpCQ68nnJeKi0GEDZUF_KSfjKW0nV0Aew" />
-    """
-    st.markdown(SEO_text, unsafe_allow_html=True)
+def SEO(loc):
+    header_text = ("TTFL Doctor : "
+                   "Tableau des picks du soir, récaps des stats par jour, scores TTFL en direct, et tous types de statistiques avancées pour la TrashTalk Fantasy League. "
+                   "Optimisez vos picks et évitez les 🥕 !")
+    
+    footer_text = ("App développée par Renaud Génin | © 2025<br>"
+                   "Mot-clés : trashtalk, trashtalk fantasy league, ttfl, best pick, fantasy nba, "
+                   "fantasy league, statistiques ttfl, stats ttfl, picks fantasy, blessures")
+    
+    if loc == 'header':
+        st.markdown(header_text)
+    elif loc == 'footer':
+        st.markdown(footer_text, unsafe_allow_html=True)
+        col_spacer, col_button = st.columns([8, 1])
+        with col_button:
+            if st.button('Requêtes / Bugs'):
+                requests_form()
+
+@st.dialog('Requêtes / Bugs')
+def requests_form():
+    request_type = st.segmented_control('Vous voulez...', ['Signaler un bug', 'Demander une nouvelle fonctionnalité'])
+    description = st.text_input('request_description', placeholder='Description', label_visibility='collapsed')
+    contact = st.text_input('contact', label_visibility='collapsed', placeholder='Contact (optionnel)')
+    if st.button('OK'):
+        supabase = conn_supabase()
+        insert = (supabase.table("requests")
+                          .insert({"request_type" : request_type, 
+                                   "request_description" : description,
+                                   "contact" : contact})
+                          .execute())
+        st.success('Requête enregistrée ✅')
 
 def custom_button_css(selected, fontsize=18):
     bkg_color = "#44454E" if selected else '#131720'

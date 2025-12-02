@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.player_stats_utils import get_all_player_stats
-from streamlit_interface.streamlit_utils import config, custom_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_CSS
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
@@ -73,3 +73,5 @@ st.data_editor(
     column_config=column_config,
     hide_index=True,
 )
+
+SEO('footer')
