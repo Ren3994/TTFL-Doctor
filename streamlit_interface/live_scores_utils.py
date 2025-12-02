@@ -11,10 +11,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.JDP_utils import clean_player_names
+from streamlit_interface.JDP_utils import clean_player_names, get_cached_avg_TTFL
 
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
+    pat = get_cached_avg_TTFL()
     
     for attempt in range(5):
         try:
@@ -44,6 +45,7 @@ def get_live_games():
                                     'awayScore' : boxscores['awayTeam']['score']})
                     boxscore_data = {
                         'Joueur' : [],
+                        'OGJoueur' : [],
                         'Equipe' : [],
                         'Pts' : [],
                         'Ast' : [],
@@ -55,8 +57,14 @@ def get_live_games():
                         'Tov' : [],
                         'Min' : [],
                         'FG' : [],
+                        'FGm' : [],
+                        'FGa' : [],
                         'FG3' : [],
+                        'FG3m' : [],
+                        'FG3a' : [],
                         'FT' : [],
+                        'FTm' : [],
+                        'FTa' : [],
                         'Pm' : [],
                         'PF' : [],
                         'TTFL' : []
@@ -69,6 +77,7 @@ def get_live_games():
                             if hp['status'] == 'INACTIVE':
                                 continue
                             playerName = hp['name'] + ('*' if hp['oncourt'] == '1' else '')
+                            OGplayerName = hp['name']
                             pts = hp['statistics']['points']
                             ast = hp['statistics']['assists']
                             reb = hp['statistics']['reboundsTotal']
@@ -93,6 +102,7 @@ def get_live_games():
                                         - tov - (int(fga)-int(fgm)) - (int(fg3a)-int(fg3m)) - (int(fta)-int(ftm)))
                             
                             boxscore_data['Joueur'].append(playerName)
+                            boxscore_data['OGJoueur'].append(OGplayerName)
                             boxscore_data['Equipe'].append(teamTricode)
                             boxscore_data['Pts'].append(pts)
                             boxscore_data['Ast'].append(ast)
@@ -104,15 +114,48 @@ def get_live_games():
                             boxscore_data['Tov'].append(tov)
                             boxscore_data['Min'].append(min_str)
                             boxscore_data['FG'].append(f'{fgm}/{fga}')
+                            boxscore_data['FGm'].append(int(fgm))
+                            boxscore_data['FGa'].append(int(fga))
                             boxscore_data['FG3'].append(f'{fg3m}/{fg3a}')
+                            boxscore_data['FG3m'].append(int(fg3m))
+                            boxscore_data['FG3a'].append(int(fg3a))
                             boxscore_data['FT'].append(f'{ftm}/{fta}')
+                            boxscore_data['FTm'].append(int(ftm))
+                            boxscore_data['FTa'].append(int(fta))
                             boxscore_data['Pm'].append(pm)
                             boxscore_data['PF'].append(pf)
                             boxscore_data['TTFL'].append(ttfl)
 
                     boxscore_df = pd.DataFrame(boxscore_data)
-                    boxscore_df = boxscore_df.sort_values(by=['Equipe', 'TTFL'], ascending=[True, False]).reset_index(drop=True)
+                    boxscore_df = clean_player_names(boxscore_df, 'OGJoueur')
+                    boxscore_df = boxscore_df.merge(
+                        pat[['playerName', 'avg_TTFL']],
+                        left_on=['OGJoueur'],
+                        right_on=['playerName'],
+                        how='left'
+                    ).drop(columns=['OGJoueur', 'playerName'])
+
+                    boxscore_df['perf'] = np.select([boxscore_df['avg_TTFL'] == 0, boxscore_df['TTFL'] < boxscore_df['avg_TTFL']],
+                           ['0', (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%'], 
+                           '+' + (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%')
+                    
+                    boxscore_df['perf_str'] = np.select([boxscore_df['perf'] == '0'], 
+                               ['<span style="text-decoration:overline">TTFL</span> : 0'],
+                               '<span style="text-decoration:overline">TTFL</span> : ' + 
+                               boxscore_df['avg_TTFL'].astype(str) + ' (' + boxscore_df['perf'] + ')')
+                    
+                    boxscore_df['FGpct'] = np.select([boxscore_df['FGa'] == 0, boxscore_df['FGa'] == boxscore_df['FGm']], 
+                                            ['', '100%'], 
+                                (100 * boxscore_df['FGm'] / boxscore_df['FGa']).round(1).astype(str) + '%')
+                    boxscore_df['FG3pct'] = np.select([boxscore_df['FG3a'] == 0, boxscore_df['FG3a'] == boxscore_df['FG3m']], 
+                                            ['', '100%'], 
+                                (100 * boxscore_df['FG3m'] / boxscore_df['FG3a']).round(1).astype(str) + '%')
+                    boxscore_df['FTpct'] = np.select([boxscore_df['FTa'] == 0, boxscore_df['FTa'] == boxscore_df['FTm']], 
+                                            ['', '100%'], 
+                                (100 * boxscore_df['FTm'] / boxscore_df['FTa']).round(1).astype(str) + '%')
+
                     boxscore_df = clean_player_names(boxscore_df, 'Joueur')
+                    boxscore_df = boxscore_df.sort_values(by=['Equipe', 'TTFL'], ascending=[True, False]).reset_index(drop=True)
                     live_games.append(boxscore_df)
             break
 

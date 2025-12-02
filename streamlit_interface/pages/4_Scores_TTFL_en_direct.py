@@ -132,7 +132,12 @@ else:
         if st.session_state[f"boxscore_{idx}"]:
             html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                             show_index=False,
-                                            tooltips={},
+                                            tooltips={
+                                                'TTFL' : 'perf_str',
+                                                'FG' : 'FGpct',
+                                                'FG3' : 'FG3pct',
+                                                'FT' : 'FTpct'
+                                            },
                                             col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
                                             col_header_tooltips=[],
                                             image_tooltips=[],
