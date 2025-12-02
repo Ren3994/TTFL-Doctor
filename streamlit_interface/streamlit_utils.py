@@ -89,7 +89,8 @@ def requests_form():
     if st.button('OK'):
         supabase = conn_supabase()
         insert = (supabase.table("requests")
-                          .insert({"request_type" : request_type, 
+                          .insert({"username" : st.session_state.get('username', 'no user'),
+                                   "request_type" : request_type,
                                    "request_description" : description,
                                    "contact" : contact})
                           .execute())
