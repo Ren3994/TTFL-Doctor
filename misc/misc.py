@@ -50,7 +50,7 @@ FRENCHIES = ['Nicolas Batum',
             'Victor Wembanyama',
             'Guerschon Yabusele']
 
-TEAM_IDS = {
+TEAM_TRICODE2IDS = {
     'ATL': 1610612737,
     'BOS': 1610612738,
     'BKN': 1610612751,
@@ -82,6 +82,8 @@ TEAM_IDS = {
     'UTA': 1610612762,
     'WAS': 1610612764
 }
+
+TEAM_IDS2TRICODE = {v: k for k, v in TEAM_TRICODE2IDS.items()}
 
 CHAR_MAP = {
     "ć": "c",

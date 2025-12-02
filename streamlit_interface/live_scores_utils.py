@@ -1,4 +1,5 @@
-from nba_api.live.nba.endpoints import scoreboard, boxscore
+from nba_api.stats.endpoints import scoreboardv2
+from nba_api.live.nba.endpoints import boxscore
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import streamlit as st
@@ -12,32 +13,43 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.JDP_utils import clean_player_names, get_cached_avg_TTFL
+from misc.misc import TEAM_IDS2TRICODE
 
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
     pat = get_cached_avg_TTFL()
-    
+    date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
+        
     for attempt in range(5):
         try:
-            games = scoreboard.ScoreBoard().games.get_dict()
+            games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
             upcoming_games = []
             live_games = []
             games_info = []
 
             for game in games:
-                if game['gameStatus'] == 1:
-                    upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
-                                           'awayTeam' : game['awayTeam']['teamTricode'],
-                                           'gameTimeUTC' : game['gameTimeUTC'],
-                                           'gameTimeParis' : (datetime.fromisoformat(
-                                               game['gameTimeUTC'].replace("Z", "+00:00"))
-                                               .astimezone(ZoneInfo("Europe/Paris"))
-                                               .strftime('%d %b. à %Hh%M'))
-                                          })
+                gameStatus = game[3]
+                gameTimeStringET = game[4]
+                homeTeamID = game[6]
+                awayTEAMID = game[7]
+                
+                if gameStatus == 1:
+                    upcoming_games.append({'homeTeam' : TEAM_IDS2TRICODE[homeTeamID],
+                                           'awayTeam' : TEAM_IDS2TRICODE[awayTEAMID],
+                                           'gameTimeParis' : (
+                                                datetime.strptime(gameTimeStringET.replace(" ET", ""), 
+                                                                   "%I:%M %p")
+                                                         .replace(year=date_paris.year, 
+                                                                  month=date_paris.month, 
+                                                                  day=date_paris.day, 
+                                                                  tzinfo=ZoneInfo("America/New_York"))
+                                                         .astimezone(ZoneInfo("Europe/Paris"))
+                                                         .strftime('%d %b. à %Hh%M'))
+                                           })
                     continue
 
-                if game['gameStatus'] == 2:
-                    boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
+                if gameStatus == 2:
+                    boxscores = boxscore.BoxScore(game_id=game[2]).get_dict()['game']
                     games_info.append({'time' : boxscores['gameStatusText'],
                                     'homeTeam' : boxscores['homeTeam']['teamTricode'],
                                     'homeScore' : boxscores['homeTeam']['score'],
