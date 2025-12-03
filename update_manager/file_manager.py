@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from shutil import copy2
 import sqlite3
-import hashlib
-import pickle
+import time
 import sys
 import os
 
@@ -14,7 +13,12 @@ def cleanup_db():
     with sqlite3.connect(DB_PATH) as conn:
         for table in ['team_games', 'played', 'teammate_played', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'avg_TTFL_per_pos_per_opp', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game']:
             drop_table(conn, table)
-        conn.execute("""VACUUM;""")
+        for attempt in range(3):
+            try:
+                conn.execute("""VACUUM;""")
+                break
+            except sqlite3.OperationalError:
+                time.sleep(0.1 * attempt)
 
 def manage_backups():
     current_date = datetime.today()

@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
+from streamlit_interface.streamlit_utils import requests_form
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def on_username_change():
@@ -93,3 +94,7 @@ def sidebar(page):
 
                 keyboard.press_and_release('ctrl+w')
                 os.kill(os.getpid(), signal.SIGTERM)
+    else:
+        st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+        if st.button('Requêtes/Bugs'):
+            requests_form()

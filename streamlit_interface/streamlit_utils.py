@@ -76,10 +76,6 @@ def SEO(loc):
         st.markdown(header_text)
     elif loc == 'footer':
         st.markdown(footer_text, unsafe_allow_html=True)
-        col_spacer, col_button = st.columns([8, 1])
-        with col_button:
-            if st.button('Requêtes / Bugs'):
-                requests_form()
 
 @st.dialog('Requêtes / Bugs')
 def requests_form():

@@ -17,7 +17,7 @@ def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database
     new_games_found = True
 
     if init_database:
-        progress = init_db(conn)
+        init_db(conn)
     
     check_boxscores_integrity(conn) # Removes rows with malformed data and duplicate rows
 
@@ -87,4 +87,7 @@ def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, gameId);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_boxscores_team_game ON boxscores(teamTricode, opponentTTFL);")
 
+    if progress is not None:
+        progress.progress(1.0)
+        
     return new_games_found
