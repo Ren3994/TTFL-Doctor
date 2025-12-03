@@ -18,11 +18,12 @@ from misc.misc import TEAM_IDS2TRICODE
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
     pat = get_cached_avg_TTFL()
+    date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
     date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
         
     for attempt in range(5):
         try:
-            games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
+            games = scoreboardv2.ScoreboardV2(game_date=date_new_york).game_header.get_dict()['data']
             upcoming_games = []
             live_games = []
             games_info = []
