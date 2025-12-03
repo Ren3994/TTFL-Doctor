@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import SEO, config, custom_error, conn_db, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import SEO, config, custom_error, conn_db, st_image_crisp, custom_button_css, deepl_api_limit_reached, custom_CSS, custom_mobile_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
@@ -82,10 +82,11 @@ with col_low_games_count:
     deadline = get_deadline(conn, st.session_state.selected_date.strftime("%d/%m/%Y"))
     st.markdown(deadline, unsafe_allow_html=True)
     st.toggle('Traduire les détails des blessures', key='bool_translate')
-    if st.session_state.bool_translate:
-        translate_col = ['details']
-    else:
-        translate_col = []
+    limit_reached, _ = deepl_api_limit_reached()
+    translate_col = []
+    if not limit_reached:
+        if st.session_state.bool_translate:
+            translate_col = ['details']            
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
