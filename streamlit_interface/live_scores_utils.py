@@ -1,5 +1,5 @@
+from nba_api.live.nba.endpoints import boxscore, scoreboard
 from nba_api.stats.endpoints import scoreboardv2
-from nba_api.live.nba.endpoints import boxscore
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import streamlit as st
@@ -23,34 +23,24 @@ def get_live_games():
         
     for attempt in range(5):
         try:
-            games = scoreboardv2.ScoreboardV2(game_date=date_new_york).game_header.get_dict()['data']
+            games = scoreboard.ScoreBoard().games.get_dict()
             upcoming_games = []
             live_games = []
             games_info = []
 
-            for game in games:
-                gameStatus = game[3]
-                gameTimeStringET = game[4]
-                homeTeamID = game[6]
-                awayTEAMID = game[7]
-                
-                if gameStatus == 1:
-                    upcoming_games.append({'homeTeam' : TEAM_IDS2TRICODE[homeTeamID],
-                                           'awayTeam' : TEAM_IDS2TRICODE[awayTEAMID],
-                                           'gameTimeParis' : (
-                                                datetime.strptime(gameTimeStringET.replace(" ET", ""), 
-                                                                   "%I:%M %p")
-                                                         .replace(year=date_paris.year, 
-                                                                  month=date_paris.month, 
-                                                                  day=date_paris.day, 
-                                                                  tzinfo=ZoneInfo("America/New_York"))
-                                                         .astimezone(ZoneInfo("Europe/Paris"))
-                                                         .strftime('%d %b. à %Hh%M'))
-                                           })
+            for game in games:                
+                if game['gameStatus'] == 1:
+                    upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
+                                           'awayTeam' : game['awayTeam']['teamTricode'],
+                                           'gameTimeParis' : (datetime.fromisoformat(
+                                               game['gameTimeUTC'].replace("Z", "+00:00"))
+                                               .astimezone(ZoneInfo("Europe/Paris"))
+                                               .strftime('%d %b. à %Hh%M'))
+                                          })
                     continue
 
-                if gameStatus == 2:
-                    boxscores = boxscore.BoxScore(game_id=game[2]).get_dict()['game']
+                if game['gameStatus'] == 2:
+                    boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
                     games_info.append({'time' : boxscores['gameStatusText'],
                                     'homeTeam' : boxscores['homeTeam']['teamTricode'],
                                     'homeScore' : boxscores['homeTeam']['score'],
@@ -176,6 +166,41 @@ def get_live_games():
             if attempt == 4:
                 raise e
             time.sleep(5 * attempt)
+    
+    if len(upcoming_games) == 0:
+        date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
+            
+        for attempt in range(5):
+            try:
+                games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
+                upcoming_games = []
+                live_games = []
+                games_info = []
+
+                for game in games:
+                    gameStatus = game[3]
+                    gameTimeStringET = game[4]
+                    homeTeamID = game[6]
+                    awayTEAMID = game[7]
+                    
+                    if gameStatus != 1:
+                        continue
+                    upcoming_games.append({'homeTeam' : TEAM_IDS2TRICODE[homeTeamID],
+                                           'awayTeam' : TEAM_IDS2TRICODE[awayTEAMID],
+                                           'gameTimeParis' : (
+                                                datetime.strptime(gameTimeStringET.replace(" ET", ""), 
+                                                                   "%I:%M %p")
+                                                         .replace(year=date_new_york.year, 
+                                                                  month=date_new_york.month, 
+                                                                  day=date_new_york.day, 
+                                                                  tzinfo=ZoneInfo("America/New_York"))
+                                                         .astimezone(ZoneInfo("Europe/Paris"))
+                                                         .strftime('%d %b. à %Hh%M'))
+                                           })
+            except Exception as e:
+                if attempt == 4:
+                    raise e
+                time.sleep(5 * attempt)
 
     return upcoming_games, games_info, live_games, time.time()
 

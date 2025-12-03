@@ -15,6 +15,6 @@ config(page=PAGENAME)
 SEO('header')
 SEO('footer')
 
-time.sleep(0.1)
+# time.sleep(0.1)
 
 st.switch_page('pages/1_Classement_TTFL.py')
