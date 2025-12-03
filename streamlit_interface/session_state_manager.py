@@ -40,6 +40,9 @@ def init_session_state(page, arg=None):
         
         if 'calculated' not in st.session_state:
             st.session_state.calculated = []
+        
+        if 'bool_translate' not in st.session_state:
+            st.session_state.bool_translate = False
 
     if page in ['classement', 'top_nuit', 'live_scores']:
         if 'scr_key' not in st.session_state:

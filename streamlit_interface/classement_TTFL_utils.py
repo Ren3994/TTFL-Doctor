@@ -7,6 +7,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.streamlit_utils import conn_deepl
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
 from misc.misc import FRENCHIES
@@ -128,6 +129,16 @@ def get_deadline(_conn, date):
     
     return result_str
 
+@st.cache_data(show_spinner=False)
+def translate_df_column(col_to_translate):
+    deepl_client = conn_deepl()
+    try:
+        translated_col_obj = deepl_client.translate_text(col_to_translate, target_lang='FR')
+        translated_col = [t.text for t in translated_col_obj]
+    except:
+        translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
+    return translated_col
+
 def df_to_html(
     df,
     show_cols=['Joueur', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
@@ -157,7 +168,8 @@ def df_to_html(
     color_tooltip_pct=True,
     highlight_index=None,
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
-    highlight_frenchies=True
+    highlight_frenchies=True,
+    translate_cols = [],
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
     
@@ -238,6 +250,14 @@ def df_to_html(
     </style>
     """
 
+    # Translate columns
+    if len(translate_cols) > 0:
+        for col in translate_cols:
+            empty_string_mask = df[col] == ''
+            to_translate = df.loc[~empty_string_mask, col].tolist()
+            translated_text = translate_df_column(to_translate)
+            df.loc[~empty_string_mask, col] = translated_text
+
     # Build HTML table
     html = css + '<table class="custom-table-dark">'
     html += "<thead><tr>"
@@ -270,6 +290,7 @@ def df_to_html(
             html += f"<td>{i}</td>"
         for col in show_cols:
             cell_value = getattr(row, col)
+
             if highlight_frenchies and (
                 cell_value in FRENCHIES or str(cell_value)[:-1] in FRENCHIES):
                 cell_value = f"{cell_value} &nbsp;🇫🇷"
@@ -334,7 +355,7 @@ def update_session_state_df(date):
     clear_classement_vars()
 
 @st.cache_data(show_spinner=False)
-def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
+def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, bool_translate, filter_JDP, filter_inj, selected_games):
     joueurs_pas_dispo = get_joueurs_pas_dispo(_conn, date)
     joueurs_blesses = get_joueurs_blesses(_conn)
 

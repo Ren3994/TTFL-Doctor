@@ -81,6 +81,11 @@ with col_low_games_count:
     st.markdown(get_low_game_count(conn, st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
     deadline = get_deadline(conn, st.session_state.selected_date.strftime("%d/%m/%Y"))
     st.markdown(deadline, unsafe_allow_html=True)
+    st.toggle('Traduire les détails des blessures', key='bool_translate')
+    if st.session_state.bool_translate:
+        translate_col = ['details']
+    else:
+        translate_col = []
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
@@ -150,7 +155,7 @@ else:
                 st.session_state.plot_calc_start:
                 st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
-            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+            topTTFL_html = df_to_html(st.session_state.topTTFL_df, translate_cols=translate_col)
             st.markdown(topTTFL_html, unsafe_allow_html=True)
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
@@ -174,11 +179,12 @@ else:
                                            st.session_state.selected_date.strftime('%d/%m/%Y'),
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,
+                                           st.session_state.bool_translate,
                                            filter_JDP,
                                            filter_inj,
                                            selected_games)
     
-    display_df_html = df_to_html(st.session_state.display_df)
+    display_df_html = df_to_html(st.session_state.display_df, translate_cols=translate_col)
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
     st.session_state.calculated.append(st.session_state.selected_date.strftime('%d/%m/%Y'))
 

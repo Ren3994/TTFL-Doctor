@@ -4,6 +4,7 @@ import pandas as pd
 import subprocess
 import sqlite3
 import base64
+import deepl
 import sys
 import os
 
@@ -21,6 +22,11 @@ def conn_supabase():
     url = st.secrets.get("SUPABASE_URL", "unknown")
     key = st.secrets.get("SUPABASE_KEY", "unknown")
     return create_client(url, key)
+
+@st.cache_resource(show_spinner=False)
+def conn_deepl():
+    api_key = st.secrets.get("DEEPL_API_KEY", "unknown")
+    return deepl.DeepLClient(api_key)
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_supabase_users(_supabase):
