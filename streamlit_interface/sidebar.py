@@ -96,5 +96,5 @@ def sidebar(page):
                 os.kill(os.getpid(), signal.SIGTERM)
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-        if st.button('Requêtes/Bugs'):
+        if st.sidebar.button('Requêtes/Bugs'):
             requests_form()
