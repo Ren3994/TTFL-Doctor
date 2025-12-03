@@ -7,7 +7,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_deepl
+from streamlit_interface.streamlit_utils import conn_deepl, deepl_api_limit_reached
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
 from misc.misc import FRENCHIES
@@ -251,7 +251,8 @@ def df_to_html(
     """
 
     # Translate columns
-    if len(translate_cols) > 0:
+    limit_reached, _ = deepl_api_limit_reached()
+    if len(translate_cols) > 0 and not limit_reached:
         for col in translate_cols:
             empty_string_mask = df[col] == ''
             to_translate = df.loc[~empty_string_mask, col].tolist()
