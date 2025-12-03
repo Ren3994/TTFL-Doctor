@@ -23,6 +23,19 @@ def conn_supabase():
     key = st.secrets.get("SUPABASE_KEY", "unknown")
     return create_client(url, key)
 
+@st.cache_data(show_spinner=False, ttl=300)
+def deepl_api_limit_reached():
+    deepl_client = conn_deepl()
+    usage = deepl_client.get_usage()
+
+    limit_reached = usage.any_limit_reached
+    used_count = usage.character.count
+    limit = usage.character.limit
+
+    remaining = f'{used_count}/{limit}'
+
+    return limit_reached, remaining
+
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_supabase_users(_supabase):
     data = _supabase.table("ttfl_doctor_user_picks").select("username").execute().data
