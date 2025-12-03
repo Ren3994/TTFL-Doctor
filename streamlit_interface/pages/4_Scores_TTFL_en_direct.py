@@ -126,7 +126,7 @@ else:
                     key=f"btn_{idx}",
                     on_click=lambda k=idx: st.session_state.update(
                         {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
-                    width=245
+                    width=255
                 )
 
     for idx in range(len(games_info)):
