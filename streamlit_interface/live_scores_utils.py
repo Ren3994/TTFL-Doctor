@@ -164,7 +164,7 @@ def get_live_games():
                 raise e
             time.sleep(5 * attempt)
     
-    if len(upcoming_games) == 0:
+    if len(upcoming_games) == 0 and len(live_games) == 0:
         date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
             
