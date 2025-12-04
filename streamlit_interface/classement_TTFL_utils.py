@@ -49,18 +49,20 @@ def get_joueurs_pas_dispo(_conn, date) :
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     limite = date_dt - timedelta(days=30)
 
+    jdp, joueurs_pas_dispo = [], []
+
     if st.session_state.local_instance:
-        JDP = run_sql_query(_conn, table="joueurs_deja_pick")
-        JDP['datePick'] = pd.to_datetime(JDP['datePick'], errors='coerce', dayfirst=True)
-        joueurs_pas_dispo = JDP[JDP['datePick'] > limite]['joueur'].tolist()
+        jdp = (run_sql_query(_conn, table="joueurs_deja_pick")
+               .rename(columns={'datePick' : 'Date du pick', 'joueur' : 'Joueur'}))
     else:
         if 'jdp_df' in st.session_state and not (st.session_state.jdp_df['Joueur'] == '').all():
-            JDP = st.session_state.jdp_df[['Joueur', 'Date du pick']].copy()
-            JDP['Date du pick'] = pd.to_datetime(JDP['Date du pick'], errors='coerce', dayfirst=True)
-            joueurs_pas_dispo = JDP[JDP['Date du pick'] > limite]['Joueur'].tolist()
-        else:
-            joueurs_pas_dispo=[]
+            jdp = st.session_state.jdp_df[['Joueur', 'Date du pick']]
 
+    if len(jdp) > 0:
+        jdp = jdp[jdp['Date du pick'] != date].copy()
+        jdp['Date du pick'] = pd.to_datetime(jdp['Date du pick'], errors='coerce', dayfirst=True)
+        joueurs_pas_dispo = jdp[jdp['Date du pick'] > limite]['Joueur'].tolist()
+            
     return joueurs_pas_dispo
 
 @st.cache_data(show_spinner=False)
@@ -177,7 +179,9 @@ def df_to_html(
     zebra_even_color, zebra_odd_color = "#222222", "#111111"
     shadow_color = "rgba(28,41,54,0.6)"
     highlight_color = "#82471D"
-    best_pick_color = "#FFD900A0" if len(df) > 30 else "#82471D"
+    hover_highlight_color = "#AA622F"
+    best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
+    hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
 
     css = f"""
     <style>
@@ -247,6 +251,18 @@ def df_to_html(
         border-radius: 4px;
         z-index: 0;
     }}
+    .custom-table-dark tr.best-pick-row {{
+        background-color: {best_pick_color} !important;
+    }}
+    .custom-table-dark tr.best-pick-row:hover {{
+        background-color: {hover_best_pick_color} !important;
+    }}
+    .custom-table-dark tr.highlight-row {{
+        background-color: {highlight_color} !important;
+    }}
+    .custom-table-dark tr.highlight-row:hover {{
+        background-color: {hover_highlight_color} !important;
+    }}
     </style>
     """
 
@@ -283,8 +299,8 @@ def df_to_html(
 
     for i, row in enumerate(df.itertuples(index=False), start=1):
         if highlight_index is not None and i == highlight_index:
-            html += ('<tr style="background-color:'
-                     f'{best_pick_color if i == 1 else highlight_color};">')
+            row_class = "best-pick-row" if i == 1 else "highlight-row"
+            html += f'<tr class="{row_class}">'
         else:
             html += "<tr>"
         if show_index:
