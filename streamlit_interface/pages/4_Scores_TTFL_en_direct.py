@@ -17,7 +17,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
-upcoming_games, games_info, live_games, timestamp = get_live_games()
+upcoming_games, games_info, live_games, game_night_date, timestamp = get_live_games()
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
@@ -145,6 +145,16 @@ else:
                 by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
                 ascending=[True, False] if st.session_state.live_scores_by_team else False)
                 .reset_index(drop=True))
+            
+            idx_pick = None
+            picks = st.session_state.get('jdp_df', None)
+            if picks is not None and not (picks['Joueur'] == '').all():
+                series = picks.loc[picks['Date du pick'] == game_night_date, 'Joueur']
+                pick = series.iloc[0] if not series.empty else None
+                if ((pick is not None and pick != '') and 
+                    (pick in live_games[idx]['Joueur'].tolist() or
+                     f'{pick}*' in live_games[idx]['Joueur'].tolist())):
+                    idx_pick = live_games[idx].index[live_games[idx]['Joueur'] == pick] + 1
 
             html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                             show_index=False,
@@ -157,7 +167,8 @@ else:
                                             col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
                                             col_header_tooltips=[],
                                             image_tooltips=[],
-                                            color_tooltip_pct=False)
+                                            color_tooltip_pct=False,
+                                            highlight_index=idx_pick)
             tableholders[idx].markdown(html_df, unsafe_allow_html=True)
         else:
             tableholders[idx].empty()

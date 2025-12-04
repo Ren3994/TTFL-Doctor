@@ -59,7 +59,7 @@ def init_session_state(page, arg=None):
             else:
                 st.session_state.mobile_layout = False
 
-    if page in ['JDP', 'top_nuit']:
+    if page in ['JDP', 'top_nuit', 'live_scores']:
         if "JDP" not in st.session_state:
             st.session_state.JDP = JoueursDejaPick()
 

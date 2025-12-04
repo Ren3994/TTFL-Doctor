@@ -18,7 +18,9 @@ from misc.misc import TEAM_IDS2TRICODE
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
     pat = get_cached_avg_TTFL()
-        
+    date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
+    date_ny_str = date_new_york.strftime('%d/%m/%Y')
+
     for attempt in range(5):
         try:
             games = scoreboard.ScoreBoard().games.get_dict()
@@ -165,7 +167,6 @@ def get_live_games():
             time.sleep(5 * attempt)
     
     if len(upcoming_games) == 0 and len(live_games) == 0:
-        date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
             
         for attempt in range(5):
@@ -200,7 +201,7 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
 
-    return upcoming_games, games_info, live_games, time.time()
+    return upcoming_games, games_info, live_games, date_ny_str, time.time()
 
 if __name__ == "__main__":
     a, b, c, d = get_live_games()

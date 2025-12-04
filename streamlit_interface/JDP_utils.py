@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
 from rapidfuzz import fuzz, process
-from datetime import timedelta
+from zoneinfo import ZoneInfo
 import streamlit as st
 import pandas as pd
 import sys
@@ -86,7 +87,14 @@ class JoueursDejaPick():
     def initJDP(self) -> pd.DataFrame:
         good_df = self.loadJDP()
         game_dates_completed = get_cached_game_dates_completed()
+
+        new_dates = (datetime.now(ZoneInfo("Europe/Paris")).strftime('%d/%m/%Y'), 
+            (datetime.now(ZoneInfo("Europe/Paris")) - timedelta(days=1)).strftime('%d/%m/%Y'))
         
+        for new_date in new_dates:
+            if new_date not in game_dates_completed:
+                game_dates_completed.loc[len(game_dates_completed)] = new_date
+
         good_df = (game_dates_completed
                    .merge(good_df, 
                           left_on='gameDate', 
