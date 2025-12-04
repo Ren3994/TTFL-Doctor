@@ -92,7 +92,7 @@ class JoueursDejaPick():
             (datetime.now(ZoneInfo("Europe/Paris")) - timedelta(days=1)).strftime('%d/%m/%Y'))
         
         for new_date in new_dates:
-            if new_date not in game_dates_completed:
+            if new_date not in game_dates_completed['gameDate'].tolist():
                 game_dates_completed.loc[len(game_dates_completed)] = new_date
 
         good_df = (game_dates_completed
