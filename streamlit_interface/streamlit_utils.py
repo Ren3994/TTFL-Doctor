@@ -66,7 +66,7 @@ def config(page):
     st.set_page_config(
     page_title="TTFL Doctor",
     page_icon="🏀",
-    layout="wide")
+    layout='wide')
 
 @st.cache_data(show_spinner=False)
 def st_image_crisp(path, width=40, raw=False):
@@ -152,11 +152,24 @@ custom_CSS = """
     /* --- Title styling --- */
     .date-title {
         text-align: center;
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         margin-bottom: -3rem;
         margin-top: -3.8rem;
         margin-left: -2.5rem
+    }
+    .big-button button {
+    font-size: 30px !important;
+    font-weight: bold !important;
+    }
+    .big-text {
+        text-align:center;
+        font-size:22px;
+        font-weight:bold;
+        margin-bottom: 3rem;
+    }
+    .centered-text {
+        text-align:center;
     }
     /* --- Center text inputs --- */
     div[data-testid="stTextInput"] {

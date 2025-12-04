@@ -71,19 +71,28 @@ else:
     start_pct = max(real_start_pct, st.session_state.progress_pct)
     if mobile:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
-        col_subheader, col_progress, col_progress_text = (st.columns([1])[0], 
-                                                          st.columns([1])[0], 
-                                                          st.columns([1])[0])
+        col_subheader = st.columns([1])[0]
+        col_progress, col_progress_text = st.columns([1, 1])
+        col_toggle = st.columns([1])[0]
+        prog_width=100
         games_per_row = 1
     else:
-        col_subheader, col_progress_text, col_progress = st.columns([4, 2, 5], gap='small')
+        col_subheader, col_progress_text, col_progress, col_toggle = st.columns([2.5, 1.5, 4, 1.5], gap='small')
+        prog_width=300
         games_per_row = 3
+
     with col_subheader:
         st.subheader('Matchs en cours :')
+
+    col_toggle.space('small')
+    with col_toggle:
+        new_toggle_value = st.toggle('Par équipe', key='live_scores_by_team')
+
     col_progress.space('small')
     with col_progress:
-        progress_bar = st.progress(value=start_pct, width=300)
+        progress_bar = st.progress(value=start_pct, width=prog_width)
     col_progress_text.space('small')
+
     with col_progress_text:
         progress_text = st.empty()
 
@@ -131,6 +140,12 @@ else:
 
     for idx in range(len(games_info)):
         if st.session_state[f"boxscore_{idx}"]:
+
+            live_games[idx] = (live_games[idx].sort_values(
+                by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
+                ascending=[True, False] if st.session_state.live_scores_by_team else False)
+                .reset_index(drop=True))
+
             html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                             show_index=False,
                                             tooltips={

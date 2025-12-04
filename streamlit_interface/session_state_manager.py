@@ -91,3 +91,6 @@ def init_session_state(page, arg=None):
         
         if 'progress_pct' not in st.session_state:
             st.session_state.progress_pct = 0
+
+        if 'live_scores_by_team' not in st.session_state:
+            st.session_state.live_scores_by_team = False

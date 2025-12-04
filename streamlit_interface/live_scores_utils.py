@@ -18,8 +18,6 @@ from misc.misc import TEAM_IDS2TRICODE
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
     pat = get_cached_avg_TTFL()
-    date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
-    date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
         
     for attempt in range(5):
         try:
@@ -158,7 +156,6 @@ def get_live_games():
                                 (100 * boxscore_df['FTm'] / boxscore_df['FTa']).round(1).astype(str) + '%')
 
                     boxscore_df = clean_player_names(boxscore_df, 'Joueur')
-                    boxscore_df = boxscore_df.sort_values(by=['Equipe', 'TTFL'], ascending=[True, False]).reset_index(drop=True)
                     live_games.append(boxscore_df)
             break
 
@@ -168,6 +165,7 @@ def get_live_games():
             time.sleep(5 * attempt)
     
     if len(upcoming_games) == 0:
+        date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
             
         for attempt in range(5):
