@@ -136,7 +136,7 @@ def get_live_games():
                         left_on=['OGJoueur'],
                         right_on=['playerName'],
                         how='left'
-                    ).drop(columns=['OGJoueur', 'playerName'])
+                    ).drop(columns=['OGJoueur'])
 
                     boxscore_df['perf'] = np.select([boxscore_df['avg_TTFL'] == 0, boxscore_df['TTFL'] < boxscore_df['avg_TTFL']],
                            ['0', (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%'], 
