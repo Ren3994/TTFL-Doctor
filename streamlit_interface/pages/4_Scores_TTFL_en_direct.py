@@ -17,7 +17,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
-upcoming_games, games_info, live_games, finished_games, game_night_date, timestamp = get_live_games()
+upcoming_games, games_info, live_games, pending_games, finished_games, game_night_date, timestamp = get_live_games()
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
@@ -77,13 +77,21 @@ else:
         prog_width=100
         games_per_row = 1
     else:
-        widths = [3.2, 1, 2, 1.2] if finished_games else [2.5, 1.5, 4, 1.5]
+        widths = [2.5, 1.5, 4, 1.5]
+        if pending_games:
+            if finished_games:
+                games_header_str = 'Matchs en cours/matchs finis :'
+                widths = [3.2, 1, 2, 1.2]
+            else:
+                games_header_str = 'Matchs en cours :'
+        else:
+            games_header_str = 'Matchs finis :'
+
         col_subheader, col_progress_text, col_progress, col_toggle = st.columns(widths, gap='small')
         prog_width=300
         games_per_row = 3
     
     with col_subheader:
-        games_header_str = 'Matchs en cours/matchs finis :' if finished_games else 'Matchs en cours :'
         st.subheader(games_header_str)
 
     col_toggle.space('small')
@@ -91,12 +99,13 @@ else:
         new_toggle_value = st.toggle('Par équipe', key='live_scores_by_team')
 
     col_progress.space('small')
-    with col_progress:
-        progress_bar = st.progress(value=start_pct, width=prog_width)
-    col_progress_text.space('small')
+    if pending_games:
+        with col_progress:
+            progress_bar = st.progress(value=start_pct, width=prog_width)
+        col_progress_text.space('small')
 
-    with col_progress_text:
-        progress_text = st.empty()
+        with col_progress_text:
+            progress_text = st.empty()
 
     buttonholders = [None] * len(games_info)
     for i in range(0, len(games_info), games_per_row):
@@ -174,14 +183,16 @@ else:
         else:
             tableholders[idx].empty()
     
-    total_steps = int(TTL * REFRESH_RATE)
-    for step in range(int(start_pct * total_steps), total_steps + 1):
-        pct = step / total_steps
-        progress_bar.progress(value=pct, width=300)
-        seconds_remaining = max(0, TTL - (pct * TTL))
-        progress_text.text(f"MàJ dans {seconds_remaining:.0f}s")
-        time.sleep(1 / REFRESH_RATE)
+    if pending_games :
+        total_steps = int(TTL * REFRESH_RATE)
+        for step in range(int(start_pct * total_steps), total_steps + 1):
+            pct = step / total_steps
+            progress_bar.progress(value=pct, width=300)
+            seconds_remaining = max(0, TTL - (pct * TTL))
+            progress_text.text(f"MàJ dans {seconds_remaining:.0f}s")
+            time.sleep(1 / REFRESH_RATE)
         
-    st.rerun()
-
+        st.rerun()
+    else:
+        vspace(50)
 SEO('footer')

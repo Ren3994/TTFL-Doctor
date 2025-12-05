@@ -20,7 +20,7 @@ def get_live_games():
     pat = get_cached_avg_TTFL()
     date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
     date_ny_str = date_new_york.strftime('%d/%m/%Y')
-    finished_games = False
+    pending_games, finished_games = False, False
 
     for attempt in range(5):
         try:
@@ -29,9 +29,12 @@ def get_live_games():
             live_games = []
             games_info = []
 
-            for game in games:    
+            for game in games:
+                if game['gameStatus'] == 2:
+                    pending_games = True
                 if game['gameStatus'] == 3:
-                    finished_games = True            
+                    finished_games = True   
+
                 elif game['gameStatus'] == 1:
                     upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
                                            'awayTeam' : game['awayTeam']['teamTricode'],
@@ -170,8 +173,8 @@ def get_live_games():
     
     if len(upcoming_games) == 0 and len(live_games) == 0:
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
-        finished_games = False
-            
+        pending_games, finished_games = False, False
+    
         for attempt in range(5):
             try:
                 games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
@@ -204,7 +207,7 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
 
-    return upcoming_games, games_info, live_games, finished_games, date_ny_str, time.time()
+    return upcoming_games, games_info, live_games, pending_games, finished_games, date_ny_str, time.time()
 
 if __name__ == "__main__":
     a, b, c, d = get_live_games()
