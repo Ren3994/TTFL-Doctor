@@ -17,7 +17,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
-upcoming_games, games_info, live_games, game_night_date, timestamp = get_live_games()
+upcoming_games, games_info, live_games, finished_games, game_night_date, timestamp = get_live_games()
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
@@ -77,12 +77,14 @@ else:
         prog_width=100
         games_per_row = 1
     else:
-        col_subheader, col_progress_text, col_progress, col_toggle = st.columns([2.5, 1.5, 4, 1.5], gap='small')
+        widths = [3.2, 1, 2, 1.2] if finished_games else [2.5, 1.5, 4, 1.5]
+        col_subheader, col_progress_text, col_progress, col_toggle = st.columns(widths, gap='small')
         prog_width=300
         games_per_row = 3
-
+    
     with col_subheader:
-        st.subheader('Matchs en cours :')
+        games_header_str = 'Matchs en cours/matchs finis :' if finished_games else 'Matchs en cours :'
+        st.subheader(games_header_str)
 
     col_toggle.space('small')
     with col_toggle:

@@ -20,6 +20,7 @@ def get_live_games():
     pat = get_cached_avg_TTFL()
     date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
     date_ny_str = date_new_york.strftime('%d/%m/%Y')
+    finished_games = False
 
     for attempt in range(5):
         try:
@@ -28,8 +29,10 @@ def get_live_games():
             live_games = []
             games_info = []
 
-            for game in games:                
-                if game['gameStatus'] == 1:
+            for game in games:    
+                if game['gameStatus'] == 3:
+                    finished_games = True            
+                elif game['gameStatus'] == 1:
                     upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
                                            'awayTeam' : game['awayTeam']['teamTricode'],
                                            'gameTimeParis' : (datetime.fromisoformat(
@@ -39,126 +42,125 @@ def get_live_games():
                                           })
                     continue
 
-                if game['gameStatus'] == 2:
-                    boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
-                    games_info.append({'time' : boxscores['gameStatusText'],
-                                    'homeTeam' : boxscores['homeTeam']['teamTricode'],
-                                    'homeScore' : boxscores['homeTeam']['score'],
-                                    'awayTeam' : boxscores['awayTeam']['teamTricode'],
-                                    'awayScore' : boxscores['awayTeam']['score']})
-                    boxscore_data = {
-                        'Joueur' : [],
-                        'OGJoueur' : [],
-                        'Equipe' : [],
-                        'Pts' : [],
-                        'Ast' : [],
-                        'Reb' : [],
-                        'OReb' : [],
-                        'DReb' : [],
-                        'Blk' : [],
-                        'Stl' : [],
-                        'Tov' : [],
-                        'Min' : [],
-                        'FG' : [],
-                        'FGm' : [],
-                        'FGa' : [],
-                        'FG3' : [],
-                        'FG3m' : [],
-                        'FG3a' : [],
-                        'FT' : [],
-                        'FTm' : [],
-                        'FTa' : [],
-                        'Pm' : [],
-                        'PF' : [],
-                        'TTFL' : []
-                    }
-                    
-                    for team in ['homeTeam', 'awayTeam']:
-                        players = boxscores[team]['players']
-                        teamTricode = boxscores[team]['teamTricode']
-                        for hp in players:
-                            if hp['status'] == 'INACTIVE':
-                                continue
-                            playerName = hp['name'] + ('*' if hp['oncourt'] == '1' else '')
-                            OGplayerName = hp['name']
-                            pts = hp['statistics']['points']
-                            ast = hp['statistics']['assists']
-                            reb = hp['statistics']['reboundsTotal']
-                            oreb = hp['statistics']['reboundsOffensive']
-                            dreb = hp['statistics']['reboundsDefensive']
-                            blk = hp['statistics']['blocks']
-                            stl = hp['statistics']['steals']
-                            tov = hp['statistics']['turnovers']
-                            min_iso = int(isodate.parse_duration(hp['statistics']['minutes']).total_seconds())
-                            min_str = f"{min_iso // 60:02d}:{min_iso % 60:02d}"
-                            fgm = str(hp['statistics']['fieldGoalsMade'])
-                            fga = str(hp['statistics']['fieldGoalsAttempted'])
-                            fg3m = str(hp['statistics']['threePointersMade'])
-                            fg3a = str(hp['statistics']['threePointersAttempted'])
-                            ftm = str(hp['statistics']['freeThrowsMade'])
-                            fta = str(hp['statistics']['freeThrowsAttempted'])
-                            pm = np.select([hp['statistics']['plusMinusPoints'] < 0], 
-                                        [str(int(hp['statistics']['plusMinusPoints']))],
-                                        '+' + str(int(hp['statistics']['plusMinusPoints'])))
-                            pf = hp['statistics']['foulsPersonal']
-                            ttfl = (pts + ast + reb + stl + blk + int(fgm) + int(fg3m) + int(ftm)
-                                        - tov - (int(fga)-int(fgm)) - (int(fg3a)-int(fg3m)) - (int(fta)-int(ftm)))
-                            
-                            boxscore_data['Joueur'].append(playerName)
-                            boxscore_data['OGJoueur'].append(OGplayerName)
-                            boxscore_data['Equipe'].append(teamTricode)
-                            boxscore_data['Pts'].append(pts)
-                            boxscore_data['Ast'].append(ast)
-                            boxscore_data['Reb'].append(reb)
-                            boxscore_data['OReb'].append(oreb)
-                            boxscore_data['DReb'].append(dreb)
-                            boxscore_data['Blk'].append(blk)
-                            boxscore_data['Stl'].append(stl)
-                            boxscore_data['Tov'].append(tov)
-                            boxscore_data['Min'].append(min_str)
-                            boxscore_data['FG'].append(f'{fgm}/{fga}')
-                            boxscore_data['FGm'].append(int(fgm))
-                            boxscore_data['FGa'].append(int(fga))
-                            boxscore_data['FG3'].append(f'{fg3m}/{fg3a}')
-                            boxscore_data['FG3m'].append(int(fg3m))
-                            boxscore_data['FG3a'].append(int(fg3a))
-                            boxscore_data['FT'].append(f'{ftm}/{fta}')
-                            boxscore_data['FTm'].append(int(ftm))
-                            boxscore_data['FTa'].append(int(fta))
-                            boxscore_data['Pm'].append(pm)
-                            boxscore_data['PF'].append(pf)
-                            boxscore_data['TTFL'].append(ttfl)
+                boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
+                games_info.append({'time' : boxscores['gameStatusText'],
+                                'homeTeam' : boxscores['homeTeam']['teamTricode'],
+                                'homeScore' : boxscores['homeTeam']['score'],
+                                'awayTeam' : boxscores['awayTeam']['teamTricode'],
+                                'awayScore' : boxscores['awayTeam']['score']})
+                boxscore_data = {
+                    'Joueur' : [],
+                    'OGJoueur' : [],
+                    'Equipe' : [],
+                    'Pts' : [],
+                    'Ast' : [],
+                    'Reb' : [],
+                    'OReb' : [],
+                    'DReb' : [],
+                    'Blk' : [],
+                    'Stl' : [],
+                    'Tov' : [],
+                    'Min' : [],
+                    'FG' : [],
+                    'FGm' : [],
+                    'FGa' : [],
+                    'FG3' : [],
+                    'FG3m' : [],
+                    'FG3a' : [],
+                    'FT' : [],
+                    'FTm' : [],
+                    'FTa' : [],
+                    'Pm' : [],
+                    'PF' : [],
+                    'TTFL' : []
+                }
+                
+                for team in ['homeTeam', 'awayTeam']:
+                    players = boxscores[team]['players']
+                    teamTricode = boxscores[team]['teamTricode']
+                    for hp in players:
+                        if hp['status'] == 'INACTIVE':
+                            continue
+                        playerName = hp['name'] + ('*' if (hp['oncourt'] == '1' and game['gameStatus'] == 2) else '')
+                        OGplayerName = hp['name']
+                        pts = hp['statistics']['points']
+                        ast = hp['statistics']['assists']
+                        reb = hp['statistics']['reboundsTotal']
+                        oreb = hp['statistics']['reboundsOffensive']
+                        dreb = hp['statistics']['reboundsDefensive']
+                        blk = hp['statistics']['blocks']
+                        stl = hp['statistics']['steals']
+                        tov = hp['statistics']['turnovers']
+                        min_iso = int(isodate.parse_duration(hp['statistics']['minutes']).total_seconds())
+                        min_str = f"{min_iso // 60:02d}:{min_iso % 60:02d}"
+                        fgm = str(hp['statistics']['fieldGoalsMade'])
+                        fga = str(hp['statistics']['fieldGoalsAttempted'])
+                        fg3m = str(hp['statistics']['threePointersMade'])
+                        fg3a = str(hp['statistics']['threePointersAttempted'])
+                        ftm = str(hp['statistics']['freeThrowsMade'])
+                        fta = str(hp['statistics']['freeThrowsAttempted'])
+                        pm = np.select([hp['statistics']['plusMinusPoints'] < 0], 
+                                    [str(int(hp['statistics']['plusMinusPoints']))],
+                                    '+' + str(int(hp['statistics']['plusMinusPoints'])))
+                        pf = hp['statistics']['foulsPersonal']
+                        ttfl = (pts + ast + reb + stl + blk + int(fgm) + int(fg3m) + int(ftm)
+                                    - tov - (int(fga)-int(fgm)) - (int(fg3a)-int(fg3m)) - (int(fta)-int(ftm)))
+                        
+                        boxscore_data['Joueur'].append(playerName)
+                        boxscore_data['OGJoueur'].append(OGplayerName)
+                        boxscore_data['Equipe'].append(teamTricode)
+                        boxscore_data['Pts'].append(pts)
+                        boxscore_data['Ast'].append(ast)
+                        boxscore_data['Reb'].append(reb)
+                        boxscore_data['OReb'].append(oreb)
+                        boxscore_data['DReb'].append(dreb)
+                        boxscore_data['Blk'].append(blk)
+                        boxscore_data['Stl'].append(stl)
+                        boxscore_data['Tov'].append(tov)
+                        boxscore_data['Min'].append(min_str)
+                        boxscore_data['FG'].append(f'{fgm}/{fga}')
+                        boxscore_data['FGm'].append(int(fgm))
+                        boxscore_data['FGa'].append(int(fga))
+                        boxscore_data['FG3'].append(f'{fg3m}/{fg3a}')
+                        boxscore_data['FG3m'].append(int(fg3m))
+                        boxscore_data['FG3a'].append(int(fg3a))
+                        boxscore_data['FT'].append(f'{ftm}/{fta}')
+                        boxscore_data['FTm'].append(int(ftm))
+                        boxscore_data['FTa'].append(int(fta))
+                        boxscore_data['Pm'].append(pm)
+                        boxscore_data['PF'].append(pf)
+                        boxscore_data['TTFL'].append(ttfl)
 
-                    boxscore_df = pd.DataFrame(boxscore_data)
-                    boxscore_df = clean_player_names(boxscore_df, 'OGJoueur')
-                    boxscore_df = boxscore_df.merge(
-                        pat[['playerName', 'avg_TTFL']],
-                        left_on=['OGJoueur'],
-                        right_on=['playerName'],
-                        how='left'
-                    ).drop(columns=['OGJoueur'])
+                boxscore_df = pd.DataFrame(boxscore_data)
+                boxscore_df = clean_player_names(boxscore_df, 'OGJoueur')
+                boxscore_df = boxscore_df.merge(
+                    pat[['playerName', 'avg_TTFL']],
+                    left_on=['OGJoueur'],
+                    right_on=['playerName'],
+                    how='left'
+                ).drop(columns=['OGJoueur'])
 
-                    boxscore_df['perf'] = np.select([boxscore_df['avg_TTFL'] == 0, boxscore_df['TTFL'] < boxscore_df['avg_TTFL']],
-                           ['0', (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%'], 
-                           '+' + (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%')
-                    
-                    boxscore_df['perf_str'] = np.select([boxscore_df['perf'] == '0'], 
-                               ['<span style="text-decoration:overline">TTFL</span> : 0'],
-                               '<span style="text-decoration:overline">TTFL</span> : ' + 
-                               boxscore_df['avg_TTFL'].astype(str) + ' (' + boxscore_df['perf'] + ')')
-                    
-                    boxscore_df['FGpct'] = np.select([boxscore_df['FGa'] == 0, boxscore_df['FGa'] == boxscore_df['FGm']], 
-                                            ['', '100%'], 
-                                (100 * boxscore_df['FGm'] / boxscore_df['FGa']).round(1).astype(str) + '%')
-                    boxscore_df['FG3pct'] = np.select([boxscore_df['FG3a'] == 0, boxscore_df['FG3a'] == boxscore_df['FG3m']], 
-                                            ['', '100%'], 
-                                (100 * boxscore_df['FG3m'] / boxscore_df['FG3a']).round(1).astype(str) + '%')
-                    boxscore_df['FTpct'] = np.select([boxscore_df['FTa'] == 0, boxscore_df['FTa'] == boxscore_df['FTm']], 
-                                            ['', '100%'], 
-                                (100 * boxscore_df['FTm'] / boxscore_df['FTa']).round(1).astype(str) + '%')
+                boxscore_df['perf'] = np.select([boxscore_df['avg_TTFL'] == 0, boxscore_df['TTFL'] < boxscore_df['avg_TTFL']],
+                        ['0', (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%'], 
+                        '+' + (100 * (boxscore_df['TTFL'] - boxscore_df['avg_TTFL']) / boxscore_df['avg_TTFL']).round(1).astype(str) + '%')
+                
+                boxscore_df['perf_str'] = np.select([boxscore_df['perf'] == '0'], 
+                            ['<span style="text-decoration:overline">TTFL</span> : 0'],
+                            '<span style="text-decoration:overline">TTFL</span> : ' + 
+                            boxscore_df['avg_TTFL'].astype(str) + ' (' + boxscore_df['perf'] + ')')
+                
+                boxscore_df['FGpct'] = np.select([boxscore_df['FGa'] == 0, boxscore_df['FGa'] == boxscore_df['FGm']], 
+                                        ['', '100%'], 
+                            (100 * boxscore_df['FGm'] / boxscore_df['FGa']).round(1).astype(str) + '%')
+                boxscore_df['FG3pct'] = np.select([boxscore_df['FG3a'] == 0, boxscore_df['FG3a'] == boxscore_df['FG3m']], 
+                                        ['', '100%'], 
+                            (100 * boxscore_df['FG3m'] / boxscore_df['FG3a']).round(1).astype(str) + '%')
+                boxscore_df['FTpct'] = np.select([boxscore_df['FTa'] == 0, boxscore_df['FTa'] == boxscore_df['FTm']], 
+                                        ['', '100%'], 
+                            (100 * boxscore_df['FTm'] / boxscore_df['FTa']).round(1).astype(str) + '%')
 
-                    boxscore_df = clean_player_names(boxscore_df, 'Joueur')
-                    live_games.append(boxscore_df)
+                boxscore_df = clean_player_names(boxscore_df, 'Joueur')
+                live_games.append(boxscore_df)
             break
 
         except Exception as e:
@@ -168,6 +170,7 @@ def get_live_games():
     
     if len(upcoming_games) == 0 and len(live_games) == 0:
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
+        finished_games = False
             
         for attempt in range(5):
             try:
@@ -201,7 +204,7 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
 
-    return upcoming_games, games_info, live_games, date_ny_str, time.time()
+    return upcoming_games, games_info, live_games, finished_games, date_ny_str, time.time()
 
 if __name__ == "__main__":
     a, b, c, d = get_live_games()
