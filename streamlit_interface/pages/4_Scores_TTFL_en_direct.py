@@ -25,11 +25,8 @@ config(page=PAGENAME)
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Scores TTFL en direct</div>', unsafe_allow_html=True)
-mobile = st.session_state.get("mobile_layout", False)
-if mobile != st.session_state.get("mobile_layout", False):
-    st.session_state.mobile_layout = mobile
-    st.rerun()
-if mobile:
+
+if st.session_state.mobile_layout:
     upcoming_games_per_row = 1
 else:
     upcoming_games_per_row = 3
@@ -80,7 +77,7 @@ else:
     else:
         games_header_str = 'Matchs finis :'
 
-    if mobile:
+    if st.session_state.mobile_layout:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
         col_subheader = st.columns([1])[0]
         col_progress, col_progress_text = st.columns([1, 1])

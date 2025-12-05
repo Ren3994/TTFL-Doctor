@@ -24,8 +24,7 @@ config(page=PAGENAME)
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Scores TTFL de la nuit</div>', unsafe_allow_html=True)
 
-mobile = st.session_state.get("screen_width", 1000) <= 500
-if mobile:
+if st.session_state.mobile_layout:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
     cols_top = st.columns([1, 5, 1], gap="small")
     col_prev, col_date, col_next = cols_top[0], cols_top[1], cols_top[2]

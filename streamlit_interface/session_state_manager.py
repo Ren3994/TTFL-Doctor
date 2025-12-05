@@ -1,13 +1,12 @@
-from streamlit_js_eval import streamlit_js_eval
 from datetime import date, timedelta
 import streamlit as st
-import uuid
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import update_session_state_df
+from streamlit_interface.streamlit_utils import is_mobile_layout
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def init_session_state(page, arg=None):
@@ -18,21 +17,8 @@ def init_session_state(page, arg=None):
         elif env == 'cloud':
             st.session_state.local_instance = False
 
-    if 'scr_key' not in st.session_state:
-            st.session_state.scr_key = str(uuid.uuid4())
-
-    if 'screen_width' in st.session_state:
-        st.session_state.screen_width = st.session_state.get('screen_width', 1366)
-
-    if "screen_width" not in st.session_state or st.session_state.get('screen_width', 1000) == 1000:
-        width = streamlit_js_eval(js_expressions='screen.width', key=st.session_state.scr_key)
-        if width:
-            st.session_state.screen_width = width
-
-    if st.session_state.screen_width < 500:
-        st.session_state.mobile_layout = True
-    else:
-        st.session_state.mobile_layout = False
+    if 'mobile_layout' not in st.session_state:
+        st.session_state.mobile_layout = is_mobile_layout()
         
     st.session_state.dark_mode = True if st.context.theme.type == 'dark' else False
     st.session_state.byteam = st.session_state.get('byteam', False)

@@ -109,6 +109,28 @@ def SEO(loc):
     elif loc == 'footer':
         st.markdown(footer_text, unsafe_allow_html=True)
 
+def is_mobile_layout():
+    MOBILE_KEYWORDS = [
+    "iphone", "android", "mobile", "blackberry", "nokia",
+    "windows phone", "opera mini", "opera mobi", "kindle fire",
+    "silk/", "palm", "symbian", "fennec", "webos"]
+
+    TABLET_KEYWORDS = ["ipad", "tablet", "kindle", "nexus 7", "nexus 10", "sm-t", "silk/"]
+
+    user_agent = st.context.headers.get("User-Agent", '') or ''
+    ua_lower = user_agent.lower()
+
+    mobile = any(k in ua_lower for k in MOBILE_KEYWORDS)
+    tablet = any(k in ua_lower for k in TABLET_KEYWORDS)
+
+    if "android" in ua_lower and not "mobile" in ua_lower:
+        tablet = True
+
+    if mobile and not tablet:
+        return True
+    
+    return False
+
 @st.dialog('Requêtes / Bugs')
 def requests_form():
     request_type = st.segmented_control('Vous voulez...', ['Signaler un bug', 'Demander une nouvelle fonctionnalité'])
@@ -133,7 +155,7 @@ def custom_button_css(selected, fontsize=18):
         bkg_color = "#c6cfda" if selected else "#f3f3f3"
         hover_color = "#aab3bf" if selected else "#e2e7ee"
         text_color = "#000000"
-        
+
     fontsize = f'{fontsize}px'
 
     button_css = [f"""
