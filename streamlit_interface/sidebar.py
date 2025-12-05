@@ -57,7 +57,7 @@ def sidebar(page):
                 st.button('Login')
             
             cols = st.sidebar.columns([1, 5, 1])
-            if cols[1].sidebar.button('Se déconnecter'):
+            if cols[1].button('Se déconnecter'):
                 st.session_state.pop("username", None)
                 on_username_change()
                 st.rerun()
