@@ -141,6 +141,18 @@ def translate_df_column(col_to_translate):
         translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
     return translated_col
 
+def get_idx_pick(df, date, colname):
+    idx_pick = None
+    picks = st.session_state.get('jdp_df', None)
+    if picks is not None and not (picks['Joueur'] == '').all():
+        series = picks.loc[picks['Date du pick'] == date, 'Joueur']
+        pick = series.iloc[0] if not series.empty else None
+        if (pick is not None and pick != '' and 
+            pick in df[colname].tolist()):
+            idx_pick = df.index[df[colname] == pick] + 1
+
+    return idx_pick
+
 def df_to_html(
     df,
     show_cols=['Joueur', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
@@ -182,19 +194,26 @@ def df_to_html(
         hover_highlight_color = "#AA622F"
         best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
         hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
+        tooltip_bkg_color = "#2b2b2b"
+        tooltip_text_color = "#e0e0e0"
+        injured_warning_color = "#CD5050"
+        injured_warning_color_hover = "#CF6767"
     else:
         hover_color="#CACACA"
         text_color="#434343"
         header_text_color="#4A4A4A"
         header_bkg_color = "#bbc2cd"
         zebra_even_color, zebra_odd_color = "#efefef", "#E2E2E2"
-        highlight_color = "#D0681E"
-        hover_highlight_color = "#AF622B"
+        highlight_color = "#C57842"
+        hover_highlight_color = "#B06732"
         best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
         hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
+        tooltip_bkg_color = "#E2E2E2"
+        tooltip_text_color = "#282828"
+        injured_warning_color = "#CD5050"
+        injured_warning_color_hover = "#B74F4F"
 
     shadow_color = "rgba(28,41,54,0.6)"
-    
 
     css = f"""
     <style>
@@ -237,8 +256,8 @@ def df_to_html(
         visibility: hidden;
         width: max-content;
         max-width: 500px;
-        background-color: #2b2b2b;
-        color: #e0e0e0;
+        background-color: {tooltip_bkg_color};
+        color: {tooltip_text_color};
         text-align: center;
         font-weight: normal !important;
         border-radius: 6px;
@@ -276,6 +295,12 @@ def df_to_html(
     .custom-table-dark tr.highlight-row:hover {{
         background-color: {hover_highlight_color} !important;
     }}
+    .custom-table-dark tr.injured-pick-row {{
+        background-color: {injured_warning_color} !important;
+    }}
+    .custom-table-dark tr.injured-pick-row:hover {{
+        background-color: {injured_warning_color_hover} !important;
+    }}
     </style>
     """
 
@@ -312,7 +337,10 @@ def df_to_html(
 
     for i, row in enumerate(df.itertuples(index=False), start=1):
         if highlight_index is not None and i == highlight_index:
-            row_class = "best-pick-row" if i == 1 else "highlight-row"
+            if 'Statut' in show_cols and getattr(row, 'Statut') != '':
+                row_class = "injured-pick-row"
+            else:
+                row_class = "best-pick-row" if i == 1 else "highlight-row"
             html += f'<tr class="{row_class}">'
         else:
             html += "<tr>"
@@ -360,19 +388,19 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-        update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
+        update_session_state_df(st.session_state.date_text)
     except ValueError:
         st.session_state.text_parse_error = True
 
 def prev_date():
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
+    update_session_state_df(st.session_state.date_text)
 
 def next_date():
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    update_session_state_df(st.session_state.selected_date.strftime("%d/%m/%Y"))
+    update_session_state_df(st.session_state.date_text)
 
 def update_session_state_df(date):
     topTTFL_df = cached_get_top_TTFL(date)
@@ -402,7 +430,8 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, bool_translat
             selected_teams.append(matchup.split('-')[1])
 
         filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['Lieu'].isin(selected_teams)]
-
+    
+    filtered_topTTFL_df = filtered_topTTFL_df.reset_index(drop=True)
     return filtered_topTTFL_df
 
 def clear_classement_vars():

@@ -35,7 +35,7 @@ def init_session_state(page, arg=None):
             st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
         if "topTTFL_df" not in st.session_state:
-            update_session_state_df(st.session_state.selected_date.strftime('%d/%m/%Y'))
+            update_session_state_df(st.session_state.date_text)
 
         if 'games_TBD' not in st.session_state:
             st.session_state.games_TBD = False
@@ -61,7 +61,7 @@ def init_session_state(page, arg=None):
             else:
                 st.session_state.mobile_layout = False
 
-    if page in ['JDP', 'top_nuit', 'live_scores']:
+    if page in ['classement', 'JDP', 'top_nuit', 'live_scores']:
         if "JDP" not in st.session_state:
             st.session_state.JDP = JoueursDejaPick()
 

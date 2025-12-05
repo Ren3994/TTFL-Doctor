@@ -78,8 +78,8 @@ with col_checkboxes:
         st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
 
 with col_low_games_count:
-    st.markdown(get_low_game_count(conn, st.session_state.selected_date.strftime("%d/%m/%Y")), unsafe_allow_html=True)
-    deadline = get_deadline(conn, st.session_state.selected_date.strftime("%d/%m/%Y"))
+    st.markdown(get_low_game_count(conn, st.session_state.date_text), unsafe_allow_html=True)
+    deadline = get_deadline(conn, st.session_state.date_text)
     st.markdown(deadline, unsafe_allow_html=True)
     st.toggle('Traduire les détails des blessures', key='bool_translate')
     limit_reached, _ = deepl_api_limit_reached()
@@ -91,7 +91,7 @@ with col_low_games_count:
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
 # Display tonight's games
-games_for_date = get_games_for_date(conn, st.session_state.selected_date.strftime("%d/%m/%Y")).to_dict(orient="records")
+games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
 games_tonight = st.empty()
 
 for i in range(0, len(games_for_date), games_per_row):
@@ -130,9 +130,9 @@ if len(games_for_date) > 0:
 # Display the TTFL table
 if st.session_state.topTTFL_df.empty:
     if not st.session_state.games_TBD:
-        st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date.strftime('%d/%m/%Y')}")
+        st.subheader(f"Pas de matchs NBA le {st.session_state.date_text}")
     else:
-        st.subheader(f"Les équipes de des matchs du {st.session_state.selected_date.strftime('%d/%m/%Y')} n'ont pas encore été déterminées")
+        st.subheader(f"Les équipes de des matchs du {st.session_state.date_text} n'ont pas encore été déterminées")
 
 else:
     tableholder = st.empty()
@@ -145,7 +145,7 @@ else:
             'plots'] == IMG_CHARGEMENT).any()
         ):
         with st.spinner('Génération des graphes...'):
-            if (st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated or
+            if (st.session_state.date_text not in st.session_state.calculated or
                 st.session_state.plot_calc_start != 0):
                 progress = statusholder.progress(0)
         
@@ -161,9 +161,9 @@ else:
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
-                                                        st.session_state.selected_date.strftime('%d/%m/%Y'))
+                                                        st.session_state.date_text)
                 
-                if (st.session_state.selected_date.strftime('%d/%m/%Y') not in st.session_state.calculated or
+                if (st.session_state.date_text not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):
                     progress.progress(min(1, (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
 
@@ -177,7 +177,7 @@ else:
                 selected_games.append(key[11:])
 
     st.session_state.display_df = apply_df_filters(conn,
-                                           st.session_state.selected_date.strftime('%d/%m/%Y'),
+                                           st.session_state.date_text,
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,
                                            st.session_state.bool_translate,
@@ -185,8 +185,9 @@ else:
                                            filter_inj,
                                            selected_games)
     
-    display_df_html = df_to_html(st.session_state.display_df, translate_cols=translate_col)
+    idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
+    display_df_html = df_to_html(st.session_state.display_df, translate_cols=translate_col, highlight_index=idx_pick)
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
-    st.session_state.calculated.append(st.session_state.selected_date.strftime('%d/%m/%Y'))
+    st.session_state.calculated.append(st.session_state.date_text)
 
 SEO('footer')

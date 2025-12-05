@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo, get_idx_pick
 from streamlit_interface.streamlit_utils import conn_db
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
@@ -104,15 +104,8 @@ def get_top_de_la_nuit(date, name, byteam):
     
     html_dfs = {}
     for team, dfteam in dfs.items():
-        idx_pick = None
-        picks = st.session_state.get('jdp_df', None)
-        if picks is not None and not (picks['Joueur'] == '').all():
-            series = picks.loc[picks['Date du pick'] == date, 'Joueur']
-            pick = series.iloc[0] if not series.empty else None
-        
-            if pick is not None and pick != '' and pick in dfteam['Joueur'].tolist():
-                idx_pick = dfteam.index[dfteam['Joueur'] == pick] + 1
-   
+        idx_pick = get_idx_pick(dfteam, date, 'Joueur')
+
         html_df = df_to_html(dfteam, show_cols=show_cols, 
                              tooltips={
                                         'FG' : 'FGpct',

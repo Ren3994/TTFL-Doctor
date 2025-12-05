@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
-from streamlit_interface.classement_TTFL_utils import df_to_html
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.sidebar import sidebar
@@ -158,15 +158,7 @@ else:
                 ascending=[True, False] if st.session_state.live_scores_by_team else False)
                 .reset_index(drop=True))
             
-            idx_pick = None
-            picks = st.session_state.get('jdp_df', None)
-            if picks is not None and not (picks['Joueur'] == '').all():
-                series = picks.loc[picks['Date du pick'] == game_night_date, 'Joueur']
-                pick = series.iloc[0] if not series.empty else None
-                if (pick is not None and pick != '' and 
-                    pick in live_games[idx]['playerName'].tolist()):
-                    idx_pick = live_games[idx].index[live_games[idx]['playerName'] == pick] + 1
-
+            idx_pick = get_idx_pick(live_games[idx], game_night_date, 'playerName')
             html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                             show_index=False,
                                             tooltips={
