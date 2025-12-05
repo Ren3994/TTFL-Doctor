@@ -26,8 +26,8 @@ def sidebar(page):
 
     if page != 'main':
 
-        # col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
-        col = st.sidebar.columns([1, 10, 1])[1]
+        col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
+        # col = st.sidebar.columns([1, 10, 1])[1]
         if col.button('Recharger la page'):
             clear_after_JDP_update()
             clear_after_db_update()
@@ -57,8 +57,8 @@ def sidebar(page):
             with col_accept_username:
                 st.button('Login')
             
-            # col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
-            col = st.sidebar.columns([1, 10, 1])[1]
+            col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
+            # col = st.sidebar.columns([1, 10, 1])[1]
             if col.button('Se déconnecter'):
                 st.session_state.pop("username", None)
                 on_username_change()
@@ -103,7 +103,7 @@ def sidebar(page):
                 os.kill(os.getpid(), signal.SIGTERM)
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-        # col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
-        col = st.sidebar.columns([1, 10, 1])[1]
+        col = st.sidebar.columns([1])[0] if st.session_state.mobile_layout else st.sidebar.columns([1, 10, 1])[1]
+        # col = st.sidebar.columns([1, 10, 1])[1]
         if col.button('Requêtes/Bugs'):
             requests_form()
