@@ -171,7 +171,7 @@ def get_live_games():
                 raise e
             time.sleep(5 * attempt)
     
-    if len(upcoming_games) == 0 and len(live_games) == 0:
+    if len(upcoming_games) == 0 and not pending_games:
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
         pending_games, finished_games = False, False
     
