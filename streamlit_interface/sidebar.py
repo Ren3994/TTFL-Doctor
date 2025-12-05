@@ -25,7 +25,7 @@ def on_username_change():
 def sidebar(page):
 
     if page != 'main':
-        
+
         cols = st.sidebar.columns([1, 5, 1])
         if cols[1].button('Recharger la page'):
             clear_after_JDP_update()
@@ -55,8 +55,9 @@ def sidebar(page):
 
             with col_accept_username:
                 st.button('Login')
-
-            if st.sidebar.button('Se déconnecter'):
+            
+            cols = st.sidebar.columns([1, 5, 1])
+            if cols[1].sidebar.button('Se déconnecter'):
                 st.session_state.pop("username", None)
                 on_username_change()
                 st.rerun()
