@@ -25,8 +25,9 @@ def on_username_change():
 def sidebar(page):
 
     if page != 'main':
-
-        if st.sidebar.button('Recharger la page'):
+        
+        cols = st.sidebar.columns([1, 5, 1])
+        if cols[1].button('Recharger la page'):
             clear_after_JDP_update()
             clear_after_db_update()
             clear_after_injury_update()
