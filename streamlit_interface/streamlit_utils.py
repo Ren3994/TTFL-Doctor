@@ -125,10 +125,17 @@ def requests_form():
         st.success('Requête enregistrée ✅')
 
 def custom_button_css(selected, fontsize=18):
-    bkg_color = "#44454E" if selected else '#131720'
-    hover_color = "#53555C" if selected else '#262831'
+    if st.session_state.dark_mode:
+        bkg_color = "#44454E" if selected else '#131720'
+        hover_color = "#53555C" if selected else '#262831'
+        text_color = "#FFFFFF"
+    else:
+        bkg_color = "#c6cfda" if selected else "#f3f3f3"
+        hover_color = "#aab3bf" if selected else "#e2e7ee"
+        text_color = "#000000"
+        
     fontsize = f'{fontsize}px'
-    text_color = "#FFFFFF"
+
     button_css = [f"""
         div.stButton button {{
             background-color: {bkg_color};

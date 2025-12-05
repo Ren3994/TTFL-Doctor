@@ -160,12 +160,9 @@ def df_to_html(
     show_index=True,
     zebra_stripes=True,
     hover_highlight=True,
-    hover_color="#1e2a3b",
     bold_headers=True,
     shadow_table=False,
     padding=10,
-    text_color="#C5C5C5",
-    header_text_color="#CAC8C8",
     center_table=True,
     color_tooltip_pct=True,
     highlight_index=None,
@@ -174,14 +171,30 @@ def df_to_html(
     translate_cols = [],
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
-    
-    header_bkg_color = "#252b32"
-    zebra_even_color, zebra_odd_color = "#222222", "#111111"
+
+    if st.session_state.dark_mode:
+        hover_color="#1e2a3b"
+        text_color="#C5C5C5"
+        header_text_color="#CAC8C8"
+        header_bkg_color = "#252b32"
+        zebra_even_color, zebra_odd_color = "#222222", "#111111"
+        highlight_color = "#82471D"
+        hover_highlight_color = "#AA622F"
+        best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
+        hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
+    else:
+        hover_color="#CACACA"
+        text_color="#434343"
+        header_text_color="#4A4A4A"
+        header_bkg_color = "#bbc2cd"
+        zebra_even_color, zebra_odd_color = "#efefef", "#E2E2E2"
+        highlight_color = "#D0681E"
+        hover_highlight_color = "#AF622B"
+        best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
+        hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
+
     shadow_color = "rgba(28,41,54,0.6)"
-    highlight_color = "#82471D"
-    hover_highlight_color = "#AA622F"
-    best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
-    hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
+    
 
     css = f"""
     <style>
