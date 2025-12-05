@@ -69,6 +69,17 @@ else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     real_start_pct = min(1, elapsed / TTL)
     start_pct = max(real_start_pct, st.session_state.progress_pct)
+    
+    widths = [2.5, 1.5, 4, 1.5]
+    if pending_games:
+        if finished_games:
+            games_header_str = 'Matchs en cours/matchs finis :'
+            widths = [3.2, 1, 2, 1.2]
+        else:
+            games_header_str = 'Matchs en cours :'
+    else:
+        games_header_str = 'Matchs finis :'
+
     if mobile:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
         col_subheader = st.columns([1])[0]
@@ -77,16 +88,6 @@ else:
         prog_width=100
         games_per_row = 1
     else:
-        widths = [2.5, 1.5, 4, 1.5]
-        if pending_games:
-            if finished_games:
-                games_header_str = 'Matchs en cours/matchs finis :'
-                widths = [3.2, 1, 2, 1.2]
-            else:
-                games_header_str = 'Matchs en cours :'
-        else:
-            games_header_str = 'Matchs finis :'
-
         col_subheader, col_progress_text, col_progress, col_toggle = st.columns(widths, gap='small')
         prog_width=300
         games_per_row = 3
