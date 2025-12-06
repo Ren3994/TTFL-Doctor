@@ -39,15 +39,15 @@ def sidebar(page):
 
         if not st.session_state.local_instance:
 
+            autologin = check_user_cookies_to_login()
+            if autologin:
+                on_username_change()
+
             if st.session_state.get('username', '') != '':
                 st.sidebar.write(f'Utilisateur : {st.session_state.username}')
             else:
                 st.sidebar.write('Pas d\'utilisateur connecté')
             
-            autologin = check_user_cookies_to_login()
-            if autologin:
-                on_username_change()
-
             col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
                 st.text_input(
