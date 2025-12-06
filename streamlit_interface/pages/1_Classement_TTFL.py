@@ -92,14 +92,15 @@ st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_all
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
-cont_games_tonight = st.container(horizontal_alignment='center', gap='medium')
+cont_games_tonight = st.container(horizontal_alignment='center', gap='medium', key=st.session_state.date_text)
 cont_games_tonight.empty()
 
 for i in range(0, len(games_for_date), games_per_row):
     row_games = games_for_date[i:i + games_per_row]
     row_cont = cont_games_tonight.container(horizontal=True, 
                                             horizontal_alignment='center', 
-                                            width=int(len(row_games) * button_width))
+                                            width=int(len(row_games) * button_width),
+                                            key=f'{i}{st.session_state.date_text}')
     row_cont.empty()
     for game in row_games:
 
@@ -139,8 +140,10 @@ if st.session_state.topTTFL_df.empty:
         st.subheader(f"Les équipes de des matchs du {st.session_state.date_text} n'ont pas encore été déterminées")
 
 else:
-    tableholder = st.empty()
     statusholder = st.empty()
+    tableholder = st.empty()
+    temp_table = st.empty()
+    
     if ('plots' not in st.session_state.topTTFL_df or
         st.session_state.plot_calc_start != 0 or
         (st.session_state.topTTFL_df.loc[
@@ -148,11 +151,7 @@ else:
             st.session_state.plot_calc_stop - 1,
             'plots'] == IMG_CHARGEMENT).any()
         ):
-        with st.spinner('Génération des graphes...'):
-            if (st.session_state.date_text not in st.session_state.calculated or
-                st.session_state.plot_calc_start != 0):
-                progress = statusholder.progress(0)
-        
+        with st.spinner('Génération des graphes...'):        
             if st.session_state.plot_calc_start == 0:
                 st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
                         
@@ -161,7 +160,7 @@ else:
                 st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
             topTTFL_html = df_to_html(st.session_state.topTTFL_df, translate_cols=translate_col)
-            tableholder.markdown(topTTFL_html, unsafe_allow_html=True)
+            temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
@@ -169,10 +168,7 @@ else:
                 
                 if (st.session_state.date_text not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):
-                    progress.progress(min(1, (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
-
-    statusholder.empty()
-    tableholder.empty()
+                    statusholder.progress(min(0.999, (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
 
     selected_games = []
     for key in list(st.session_state.keys()):
@@ -191,7 +187,11 @@ else:
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
     display_df_html = df_to_html(st.session_state.display_df, translate_cols=translate_col, highlight_index=idx_pick)
+    
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
     st.session_state.calculated.append(st.session_state.date_text)
+
+    temp_table.empty()
+    statusholder.empty()
 
 SEO('footer')

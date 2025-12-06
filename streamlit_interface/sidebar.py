@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
+from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, delete_cookie
 from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
@@ -42,7 +43,8 @@ def sidebar(page):
                 st.sidebar.write(f'Utilisateur : {st.session_state.username}')
             else:
                 st.sidebar.write('Pas d\'utilisateur connecté')
-
+            
+            check_user_cookies_to_login()
             col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
                 st.text_input(
@@ -56,11 +58,15 @@ def sidebar(page):
             with col_accept_username:
                 st.button('Login')
             
-            cont = centered(sidebar=True)
+            cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
+                delete_cookie('auth_token')
                 on_username_change()
                 st.rerun()
+
+            if cont.checkbox('Rester connecté', value=False):
+                remember_user()
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
@@ -72,6 +78,7 @@ def sidebar(page):
     st.sidebar.page_link('pages/4_Scores_TTFL_en_direct.py', label='4 - Scores TTFL en direct')
     st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes (WIP)')
     st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
+    # st.sidebar.page_link('pages/7_Test_page.py', label='7 - tests')
                 
     if st.secrets.environment == 'local':
         if page != 'main':
