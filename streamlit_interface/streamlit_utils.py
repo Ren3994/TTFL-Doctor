@@ -11,6 +11,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import STREAMLIT_MAIN_PY_PATH, DB_PATH, TBD_LOGO_PATH
+from streamlit_interface.color_palette import get_palette
 
 @st.cache_resource(show_spinner=False)
 def conn_db():
@@ -160,15 +161,18 @@ def centered(sidebar=False, origin=None):
     else:
         return origin.container(horizontal_alignment='center', border=True)
 
-def custom_button_css(selected, fontsize=18, min_width=0):
-    if st.session_state.dark_mode:
-        bkg_color = "#44454E" if selected else '#131720'
-        hover_color = "#53555C" if selected else '#262831'
-        text_color = "#FFFFFF"
-    else:
-        bkg_color = "#c6cfda" if selected else "#f3f3f3"
-        hover_color = "#aab3bf" if selected else "#e2e7ee"
-        text_color = "#000000"
+def custom_button_css(selected, fontsize=18, min_width=0, button_team=None, pick_team=None):
+    palette = get_palette('button')
+    
+    bkg_color = palette['bkg_selected'] if selected else palette['bkg']
+    hover_color = palette['hover_selected'] if selected else palette['hover']
+    text_color = palette['text']
+
+    if pick_team is not None and button_team is not None:
+        if pick_team in button_team:
+            bkg_color = palette['pick_bkg_selected'] if selected else palette['pick_bkg']
+            hover_color = palette['pick_hover_selected'] if selected else palette['pick_hover']
+            text_color = palette['pick_text']    
 
     fontsize = f'{fontsize}px'
 

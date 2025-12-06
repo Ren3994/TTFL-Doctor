@@ -8,27 +8,32 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.streamlit_utils import conn_deepl, deepl_api_limit_reached
+from streamlit_interface.JDP_utils import get_cached_rosters
+from streamlit_interface.color_palette import get_palette
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
 from misc.misc import FRENCHIES
 
 def accentuate_pct(text: str) -> str:
-    def color_for_value(value: float) -> str:
-        if value >= 10:
-            return "#FFD700"  # gold
-        if value <= -10:
-            return "#1E90FF"  # blue
-        if value == 0:
-            return "gray"
+    palette = get_palette('pct')
+    threshold = 10
 
-        magnitude = min(abs(value), 10) / 10.0
+    def color_for_value(value: float) -> str:
+        if value >= threshold:
+            return palette['gold']
+        if value <= -threshold:
+            return palette['blue']
+        if value == 0:
+            return palette['text']
+
+        magnitude = min(abs(value), threshold) / threshold
 
         if value > 0:
-            r1, g1, b1 = (182, 242, 182)  # #b6f2b6
-            r2, g2, b2 = (0, 204, 102)    # #00cc66
+            r1, g1, b1 = palette['light_green']
+            r2, g2, b2 = palette['bright_green']
         else:
-            r1, g1, b1 = (246, 176, 176)  # #f6b0b0
-            r2, g2, b2 = (255, 77, 77)    # #ff4d4d
+            r1, g1, b1 = palette['light_red']
+            r2, g2, b2 = palette['bright_red']
 
         r = int(r1 + (r2 - r1) * magnitude)
         g = int(g1 + (g2 - g1) * magnitude)
@@ -150,15 +155,26 @@ def translate_df_column(col_to_translate):
         translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
     return translated_col
 
-def get_idx_pick(df, date, colname):
-    idx_pick = None
+def get_pick(date, team=False):
+    pick = None
     picks = st.session_state.get('jdp_df', None)
     if picks is not None and not (picks['Joueur'] == '').all():
         series = picks.loc[picks['Date du pick'] == date, 'Joueur']
         pick = series.iloc[0] if not series.empty else None
-        if (pick is not None and pick != '' and 
-            pick in df[colname].tolist()):
-            idx_pick = df.index[df[colname] == pick] + 1
+    if not team:
+        return pick
+    pick_team = None
+    if pick is not None:
+        rosters = get_cached_rosters()
+        pick_team = rosters[rosters['playerName'] == pick]['teamTricode'].iloc[0]
+    return pick, pick_team
+
+def get_idx_pick(df, date, colname):
+    idx_pick = None
+    pick = get_pick(date)
+    if (pick is not None and pick != '' and 
+        pick in df[colname].tolist()):
+        idx_pick = df.index[df[colname] == pick] + 1
 
     return idx_pick
 
@@ -182,7 +198,6 @@ def df_to_html(
     zebra_stripes=True,
     hover_highlight=True,
     bold_headers=True,
-    shadow_table=False,
     padding=10,
     center_table=True,
     color_tooltip_pct=True,
@@ -193,36 +208,21 @@ def df_to_html(
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
 
-    if st.session_state.dark_mode:
-        hover_color="#1e2a3b"
-        text_color="#C5C5C5"
-        header_text_color="#CAC8C8"
-        header_bkg_color = "#252b32"
-        zebra_even_color, zebra_odd_color = "#222222", "#111111"
-        highlight_color = "#82471D"
-        hover_highlight_color = "#AA622F"
-        best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
-        hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
-        tooltip_bkg_color = "#2b2b2b"
-        tooltip_text_color = "#e0e0e0"
-        injured_warning_color = "#CD5050"
-        injured_warning_color_hover = "#CF6767"
-    else:
-        hover_color="#CACACA"
-        text_color="#434343"
-        header_text_color="#4A4A4A"
-        header_bkg_color = "#bbc2cd"
-        zebra_even_color, zebra_odd_color = "#efefef", "#E2E2E2"
-        highlight_color = "#C57842"
-        hover_highlight_color = "#B06732"
-        best_pick_color = "#E1C0029F" if len(df) > 30 else highlight_color
-        hover_best_pick_color = "#FFD900A0" if len(df) > 30 else hover_highlight_color
-        tooltip_bkg_color = "#E2E2E2"
-        tooltip_text_color = "#282828"
-        injured_warning_color = "#CD5050"
-        injured_warning_color_hover = "#B74F4F"
+    palette = get_palette('table')
 
-    shadow_color = "rgba(28,41,54,0.6)"
+    hover_color = palette['hover']
+    text_color = palette['text']
+    header_text_color = palette['header_text']
+    header_bkg_color = palette['header_bkg']
+    zebra_even_color, zebra_odd_color = palette['even'], palette['odd']
+    highlight_color = palette['pick']
+    hover_highlight_color = palette['pick_hover']
+    best_pick_color = palette['best_pick'] if len(df) > 30 else highlight_color
+    hover_best_pick_color = palette['best_pick_hover'] if len(df) > 30 else hover_highlight_color
+    tooltip_bkg_color = palette['tooltip_bkg']
+    tooltip_text_color = palette['tooltip_text']
+    injured_warning_color = palette['injured']
+    injured_warning_color_hover = palette['injured_hover']
 
     css = f"""
     <style>
@@ -231,7 +231,6 @@ def df_to_html(
         text-align: center;
         width: 100%;
         margin: {'0 auto' if center_table else '0'};
-        {'box-shadow: 2px 2px 8px ' + shadow_color + ';' if shadow_table else ''}
     }}
     .custom-table-dark th {{
         

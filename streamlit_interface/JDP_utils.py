@@ -51,6 +51,11 @@ def get_cached_pat():
     pat = run_sql_query(conn=conn_db(), table='player_avg_TTFL')
     return pat
 
+@st.cache_data(show_spinner=False)
+def get_cached_rosters():
+    rosters = run_sql_query(conn=conn_db(), table='rosters')
+    return rosters
+
 class JoueursDejaPick():
     def __init__(self):
         self.conn = conn_db()

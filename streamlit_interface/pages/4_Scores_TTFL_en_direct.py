@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.sidebar import sidebar
@@ -68,6 +68,7 @@ else:
     start_pct = max(real_start_pct, st.session_state.progress_pct)
     
     widths = [2.5, 1.5, 4, 1.5]
+    pick, pick_team = get_pick(date=game_night_date, team=True)
     if pending_games:
         if finished_games:
             games_header_str = 'Matchs en cours/matchs finis :'
@@ -120,9 +121,10 @@ else:
     tableholders = [st.empty() for _ in games_info]
     for idx, game in enumerate(games_info):
         st.session_state.setdefault(f"boxscore_{idx}", False)
-
+        
         home = game["homeTeam"]
         away = game["awayTeam"]
+        matchup = f'{home}-{away}'
         scores = [game["awayScore"], game["homeScore"]]
         logos = [
             st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True)
@@ -138,7 +140,7 @@ else:
 
         with buttonholders[idx].container():
             with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
-                st.session_state[f"boxscore_{idx}"])
+                st.session_state[f"boxscore_{idx}"], button_team=matchup, pick_team=pick_team)
             ):
                 st.button(btn_text,
                     key=f"btn_{idx}",

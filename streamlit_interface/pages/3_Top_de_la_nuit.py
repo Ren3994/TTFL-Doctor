@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.streamlit_utils import SEO, config, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
+from streamlit_interface.classement_TTFL_utils import get_pick
 from streamlit_interface.top_nuit_utils import *
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
@@ -70,6 +71,8 @@ else:
     cont_lower.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
     cont_lower.button('OK')
     cont_lower.button('Clear', on_click=clear_search)
+
+    pick, pick_team = get_pick(date=st.session_state.selected_date_nuit.strftime('%d/%m/%Y'), team=True)
             
     if st.session_state.top_nuit == 'did_not_play':
         st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit} le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}')
@@ -88,7 +91,9 @@ else:
                     if i < len(st.session_state.top_nuit):
                         with col:
                             with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
-                                st.session_state[f'boxscore_nuit_{team}'], min_width=60)):
+                                st.session_state[f'boxscore_nuit_{team}'], 
+                                min_width=60, button_team=team, pick_team=pick_team)):
+                                
                                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
                                         on_click=lambda k=team: st.session_state.update(
                                         {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}),

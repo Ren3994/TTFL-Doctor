@@ -161,7 +161,7 @@ else:
                 st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
             topTTFL_html = df_to_html(st.session_state.topTTFL_df, translate_cols=translate_col)
-            st.markdown(topTTFL_html, unsafe_allow_html=True)
+            tableholder.markdown(topTTFL_html, unsafe_allow_html=True)
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
