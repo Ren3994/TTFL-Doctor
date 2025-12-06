@@ -44,9 +44,11 @@ def sidebar(page):
             else:
                 st.sidebar.write('Pas d\'utilisateur connecté')
             
-            if check_user_cookies_to_login():
+            autologin = check_user_cookies_to_login()
+            st.sidebar.write(autologin)
+            if autologin:
                 on_username_change()
-                
+
             col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
             with col_username_input:
                 st.text_input(
