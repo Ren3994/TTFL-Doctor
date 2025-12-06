@@ -7,6 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.clear_cache_functions import clear_after_JDP_update
 from streamlit_interface.streamlit_utils import conn_supabase
 
 cookies = CookieManager()
@@ -59,6 +60,8 @@ def check_user_cookies_to_login():
                                 .execute()).data[0]['username']
         
             st.session_state.username = username
+            clear_after_JDP_update()
+            st.rerun()
 
 
 
