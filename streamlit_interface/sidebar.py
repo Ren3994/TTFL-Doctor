@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
-from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached
+from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
@@ -25,8 +25,9 @@ def on_username_change():
 def sidebar(page):
 
     if page != 'main':
-
-        if st.sidebar.button('Recharger la page'):
+        
+        cont = centered(sidebar=True)
+        if cont.button('Recharger la page'):
             clear_after_JDP_update()
             clear_after_db_update()
             clear_after_injury_update()
@@ -55,7 +56,8 @@ def sidebar(page):
             with col_accept_username:
                 st.button('Login')
             
-            if st.sidebar.button('Se déconnecter'):
+            cont = centered(sidebar=True)
+            if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
                 on_username_change()
                 st.rerun()
@@ -82,16 +84,20 @@ def sidebar(page):
 
         if 'local_instance' in st.session_state:
             st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
-            if st.sidebar.button('Switch instance'):
+
+            cont = centered(sidebar=True)
+            if cont.button('Switch instance'):
                 st.session_state.local_instance = not st.session_state.local_instance
                 st.session_state.pop('jdp_df', None)
                 st.session_state.pop('JDP', None)
                 st.rerun()
             
-            if st.sidebar.button('Force update'):
+            cont = centered(sidebar=True)
+            if cont.button('Force update'):
                 update_all_data(force_update=True)
                 
-            if st.sidebar.button("🛑 Quitter"):
+            cont = centered(sidebar=True)
+            if cont.button("🛑 Quitter"):
                 cleanup_db()
                 manage_backups()
 
@@ -99,5 +105,6 @@ def sidebar(page):
                 os.kill(os.getpid(), signal.SIGTERM)
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-        if st.sidebar.button('Requêtes/Bugs'):
+        cont = centered(sidebar=True)
+        if cont.button('Requêtes/Bugs'):
             requests_form()

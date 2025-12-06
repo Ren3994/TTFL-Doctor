@@ -45,10 +45,13 @@ def accentuate_pct(text: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def get_joueurs_pas_dispo(_conn, date) :
-
-    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    
+    try:
+        date_dt = datetime.strptime(date, '%d/%m/%Y')
+    except:
+        return []
+    
     limite = date_dt - timedelta(days=30)
-
     jdp, joueurs_pas_dispo = [], []
 
     if st.session_state.local_instance:
@@ -76,10 +79,13 @@ def get_joueurs_blesses(_conn):
 
 @st.cache_data(show_spinner=False)
 def get_low_game_count(_conn, date) :
-
-    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    
+    try:
+        date_dt = datetime.strptime(date, '%d/%m/%Y')
+    except:
+        return ''
     limite = date_dt + timedelta(days=30)
-    n_games = 3
+    n_games = 2
 
     games_per_day = run_sql_query(_conn, 
                                   table="schedule", 
@@ -111,7 +117,7 @@ def get_low_game_count(_conn, date) :
         result_str = ''.join(['&nbsp;'] * 20) + f'<b>Jours avec moins de {n_games} matchs :</b>'
         for p in parts:
             result_str += '<br>'
-            result_str += '•&nbsp;&nbsp;&nbsp;&nbsp;' + p
+            result_str += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;' + p
     else:
         result_str = ''.join(['&nbsp;'] * 15) + f'Pas de jours avec moins de {n_games} matchs'
    
@@ -119,7 +125,10 @@ def get_low_game_count(_conn, date) :
 
 @st.cache_data(show_spinner=False)
 def get_deadline(_conn, date):
-    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    try:
+        date_dt = datetime.strptime(date, '%d/%m/%Y')
+    except:
+        return ''
     df = run_sql_query(_conn, table='schedule', select=['gameDate', 'gameDateTime'], filters=f"gameDate = '{date}'")
     df['gameDateTime'] = pd.to_datetime(df['gameDateTime']).dt.tz_localize(None)
     df_before_midnight = df[df['gameDateTime'] - date_dt < timedelta(days=1)]

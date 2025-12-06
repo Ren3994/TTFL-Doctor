@@ -81,8 +81,8 @@ def st_image_crisp(path, width=40, raw=False):
         return encoded
     return f"""<img src="data:image/png;base64,{encoded}" style="width:{width}px;height:auto;object-fit:contain;"/>"""
 
-def custom_error(error_text, fontsize, center_text=True):
-    st.markdown(f"""
+def custom_error(error_text, fontsize, center_text=True, container=None):
+    error = f"""
             <div style="
                 background-color: #3e2428; 
                 color: #f06666; 
@@ -93,16 +93,21 @@ def custom_error(error_text, fontsize, center_text=True):
             ">
                 {error_text}
             </div>
-            """, unsafe_allow_html=True)
+            """
+    if container is None:
+        st.markdown(error, unsafe_allow_html=True)
+    else:
+        container.markdown(error, unsafe_allow_html=True)
+    
     
 def SEO(loc):
     header_text = ("TTFL Doctor : "
                    "Tableau des picks du soir, récaps des stats par jour, scores TTFL en direct, et tous types de statistiques avancées pour la TrashTalk Fantasy League. "
                    "Optimisez vos picks et évitez les 🥕 !")
     
-    footer_text = ("App développée par Renaud Génin | © 2025<br>"
-                   "Mot-clés : trashtalk, trashtalk fantasy league, ttfl, best pick, fantasy nba, "
-                   "fantasy league, statistiques ttfl, stats ttfl, picks fantasy, blessures")
+    footer_text = ("Mot-clés : trashtalk, trashtalk fantasy league, ttfl, best pick, fantasy nba, "
+                   "fantasy league, statistiques ttfl, stats ttfl, picks fantasy, blessures<br>"
+                   "App développée par Renaud Génin | © 2025")
     
     if loc == 'header':
         st.markdown(header_text)
@@ -146,7 +151,16 @@ def requests_form():
                           .execute())
         st.success('Requête enregistrée ✅')
 
-def custom_button_css(selected, fontsize=18):
+def centered(sidebar=False, origin=None):
+    if origin is None:
+        if sidebar:
+            return st.sidebar.container(horizontal_alignment='center')
+        else:
+            return st.container(horizontal_alignment='center', border=True)
+    else:
+        return origin.container(horizontal_alignment='center', border=True)
+
+def custom_button_css(selected, fontsize=18, min_width=0):
     if st.session_state.dark_mode:
         bkg_color = "#44454E" if selected else '#131720'
         hover_color = "#53555C" if selected else '#262831'
@@ -161,6 +175,7 @@ def custom_button_css(selected, fontsize=18):
     button_css = [f"""
         div.stButton button {{
             background-color: {bkg_color};
+            min-width: {min_width};
         }}""", f"""
         div.stButton > button > div > p {{
             font-size: {fontsize} !important;

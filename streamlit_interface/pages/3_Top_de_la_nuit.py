@@ -26,36 +26,36 @@ st.markdown('<div class="date-title">Scores TTFL de la nuit</div>', unsafe_allow
 
 if st.session_state.mobile_layout:
     st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
-    cols_top = st.columns([1, 5, 1], gap="small")
-    col_prev, col_date, col_next = cols_top[0], cols_top[1], cols_top[2]
-    col_toggle = st.columns([1])[0]
-    col_search, col_ok, col_clear = st.columns([10, 1, 1], gap="small")
+    cont = st.container(horizontal_alignment='center', gap='medium')
+    cont_date_obj = cont.container(horizontal=True, horizontal_alignment='center')
+    cont_left = cont.container(horizontal_alignment='center')
+    cont_lower = cont.container(horizontal=True, horizontal_alignment='center')
     buttons_per_row = 4
 else:
-    cols_top = st.columns([4, 0.7, 1.5, 0.7, 4], gap="small")
-    col_prev, col_date, col_next = cols_top[1], cols_top[2], cols_top[3]
-    col_search, col_ok, col_clear, col_spacer = st.columns([7, 2.5, 3, 8], gap='small', width=500)
-    col_toggle = cols_top[0]
+    cont = st.container(horizontal_alignment='center')
+    cont_upper = cont.container(horizontal=True, horizontal_alignment='center', gap="small")
+    cont_lower = cont.container(horizontal=True, gap='medium')
+    cont_left = cont_upper.container(horizontal_alignment='center', width=300)
+    cont_center = cont_upper.container(horizontal_alignment='center')
+    cont_right = cont_upper.container(horizontal_alignment='center', width=300)
+    cont_right.markdown('')
+    cont_date_obj = cont_center.container(horizontal=True, horizontal_alignment='center')
     buttons_per_row = 8
     
-with col_prev:
-    st.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
+cont_date_obj.button("◀️", on_click=prev_date_nuit, key='prev_button_nuit')
 
-with col_next:
-    st.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
+cont_date_obj.text_input(
+    label="date top nuit",
+    key="date_text_nuit",
+    on_change=on_text_change_nuit,
+    label_visibility="collapsed",
+    width=120)
+if st.session_state.get("text_parse_error_nuit", False):
+    custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13, container=cont_date_obj)
 
-with col_date:
-    st.text_input(
-        label="date top nuit",
-        key="date_text_nuit",
-        on_change=on_text_change_nuit,
-        label_visibility="collapsed",
-        width=120)
-    if st.session_state.get("text_parse_error_nuit", False):
-        custom_error('Format invalide<br>JJ/MM/AAAA', fontsize=13)
+cont_date_obj.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 
-with col_toggle:
-    st.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
+cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
 
 update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.session_state.get('search_player_nuit', ''), st.session_state.byteam)
 
@@ -66,12 +66,10 @@ elif st.session_state.top_nuit == 'hier':
     st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
     vspace(50)
 else:
-    with col_search:
-        st.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
-    with col_ok:
-        st.button('OK')
-    with col_clear:
-        st.button('Clear', on_click=clear_search)
+    
+    cont_lower.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
+    cont_lower.button('OK')
+    cont_lower.button('Clear', on_click=clear_search)
             
     if st.session_state.top_nuit == 'did_not_play':
         st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit} le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}')
@@ -90,7 +88,7 @@ else:
                     if i < len(st.session_state.top_nuit):
                         with col:
                             with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
-                                st.session_state[f'boxscore_nuit_{team}'])):
+                                st.session_state[f'boxscore_nuit_{team}'], min_width=60)):
                                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
                                         on_click=lambda k=team: st.session_state.update(
                                         {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}),
