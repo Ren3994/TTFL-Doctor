@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import streamlit as st
 import sys
 import os
@@ -25,7 +26,8 @@ def init_session_state(page, arg=None):
     st.session_state.username = st.session_state.get('username', '')
 
     if page == 'classement':
-        st.session_state.selected_date = st.session_state.get("selected_date", date.today())
+        st.session_state.selected_date = st.session_state.get("selected_date", 
+                                                              datetime.now(ZoneInfo("Europe/Paris")))
 
         st.session_state.date_text = st.session_state.get("date_text",
             st.session_state.selected_date.strftime("%d/%m/%Y"))
@@ -60,7 +62,8 @@ def init_session_state(page, arg=None):
     
     if page == 'top_nuit':
         st.session_state.selected_date_nuit = st.session_state.get("selected_date_nuit", 
-                                                      date.today() - timedelta(days=1))
+                                                      (datetime.now(ZoneInfo("Europe/Paris")) - 
+                                                       timedelta(days=1)))
 
         st.session_state.date_text_nuit = st.session_state.get("date_text_nuit",
                     st.session_state.selected_date_nuit.strftime("%d/%m/%Y"))

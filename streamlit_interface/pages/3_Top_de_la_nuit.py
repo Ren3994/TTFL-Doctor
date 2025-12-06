@@ -58,24 +58,32 @@ cont_date_obj.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 
 cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
 
-update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), st.session_state.get('search_player_nuit', ''), st.session_state.byteam)
+update_top_nuit(st.session_state.date_text_nuit, 
+                st.session_state.get('search_player_nuit', ''), 
+                st.session_state.byteam)
 
 if st.session_state.top_nuit is None:
-    st.subheader(f"Pas de matchs NBA le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
+    st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")
     vspace(50)
 elif st.session_state.top_nuit == 'hier':
-    st.subheader(f"Pas encore de données pour les matchs du {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}")
+    st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")
     vspace(50)
 else:
     
-    cont_lower.text_input(label='Rechercher joueur', placeholder='Rechercher joueur', key='search_player_nuit', on_change=on_search_player_nuit, width=200, label_visibility="collapsed")
+    cont_lower.text_input(label='Rechercher joueur', 
+                          placeholder='Rechercher joueur', 
+                          key='search_player_nuit', 
+                          on_change=on_search_player_nuit,
+                          label_visibility="collapsed",
+                          width=200)
     cont_lower.button('OK')
     cont_lower.button('Clear', on_click=clear_search)
 
-    pick, pick_team = get_pick(date=st.session_state.selected_date_nuit.strftime('%d/%m/%Y'), team=True)
+    pick, pick_team = get_pick(date=st.session_state.date_text_nuit, team=True)
             
     if st.session_state.top_nuit == 'did_not_play':
-        st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit} le {st.session_state.selected_date_nuit.strftime('%d/%m/%Y')}')
+        st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit}'
+                     f'le {st.session_state.date_text_nuit}')
     else:
         if not st.session_state.byteam:
             st.markdown(st.session_state.top_nuit, unsafe_allow_html=True)
@@ -94,10 +102,12 @@ else:
                                 st.session_state[f'boxscore_nuit_{team}'], 
                                 min_width=60, button_team=team, pick_team=pick_team)):
                                 
-                                st.button(f'![icon](data:image/png;base64,{logo}) {team}', key=f'button_nuit_{team}', 
-                                        on_click=lambda k=team: st.session_state.update(
-                                        {f"boxscore_nuit_{k}": not st.session_state[f"boxscore_nuit_{k}"]}),
-                                        width=80)
+                                st.button(f'![icon](data:image/png;base64,{logo}) {team}', 
+                                          key=f'button_nuit_{team}', 
+                                          width=80,
+                                          on_click=lambda k=team: st.session_state.update(
+                                                   {f"boxscore_nuit_{k}": 
+                                                    not st.session_state[f"boxscore_nuit_{k}"]}))
                                 
             for team, top in st.session_state.top_nuit.items():
                 if st.session_state[f'boxscore_nuit_{team}']:

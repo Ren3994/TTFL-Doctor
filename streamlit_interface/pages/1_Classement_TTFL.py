@@ -92,7 +92,9 @@ st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_all
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
-cont_games_tonight = st.container(horizontal_alignment='center', gap='medium', key=st.session_state.date_text)
+cont_games_tonight = st.container(horizontal_alignment='center',
+                                  key=st.session_state.date_text, 
+                                  gap='medium')
 cont_games_tonight.empty()
 
 for i in range(0, len(games_for_date), games_per_row):
@@ -106,7 +108,8 @@ for i in range(0, len(games_for_date), games_per_row):
 
         ha = [game["homeTeam"], game["awayTeam"]]
         idx = f'{ha[0]}-{ha[1]}'
-        logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True) for team in ha]
+        logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, 
+                                             f"{team}.png"), raw=True) for team in ha]
 
         st.session_state.setdefault(f"classement_{idx}", False)
 
@@ -137,7 +140,8 @@ if st.session_state.topTTFL_df.empty:
     if not st.session_state.games_TBD:
         st.subheader(f"Pas de matchs NBA le {st.session_state.date_text}")
     else:
-        st.subheader(f"Les équipes de des matchs du {st.session_state.date_text} n'ont pas encore été déterminées")
+        st.subheader(f"Les équipes de des matchs du {st.session_state.date_text}" 
+                     "n'ont pas encore été déterminées")
 
 else:
     statusholder = st.empty()
@@ -163,12 +167,14 @@ else:
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
-                st.session_state.topTTFL_df.iloc[i] = generate_all_plots(st.session_state.topTTFL_df.iloc[i],
+                st.session_state.topTTFL_df.iloc[i] = generate_all_plots(
+                                                        st.session_state.topTTFL_df.iloc[i],
                                                         st.session_state.date_text)
                 
                 if (st.session_state.date_text not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):
-                    statusholder.progress(min(0.999, (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
+                    statusholder.progress(min(0.999, 
+                        (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
 
     selected_games = []
     for key in list(st.session_state.keys()):
@@ -186,7 +192,9 @@ else:
                                            selected_games)
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
-    display_df_html = df_to_html(st.session_state.display_df, translate_cols=translate_col, highlight_index=idx_pick)
+    display_df_html = df_to_html(st.session_state.display_df, 
+                                 translate_cols=translate_col, 
+                                 highlight_index=idx_pick)
     
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
     st.session_state.calculated.append(st.session_state.date_text)
