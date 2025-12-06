@@ -49,8 +49,8 @@ def save_user_to_supabase(token):
 
 def check_user_cookies_to_login():
     if st.session_state.get('username', '') == '':
-        # cookies = st.context.cookies
         supabase = conn_supabase()
+        cookies = get_manager()
         if 'ttfl-doctor.auth_token' in cookies.keys():
             auth_token = cookies['ttfl-doctor.auth_token']
             username = (supabase.table("user_auth")
