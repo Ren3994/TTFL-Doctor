@@ -49,6 +49,7 @@ def save_user_to_supabase(token):
                             .execute())
 
 def check_user_cookies_to_login():
+    auto_login = False
     if st.session_state.get('username', '') == '':
         supabase = conn_supabase()
         cookies = get_manager()
@@ -60,8 +61,9 @@ def check_user_cookies_to_login():
                                 .execute()).data[0]['username']
         
             st.session_state.username = username
-            clear_after_JDP_update()
-            st.rerun()
+            auto_login = True
+
+    return auto_login
 
 
 
