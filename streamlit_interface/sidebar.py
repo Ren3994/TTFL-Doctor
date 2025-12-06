@@ -45,7 +45,6 @@ def sidebar(page):
                 st.sidebar.write('Pas d\'utilisateur connecté')
             
             autologin = check_user_cookies_to_login()
-            st.sidebar.write(autologin)
             if autologin:
                 on_username_change()
 
