@@ -17,7 +17,8 @@ cookies = st.session_state.cookies
 # cookies.auto_run()
 
 def get_manager():
-    if not cookies.ready():
+    while not cookies.ready():
+        st.write('sleep 5')
         time.sleep(5)
     return cookies
 
