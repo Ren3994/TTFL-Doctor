@@ -205,6 +205,7 @@ def df_to_html(
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
     translate_cols = [],
+    best_pick_allowed=False
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
 
@@ -217,8 +218,8 @@ def df_to_html(
     zebra_even_color, zebra_odd_color = palette['even'], palette['odd']
     highlight_color = palette['pick']
     hover_highlight_color = palette['pick_hover']
-    best_pick_color = palette['best_pick'] if len(df) > 30 else highlight_color
-    hover_best_pick_color = palette['best_pick_hover'] if len(df) > 30 else hover_highlight_color
+    best_pick_color = palette['best_pick'] if best_pick_allowed else highlight_color
+    hover_best_pick_color = palette['best_pick_hover'] if best_pick_allowed else hover_highlight_color
     tooltip_bkg_color = palette['tooltip_bkg']
     tooltip_text_color = palette['tooltip_text']
     injured_warning_color = palette['injured']

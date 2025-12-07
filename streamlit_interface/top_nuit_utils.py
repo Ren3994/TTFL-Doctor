@@ -119,7 +119,8 @@ def get_top_de_la_nuit(date, name, byteam):
                              image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
-                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'}
+                             col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'},
+                             best_pick_allowed = not byteam
                              )
             
         html_dfs[team] = html_df

@@ -8,8 +8,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
+from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered, custom_CSS
 from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, delete_cookie
-from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
@@ -24,6 +24,8 @@ def on_username_change():
     clear_after_JDP_update()
 
 def sidebar(page):
+
+    st.markdown(custom_CSS, unsafe_allow_html=True)
 
     if page != 'main':
         
