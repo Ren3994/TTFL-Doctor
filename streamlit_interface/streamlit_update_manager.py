@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_db_update, clear_after_injury_update
-from data.sql_functions import run_sql_query, update_tables, get_missing_gameids
+from data.sql_functions import run_sql_query, update_tables, get_missing_gameids, check_table_exists
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
 from streamlit_interface.streamlit_utils import conn_db
@@ -55,6 +55,7 @@ def update_all_data(force_update=False):
 
     ij_updated = ij_prev_update != st.session_state.last_update
     need_to_update = need_to_fetch_new_boxscores()
+    tables_exist = check_table_exists()
 
     if need_to_update or force_update:
         update_status = st.empty()
@@ -68,7 +69,7 @@ def update_all_data(force_update=False):
 
         update_status.empty()
     
-    if ij_updated or need_to_update or force_update:
+    if ij_updated or need_to_update or force_update or not tables_exist:
 
         update_tables(conn)
         clear_after_injury_update()
