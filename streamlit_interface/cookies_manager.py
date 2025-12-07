@@ -12,8 +12,9 @@ from streamlit_interface.streamlit_utils import conn_supabase
 if 'cookies' not in st.session_state:
     st.session_state.cookies = CookieManager()
 
+cookies = st.session_state.cookies
+
 def get_manager():
-    cookies = st.session_state.cookies
     if not cookies.ready():
         st.stop()
     return cookies
