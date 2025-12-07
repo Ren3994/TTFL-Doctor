@@ -21,6 +21,7 @@ cycler==0.12.1
 deepl==1.25.0
 deprecation==2.1.0
 entrypoints==0.4
+extra-streamlit-components==0.1.81
 Faker==38.2.0
 favicon==0.7.0
 filelock==3.20.0

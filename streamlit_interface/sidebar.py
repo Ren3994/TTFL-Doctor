@@ -66,12 +66,12 @@ def sidebar(page):
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
-                delete_cookie('auth_token')
+                # delete_cookie('auth_token')
                 on_username_change()
                 st.rerun()
 
-            if cont.checkbox('Rester connecté', value=False):
-                remember_user()
+            # if cont.checkbox('Rester connecté', value=False):
+            #     remember_user()
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
