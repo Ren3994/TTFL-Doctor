@@ -7,14 +7,13 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.clear_cache_functions import clear_after_JDP_update
 from streamlit_interface.streamlit_utils import conn_supabase
 
-cookies = CookieManager()
-if not cookies.ready():
-    st.stop()
+if 'cookies' not in st.session_state:
+    st.session_state.cookies = CookieManager()
 
 def get_manager():
+    cookies = st.session_state.cookies
     if not cookies.ready():
         st.stop()
     return cookies
@@ -65,5 +64,5 @@ def check_user_cookies_to_login():
                 auto_login = True
             except:
                 pass
-            
+
     return auto_login
