@@ -41,9 +41,9 @@ def sidebar(page):
 
         if not st.session_state.local_instance:
 
-            autologin = check_user_cookies_to_login()
-            if autologin:
-                on_username_change()
+            # autologin = check_user_cookies_to_login()
+            # if autologin:
+            #     on_username_change()
 
             if st.session_state.get('username', '') != '':
                 st.sidebar.write(f'Utilisateur : {st.session_state.username}')
