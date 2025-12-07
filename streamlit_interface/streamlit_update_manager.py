@@ -55,7 +55,7 @@ def update_all_data(force_update=False):
 
     ij_updated = ij_prev_update != st.session_state.last_update
     need_to_update = need_to_fetch_new_boxscores()
-    tables_exist = check_table_exists()
+    tables_exist = check_table_exists(conn, 'absent_teammate_rel_impact')
 
     if need_to_update or force_update:
         update_status = st.empty()
