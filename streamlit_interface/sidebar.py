@@ -71,7 +71,7 @@ def sidebar(page):
                 st.rerun()
             
             if st.session_state.get('username', '') != '':
-                if cont.checkbox('Rester connecté', value=False):
+                if cont.button('Rester connecté'):
                     remember_user()
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)

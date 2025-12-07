@@ -23,6 +23,8 @@ def init_session_state(page, arg=None):
         st.session_state.mobile_layout = is_mobile_layout()
     if 'cookie_manager' not in st.session_state:
         st.session_state.cookie_manager = stx.CookieManager()
+    if 'remembered' not in st.session_state:
+        st.session_state.remembered = False
         
     st.session_state.dark_mode = True if st.context.theme.type == 'dark' else False
     st.session_state.byteam = st.session_state.get('byteam', False)
