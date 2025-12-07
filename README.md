@@ -72,6 +72,12 @@ git clone https://github.com/Ren3994/TTFL-Doctor.git
 cd TTFL-Doctor
 ```
 
+### Création d'un environnement virtuel
+```bash
+python -m venv .venv
+.venv/Scripts/activate # on windows
+```
+
 ### Installation des librairies
 ```bash
 pip install -r requirements.txt

@@ -1,5 +1,4 @@
 from nba_api.stats.endpoints import BoxScoreTraditionalV3
-# from datetime import datetime
 from tqdm import tqdm
 import pandas as pd
 import time

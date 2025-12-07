@@ -55,38 +55,15 @@ def check_user_cookies_to_login():
         cookies = get_manager()
         if 'ttfl-doctor.auth_token' in cookies.keys():
             auth_token = cookies['ttfl-doctor.auth_token']
-            username = (supabase.table("user_auth")
-                                .select("username")
-                                .eq("auth_token", auth_token)
-                                .execute()).data[0]['username']
-        
-            st.session_state.username = username
-            auto_login = True
-
+            try:
+                username = (supabase.table("user_auth")
+                                    .select("username")
+                                    .eq("auth_token", auth_token)
+                                    .execute()).data[0]['username']
+                
+                st.session_state.username = username
+                auto_login = True
+            except:
+                pass
+            
     return auto_login
-
-
-
-
-
-
-
-
-
-
-# @st.cache_resource(show_spinner=False)
-# def get_cookies():
-#     cookies = EncryptedCookieManager(
-#         prefix="ttfl-doctor/st-cookies-manager/",
-#         password=st.secrets.get("COOKIES_PWD", ""),
-#     )
-#     if not cookies.ready():
-#         st.stop()
-#     return cookies
-
-# st.write("Current cookies:", cookies)
-# value = st.text_input("New value for a cookie")
-# if st.button("Change the cookie"):
-#     cookies['a-cookie'] = value  # This will get saved on next rerun
-#     if st.button("No really, change it now"):
-#         cookies.save()  # Force saving the cookies now, without a rerun

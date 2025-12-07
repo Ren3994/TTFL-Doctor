@@ -1,4 +1,4 @@
-from nba_api.stats.endpoints import commonplayerinfo, leaguegamelog, leaguedashplayerbiostats
+from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.static import players
 from tqdm import tqdm
 import pandas as pd

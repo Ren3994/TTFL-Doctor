@@ -158,9 +158,11 @@ def translate_df_column(col_to_translate):
 def get_pick(date, team=False):
     pick = None
     picks = st.session_state.get('jdp_df', None)
-    if picks is not None and not (picks['Joueur'] == '').all():
-        series = picks.loc[picks['Date du pick'] == date, 'Joueur']
-        pick = series.iloc[0] if not series.empty else None
+    if picks is not None:
+        picks = picks[picks['Joueur'] != '']
+        if not picks.empty:
+            series = picks.loc[picks['Date du pick'] == date, 'Joueur']
+            pick = series.iloc[0] if not series.empty else None
     if not team:
         return pick
     pick_team = None

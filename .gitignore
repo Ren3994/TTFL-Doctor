@@ -16,5 +16,6 @@ player_clustering/
 test.py
 
 *.env
+*.venv/
 
 secrets.toml

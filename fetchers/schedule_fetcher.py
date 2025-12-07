@@ -1,5 +1,4 @@
 from nba_api.stats.endpoints import ScheduleLeagueV2
-from zoneinfo import ZoneInfo
 from tqdm import tqdm
 import pandas as pd
 import time
