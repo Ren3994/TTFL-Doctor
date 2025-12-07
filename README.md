@@ -11,7 +11,7 @@ Site hébergé sur streamlit community cloud : [TTFL Doctor](https://ttfl-doctor
 ### 1. Classement TTFL du jour 
 Donne le classement par moyenne TTFL décroissante de tous les joueurs jouant ce soir avec des informations sur les blessures et des stats TTFL.
 
-<img width="1352" height="720" alt="Classement" src="https://github.com/user-attachments/assets/923abc67-06be-4def-95d7-f802645eb58c" /><br><br>
+<img width="1403" height="743" alt="Classement" src="https://github.com/user-attachments/assets/797309ac-f42e-43ca-9e38-f135eecc3b33" /><br><br>
 
 Cliquer sur les flèches à droite et à gauche de la date, ou simplement rentrer une nouvelle date dans la case permet de naviguer entre les différentes journées de matchs.
 
@@ -25,7 +25,7 @@ Par défaut, les graphes d'évolution des scores des 30 premiers joueurs sont g�
 
 Les checkbox sur la gauche permettent de filtrer les joueurs blessés ou qui ont déjà été pick dans les 30 derniers jours (cf. page Historique des picks).
 
-Les indications sur la droite montrent les soirs avec moins de 3 matchs dans les 30 prochains jours pour pouvoir prévoir.
+Les indications sur la droite montrent les soirs avec moins de 2 matchs dans les 30 prochains jours pour pouvoir prévoir.
 
 ### 2. Historique des picks 
 Gestion des picks : des rangées sont automatiquement ajoutées pour les soirs où des matchs ont eu lieu. Il suffit de rentrer le nom du joueur et de cliquer sur sauvegarder.
@@ -36,15 +36,15 @@ Les initiales des joueurs (SGA, KAT, ...), juste prénom/nom quand ils sont uniq
 
 ### 3. Top de la nuit
 
-Donne les scores de tous les joueurs ayant joué lors de la nuit du jour renseigné dans la case. Si les picks sont renseignés dans la page Historique des picks, alors le pick sera surligné et la colonne 'Dispo' montre les joueurs qui auraient pu être pris à la place.
+Donne les scores de tous les joueurs ayant joué lors de la nuit du jour renseigné dans la case. Si les picks sont renseignés dans la page Historique des picks, alors le pick sera surligné et la colonne 'Dispo' montre les joueurs qui auraient pu être pris à la place. Vous pouvez aussi voir les boxscores normaux par équipes en cliquant sur 'Boxscores par équipes'.
 
-<br><img width="1354" height="703" alt="top nuit" src="https://github.com/user-attachments/assets/5eaab812-2178-4aff-a2fe-470bec9450ee" />
+<br><img width="1343" height="767" alt="top nuit" src="https://github.com/user-attachments/assets/d4952412-5e7f-4de8-820e-d17f0c545529" />
 
 ### 4. Scores TTFL en direct
 
-Montre les boxscores classiques en direct (mis à jour toutes les 15s) avec une colonne TTFL. Cliquez sur le bouton d'un match pour afficher le boxscore et recliquez pour le cacher.
+Montre les boxscores classiques en direct (mis à jour toutes les 15s) avec une colonne TTFL. Cliquez sur le bouton d'un match pour afficher le boxscore et recliquez pour le cacher. L'équipe et la rangée du pick est surlignée si le pick est renseigné.
 
-<img width="1351" height="744" alt="live boxscores" src="https://github.com/user-attachments/assets/b2fabd28-d5d5-4cd8-bec2-74af8ac160eb" />
+<img width="1410" height="797" alt="live boxscores" src="https://github.com/user-attachments/assets/7f291fdc-258a-42dc-9149-e6c7d231006c" />
 
 ### 5. Stats par équipes (en construction)
 
@@ -62,7 +62,7 @@ Donne les stats des joueurs. Classable par colonnes.
 
 ## Installation
 
-Vous pouvez juste utiliser l'appli hébergée sur streamlit : ([TTFL Doctor](https://ttfl-doctor.streamlit.app)).
+Vous pouvez juste utiliser l'appli hébergée sur streamlit : [TTFL Doctor](https://ttfl-doctor.streamlit.app)
 
 Ou alors cloner le repo et travailler avec une version locale (app développée avec python 3.13.3).
 
