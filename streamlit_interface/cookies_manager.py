@@ -13,10 +13,11 @@ if 'cookies' not in st.session_state:
     st.session_state.cookies = CookieManager()
 
 cookies = st.session_state.cookies
+cookies.auto_run()
 
 def get_manager():
-    if not cookies.ready():
-        st.stop()
+    # if not cookies.ready():
+    #     st.stop()
     return cookies
 
 def set_cookie(key, value, prefix='ttfl-doctor.'):
