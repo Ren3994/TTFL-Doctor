@@ -2,6 +2,7 @@ from st_cookies_manager import CookieManager
 from datetime import datetime, timedelta
 import streamlit as st
 import secrets
+import time
 import sys
 import os
 
@@ -13,11 +14,11 @@ if 'cookies' not in st.session_state:
     st.session_state.cookies = CookieManager()
 
 cookies = st.session_state.cookies
-cookies.auto_run()
+# cookies.auto_run()
 
 def get_manager():
-    # if not cookies.ready():
-    #     st.stop()
+    if not cookies.ready():
+        time.sleep(5)
     return cookies
 
 def set_cookie(key, value, prefix='ttfl-doctor.'):
