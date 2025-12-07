@@ -4,17 +4,17 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.cookies_manager import *
+from streamlit_interface.cookies_manager import get_manager, set_cookie, delete_cookie, check_user_cookies_to_login
 from streamlit_interface.sidebar import sidebar
 
 sidebar(page='test')
+st.write(st.context.cookies)
 
 cookies = get_manager()
 cont = st.container(horizontal=True)
 cont2 = st.container(horizontal=True)
 
 st.write(cookies)
-st.write(st.context.cookies)
 
 cont.text_input('key', key='cookie_key', width=100)
 cont.text_input('value', key='cookie_value', width=100)
