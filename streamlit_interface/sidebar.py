@@ -72,6 +72,7 @@ def sidebar(page):
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
+                st.session_state.auth_token = None
                 forget_user()
                 on_username_change()
                 st.rerun()
