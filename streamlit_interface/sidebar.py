@@ -8,8 +8,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
+from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, delete_auth_cookie
 from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered, custom_CSS
-# from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, delete_cookie
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
@@ -41,9 +41,9 @@ def sidebar(page):
 
         if not st.session_state.local_instance:
 
-            # autologin = check_user_cookies_to_login()
-            # if autologin:
-            #     on_username_change()
+            autologin = check_user_cookies_to_login()
+            if autologin:
+                on_username_change()
 
             if st.session_state.get('username', '') != '':
                 st.sidebar.write(f'Utilisateur : {st.session_state.username}')
@@ -66,12 +66,13 @@ def sidebar(page):
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
-                # delete_cookie('auth_token')
+                delete_auth_cookie()
                 on_username_change()
                 st.rerun()
-
-            # if cont.checkbox('Rester connecté', value=False):
-            #     remember_user()
+            
+            if st.session_state.get('username', '') != '':
+                if cont.checkbox('Rester connecté', value=False):
+                    remember_user()
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
@@ -84,7 +85,7 @@ def sidebar(page):
     st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes (WIP)')
     st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
 
-    if st.session_state.get('username', '') == 'dev':
+    if st.session_state.get('username', '') == 'dev' or st.secrets.environment == 'local':
         st.sidebar.page_link('pages/7_Test_page.py', label='7 - tests')
                 
     if st.secrets.environment == 'local':

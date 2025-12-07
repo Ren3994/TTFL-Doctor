@@ -1,3 +1,4 @@
+import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import streamlit as st
@@ -20,6 +21,8 @@ def init_session_state(page, arg=None):
 
     if 'mobile_layout' not in st.session_state:
         st.session_state.mobile_layout = is_mobile_layout()
+    if 'cookie_manager' not in st.session_state:
+        st.session_state.cookie_manager = stx.CookieManager()
         
     st.session_state.dark_mode = True if st.context.theme.type == 'dark' else False
     st.session_state.byteam = st.session_state.get('byteam', False)

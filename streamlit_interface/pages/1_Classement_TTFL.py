@@ -89,6 +89,7 @@ if not limit_reached:
         translate_col = ['details']
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+vspace()
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
@@ -134,6 +135,8 @@ vspace()
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
+
+vspace()
 
 # Display the TTFL table
 if st.session_state.topTTFL_df.empty:
