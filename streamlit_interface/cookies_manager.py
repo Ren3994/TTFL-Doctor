@@ -8,11 +8,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.streamlit_utils import conn_supabase
 
-def delete_auth_cookie():
+def forget_user():
     cookie_manager = st.session_state.cookie_manager
-    auth_token = cookie_manager.get(cookie='ttfl-doctor.auth_token')
+    auth_token = st.session_state.auth_token
     if auth_token is not None:
         cookie_manager.delete('ttfl-doctor.auth_token')
+    try:
+        supabase = conn_supabase()
+        delete = (supabase.table("user_auth")
+                          .delete()    
+                          .eq("auth_token", auth_token)    
+                          .execute())
+    except:
+        pass
 
 def remember_user():
     cookie_manager = st.session_state.cookie_manager
@@ -32,24 +40,33 @@ def save_user_to_supabase(token):
                             .insert({"username" : username,
                                     "auth_token" : token})
                             .execute())
+        
+def get_auth_token():
+    if st.session_state.get('auth_token', None) is not None:
+        return st.session_state.auth_token
+        
+    all_cookies = st.session_state.cookie_manager.get_all(key=f'cookies')
+
+    if len(all_cookies) > 0:
+        st.session_state.cookies_retrieved = True
+
+    if 'ttfl-doctor.auth_token' in all_cookies:
+        return all_cookies['ttfl-doctor.auth_token']
+    
+    return None
 
 def check_user_cookies_to_login():
     auto_login = False
-    if st.session_state.get('username', '') == '':
-        supabase = conn_supabase()
-        cookie_manager = st.session_state.get('cookie_manager', None)
-        if cookie_manager is not None:
-            auth_token = cookie_manager.get(cookie='ttfl-doctor.auth_token')
-            if auth_token is not None:
-                try:
-                    username = (supabase.table("user_auth")
-                                        .select("username")
-                                        .eq("auth_token", auth_token)
-                                        .execute()).data[0]['username']
-                    
-                    st.session_state.username = username
-                    auto_login = True
-                except:
-                    pass
+    supabase = conn_supabase()
+    try:
+        username = (supabase.table("user_auth")
+                            .select("username")
+                            .eq("auth_token", st.session_state.auth_token)
+                            .execute()).data[0]['username']
+        
+        st.session_state.username = username
+        auto_login = True
+    except:
+        pass
 
     return auto_login

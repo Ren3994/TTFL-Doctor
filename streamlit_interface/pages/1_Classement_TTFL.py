@@ -118,7 +118,7 @@ for i in range(0, len(games_for_date), games_per_row):
             st.session_state.games_TBD = True
         btn_text = (
                     f'![icon](data:image/png;base64,{logos[0]})'
-                    f'{ha[0]} - {ha[1]}'
+                    f'&nbsp;&nbsp;&nbsp;{ha[0]} - {ha[1]}&nbsp;&nbsp;&nbsp;'
                     f'![icon](data:image/png;base64,{logos[1]})'
                 )
 

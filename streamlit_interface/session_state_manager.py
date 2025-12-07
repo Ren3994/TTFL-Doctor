@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import update_session_state_df
 from streamlit_interface.streamlit_utils import is_mobile_layout
+from streamlit_interface.cookies_manager import get_auth_token
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def init_session_state(page, arg=None):
@@ -23,9 +24,11 @@ def init_session_state(page, arg=None):
         st.session_state.mobile_layout = is_mobile_layout()
     if 'cookie_manager' not in st.session_state:
         st.session_state.cookie_manager = stx.CookieManager()
-    if 'remembered' not in st.session_state:
-        st.session_state.remembered = False
-        
+        st.session_state.cookies_retrieved = False
+    
+    if not st.session_state.cookies_retrieved:
+        st.session_state.auth_token = get_auth_token()
+
     st.session_state.dark_mode = True if st.context.theme.type == 'dark' else False
     st.session_state.byteam = st.session_state.get('byteam', False)
     st.session_state.username = st.session_state.get('username', '')

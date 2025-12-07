@@ -8,8 +8,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
-from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, delete_auth_cookie
 from streamlit_interface.streamlit_utils import requests_form, deepl_api_limit_reached, centered, custom_CSS
+from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, forget_user
+from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
 from streamlit_interface.JDP_utils import JoueursDejaPick
@@ -24,6 +25,8 @@ def on_username_change():
     clear_after_JDP_update()
 
 def sidebar(page):
+
+    init_session_state('sidebar')
 
     st.markdown(custom_CSS, unsafe_allow_html=True)
 
@@ -40,10 +43,11 @@ def sidebar(page):
             st.sidebar.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
         if not st.session_state.local_instance:
-
-            autologin = check_user_cookies_to_login()
-            if autologin:
-                on_username_change()
+            
+            if st.session_state.get('auth_token', None) is not None:
+                user_found = check_user_cookies_to_login()
+                if user_found:
+                    on_username_change()
 
             if st.session_state.get('username', '') != '':
                 st.sidebar.write(f'Utilisateur : {st.session_state.username}')
@@ -62,15 +66,17 @@ def sidebar(page):
 
             with col_accept_username:
                 st.button('Login')
-            
+                # if login_button:
+                #     st.session_state.other = st.session_state.cookie_manager.get(cookie='ttfl-doctor.auth_token')
+                        
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
-                delete_auth_cookie()
+                forget_user()
                 on_username_change()
                 st.rerun()
             
-            if st.session_state.get('username', '') != '':
+            if st.session_state.get('username', '') != '' and st.session_state.auth_token is None:
                 if cont.button('Rester connecté'):
                     remember_user()
 
