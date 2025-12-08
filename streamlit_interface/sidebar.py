@@ -69,6 +69,11 @@ def sidebar(page):
             
             if st.session_state.get('username', '') != '':
                 cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
+
+                if st.session_state.auth_token is None:
+                    if cont.button('Rester connecté'):
+                        remember_user(st.session_state.username)
+                        
                 if cont.button('Se déconnecter'):
                     st.session_state.pop("username", None)
                     st.session_state.auth_token = None
@@ -76,10 +81,6 @@ def sidebar(page):
                     on_username_change()
                     st.rerun()
                 
-                if st.session_state.auth_token is None:
-                    if cont.button('Rester connecté'):
-                        remember_user(st.session_state.username)
-
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
     st.sidebar.header('Navigation')

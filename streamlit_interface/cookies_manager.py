@@ -62,14 +62,14 @@ def get_auth_token():
     
     try:
         all_cookies = st.session_state.cookie_manager.get_all(key='auth')
+
+        if len(all_cookies) > 0:
+            st.session_state.cookies_retrieved = True
+
+        if 'ttfl_doctor_auth_token' in all_cookies:
+            return all_cookies['ttfl_doctor_auth_token']
     except:
         pass
-
-    if len(all_cookies) > 0:
-        st.session_state.cookies_retrieved = True
-
-    if 'ttfl_doctor_auth_token' in all_cookies:
-        return all_cookies['ttfl_doctor_auth_token']
     
     return None
 
