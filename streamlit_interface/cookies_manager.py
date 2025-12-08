@@ -60,7 +60,9 @@ def get_auth_token():
     if st.session_state.get('auth_token', None) is not None:
         return st.session_state.auth_token
     
-    all_cookies = st.session_state.cookie_manager.get_all(key='auth')
+    counter = st.session_state.cookie_retry_counter
+    all_cookies = st.session_state.cookie_manager.get_all(key=f'auth{counter}')
+    st.session_state.cookie_retry_counter += 1
 
     if len(all_cookies) > 0:
         st.session_state.cookies_retrieved = True
