@@ -31,6 +31,9 @@ def sidebar(page):
     st.markdown(custom_CSS, unsafe_allow_html=True)
 
     if page != 'main':
+
+        st.sidebar.write(st.session_state.get('all_cookies', 'not yet'))
+        st.sidebar.write(st.session_state.get('auth_token', 'not yet'))
         
         cont = centered(sidebar=True)
         if cont.button('Recharger la page'):

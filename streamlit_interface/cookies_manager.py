@@ -60,9 +60,11 @@ def get_auth_token():
     if st.session_state.get('auth_token', None) is not None:
         return st.session_state.auth_token
     
+    st.sidebar.write('before', st.session_state.all_cookies)
     if st.session_state.all_cookies is None:
-        new_cookies = st.session_state.cookie_manager.get_all(key='auth')
-        st.session_state.all_cookies = new_cookies
+        st.session_state.all_cookies = st.session_state.cookie_manager.get_all(key='auth')
+    
+    st.sidebar.write('after', st.session_state.all_cookies)
 
     if len(st.session_state.all_cookies) > 0:
         st.session_state.cookies_retrieved = True
