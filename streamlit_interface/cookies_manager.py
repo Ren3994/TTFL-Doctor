@@ -11,12 +11,10 @@ from streamlit_interface.streamlit_utils import conn_supabase
 def forget_user():
     cookie_manager = st.session_state.cookie_manager
     auth_token = st.session_state.auth_token
-    
     try:
         cookie_manager.delete('ttfl-doctor.auth_token')
     except:
         pass
-
     try:
         supabase = conn_supabase()
         delete = (supabase.table("user_auth")
@@ -49,8 +47,7 @@ def get_auth_token():
     if st.session_state.get('auth_token', None) is not None:
         return st.session_state.auth_token
     
-    random_key = secrets.token_hex(10)
-    all_cookies = st.session_state.cookie_manager.get_all(key=random_key)
+    all_cookies = st.session_state.cookie_manager.get_all(key='auth')
 
     if len(all_cookies) > 0:
         st.session_state.cookies_retrieved = True
