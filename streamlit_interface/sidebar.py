@@ -66,9 +66,7 @@ def sidebar(page):
 
             with col_accept_username:
                 st.button('Login')
-                # if login_button:
-                #     st.session_state.other = st.session_state.cookie_manager.get(cookie='ttfl-doctor.auth_token')
-                        
+                
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)

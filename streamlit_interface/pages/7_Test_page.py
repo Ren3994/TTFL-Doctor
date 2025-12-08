@@ -47,7 +47,7 @@ cookie_key = cont.text_input('cookie_key', key='3')
 # cookie_path = cont.text_input('cookie_path', key='5')
 # expires = datetime.datetime(1970, 1, 1)
 if cont.button('Set custom cookie'):
-    manager.set(cookie = 'ttfl-doctor.auth_token',
+    manager.set(cookie = 'ttfl_doctor_auth_token',
                 val='', 
                 path="/~/+", 
                 expires_at=datetime.datetime(1970, 1, 1))

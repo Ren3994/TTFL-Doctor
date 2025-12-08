@@ -12,7 +12,7 @@ def forget_user():
     cookie_manager = st.session_state.cookie_manager
     auth_token = st.session_state.auth_token
     try:
-        cookie_manager.delete('ttfl-doctor.auth_token')
+        cookie_manager.delete('ttfl_doctor_auth_token')
     except:
         pass
     try:
@@ -31,7 +31,13 @@ def remember_user():
         expiration_date = datetime.now() + timedelta(days = 365)
     else:
         expiration_date = datetime.now() + timedelta(days = 30)
-    cookie_manager.set(cookie='ttfl-doctor.auth_token', val=token, expires_at=expiration_date)
+    cookie_manager.set(cookie='ttfl_doctor_auth_token',
+                       val=token, 
+                       expires_at=expiration_date,
+                       path='/',
+                       same_site='lax',
+                       secure=False)
+    
     save_user_to_supabase(token)
 
 def save_user_to_supabase(token):
@@ -52,8 +58,8 @@ def get_auth_token():
     if len(all_cookies) > 0:
         st.session_state.cookies_retrieved = True
 
-    if 'ttfl-doctor.auth_token' in all_cookies:
-        return all_cookies['ttfl-doctor.auth_token']
+    if 'ttfl_doctor_auth_token' in all_cookies:
+        return all_cookies['ttfl_doctor_auth_token']
     
     return None
 
