@@ -25,7 +25,6 @@ def init_session_state(page, arg=None):
     if 'cookie_manager' not in st.session_state:
         st.session_state.cookie_manager = stx.CookieManager()
         st.session_state.cookies_retrieved = False
-        st.session_state.all_cookies = None
     
     if not st.session_state.cookies_retrieved:
         st.session_state.auth_token = get_auth_token()
