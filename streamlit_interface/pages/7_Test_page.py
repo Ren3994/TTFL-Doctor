@@ -1,7 +1,7 @@
 import streamlit as st
 import sys
 import os
-# import datetime
+import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -40,3 +40,14 @@ with c3:
     cookie = st.text_input("Cookie", key="2")
     if st.button("Delete"):
         manager.delete(cookie)
+
+cont=st.container(horizontal=True)
+cookie_key = cont.text_input('cookie_key', key='3')
+# cookie_val = cont.text_input('cookie_val', key='4')
+# cookie_path = cont.text_input('cookie_path', key='5')
+# expires = datetime.datetime(1970, 1, 1)
+if cont.button('Set custom cookie'):
+    manager.set(cookie = 'ttfl-doctor.auth_token',
+                val='', 
+                path="/~/+", 
+                expires_at=datetime.datetime(1970, 1, 1))
