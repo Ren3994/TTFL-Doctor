@@ -9,19 +9,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.streamlit_utils import conn_supabase
 
 def forget_user():
-    cookie_manager = st.session_state.cookie_manager
     auth_token = st.session_state.auth_token
-    try:
-        cookie_manager.delete('ttfl_doctor_auth_token')
-    except:
-        pass
-    try:
-        cookie_manager.set(cookie='ttfl_doctor_auth_token',
-                           val='',
-                           path='/',
-                           expires_at=datetime(1970, 1, 1))
-    except:
-        pass
+    delete_auth_cookie()
     try:
         supabase = conn_supabase()
         delete = (supabase.table("user_auth")
@@ -35,12 +24,12 @@ def remember_user(username):
     cookie_manager = st.session_state.cookie_manager
     token = secrets.token_hex(32)
     if username == 'admin':
-        expiration_date = datetime.now() + timedelta(days = 365)
+        max_age = 60*60*24*365
     else:
-        expiration_date = datetime.now() + timedelta(days = 30)
+        max_age = 60*60*24*30
     cookie_manager.set(cookie='ttfl_doctor_auth_token',
                        val=token, 
-                       expires_at=expiration_date,
+                       max_age=max_age,
                        path='/',
                        same_site='lax',
                        secure=False)
@@ -73,6 +62,19 @@ def get_auth_token():
     
     return None
 
+def delete_auth_cookie():
+    try:
+        st.session_state.cookie_manager.delete('ttfl_doctor_auth_token')
+    except:
+        pass
+    try:
+        st.session_state.cookie_manager.set(cookie='ttfl_doctor_auth_token',
+                                            val='',
+                                            path='/',
+                                            expires_at=datetime(1970, 1, 1))
+    except:
+        pass
+
 def check_user_cookies_to_login():
     auto_login = False
     supabase = conn_supabase()
@@ -84,7 +86,9 @@ def check_user_cookies_to_login():
         
         st.session_state.username = username
         auto_login = True
-    except:
-        pass
+
+    except: # If the token is not found in supabase, delete the cookie and set bools accordingly
+        delete_auth_cookie()
+        st.session_state.auth_token = None
 
     return auto_login
