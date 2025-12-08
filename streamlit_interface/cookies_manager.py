@@ -16,6 +16,13 @@ def forget_user():
     except:
         pass
     try:
+        cookie_manager.set(cookie='ttfl_doctor_auth_token',
+                           val='',
+                           path='/',
+                           expires_at=datetime(1970, 1, 1))
+    except:
+        pass
+    try:
         supabase = conn_supabase()
         delete = (supabase.table("user_auth")
                           .delete()    
@@ -24,10 +31,10 @@ def forget_user():
     except:
         pass
 
-def remember_user():
+def remember_user(username):
     cookie_manager = st.session_state.cookie_manager
     token = secrets.token_hex(32)
-    if st.session_state.get('username', '') == 'admin':
+    if username == 'admin':
         expiration_date = datetime.now() + timedelta(days = 365)
     else:
         expiration_date = datetime.now() + timedelta(days = 30)

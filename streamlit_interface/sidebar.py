@@ -66,7 +66,7 @@ def sidebar(page):
 
             with col_accept_username:
                 st.button('Login')
-                
+
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             if cont.button('Se déconnecter'):
                 st.session_state.pop("username", None)
@@ -77,7 +77,7 @@ def sidebar(page):
             
             if st.session_state.get('username', '') != '' and st.session_state.auth_token is None:
                 if cont.button('Rester connecté'):
-                    remember_user()
+                    remember_user(st.session_state.username)
 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
