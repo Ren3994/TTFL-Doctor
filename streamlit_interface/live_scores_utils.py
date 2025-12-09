@@ -21,6 +21,7 @@ def get_live_games():
     date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
     date_ny_str = date_new_york.strftime('%d/%m/%Y')
     pending_games, finished_games = False, False
+    all_live_data = {}
 
     for attempt in range(5):
         try:
@@ -208,8 +209,17 @@ def get_live_games():
                 if attempt == 4:
                     raise e
                 time.sleep(5 * attempt)
+    
+    all_live_data = {'global' : all_boxscores_df,
+                     'upcoming_games' : upcoming_games,
+                     'games_info' : games_info,
+                     'live_games' : live_games,
+                     'pending_games' : pending_games,
+                     'finished_games' : finished_games,
+                     'gameDate' : date_ny_str,
+                     'timestamp' : time.time()}
 
-    return all_boxscores_df, upcoming_games, games_info, live_games, pending_games, finished_games, date_ny_str, time.time()
+    return all_live_data
 
 if __name__ == "__main__":
     live_data = get_live_games()

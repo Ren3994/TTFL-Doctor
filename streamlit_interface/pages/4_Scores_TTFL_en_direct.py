@@ -20,16 +20,8 @@ PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
 
 live_data = get_live_games()
-all_boxscores_df = live_data[0]
-upcoming_games = live_data[1]
-games_info = live_data[2]
-live_games = live_data[3]
-pending_games = live_data[4]
-finished_games = live_data[5]
-game_night_date = live_data[6]
-timestamp = live_data[7]
 
-init_session_state(page=PAGENAME, arg=timestamp)
+init_session_state(page=PAGENAME, arg=live_data['timestamp'])
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
 
@@ -42,15 +34,15 @@ if st.session_state.mobile_layout:
 else:
     upcoming_games_per_row = 3
 
-if len(upcoming_games) > 0:
+if len(live_data['upcoming_games']) > 0:
     st.subheader('Matchs à venir :')
-    for i in range(0, len(upcoming_games), upcoming_games_per_row):
+    for i in range(0, len(live_data['upcoming_games']), upcoming_games_per_row):
         cols = st.columns(upcoming_games_per_row)
         for j in range(upcoming_games_per_row):
             idx = i + j
-            if idx >= len(upcoming_games):
+            if idx >= len(live_data['upcoming_games']):
                 break
-            upcoming_game = upcoming_games[idx]
+            upcoming_game = live_data['upcoming_games'][idx]
             ha = [upcoming_game['homeTeam'], upcoming_game['awayTeam']]
             gameTime = upcoming_game['gameTimeParis']
             logos = [st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), width=30)
@@ -70,7 +62,7 @@ if len(upcoming_games) > 0:
     
     vspace(2)
 
-if len(live_games) == 0 and not need_to_fetch_new_boxscores():
+if len(live_data['live_games']) == 0 and not need_to_fetch_new_boxscores():
     st.subheader('Aucun match en cours.')
     vspace(50)
 else:
@@ -79,16 +71,16 @@ else:
     start_pct = max(real_start_pct, st.session_state.progress_pct)
     
     widths = [2.5, 1, 2, 1.5, 1.5]
-    pick, pick_team = get_pick(date=game_night_date, team=True)
-    if pending_games:
-        if finished_games:
+    pick, pick_team = get_pick(date=live_data['gameDate'], team=True)
+    if live_data['pending_games']:
+        if live_data['finished_games']:
             games_header_str = 'Matchs en cours/matchs finis :'
             widths = [3.2, 1, 1, 1.3, 1.3]
         else:
             games_header_str = 'Matchs en cours :'
     else:
         games_header_str = 'Matchs finis :'
-        if len(all_boxscores_df) > 0:
+        if len(live_data['global']) > 0:
             st.session_state.global_boxscores = True
 
     if st.session_state.mobile_layout:
@@ -116,7 +108,7 @@ else:
         st.toggle('Global', key='global_boxscores')
 
     col_progress.space('small')
-    if pending_games:
+    if live_data['pending_games']:
         with col_progress:
             progress_bar = st.progress(value=start_pct, width=prog_width)
         col_progress_text.space('small')
@@ -124,20 +116,20 @@ else:
         with col_progress_text:
             progress_text = st.empty()
 
-    buttonholders = [None] * len(games_info)
-    for i in range(0, len(games_info), games_per_row):
+    buttonholders = [None] * len(live_data['games_info'])
+    for i in range(0, len(live_data['games_info']), games_per_row):
         cols = st.columns(games_per_row)
         vspace()
         for j in range(games_per_row):
             idx = i + j
-            if idx >= len(games_info):
+            if idx >= len(live_data['games_info']):
                 break
 
             with cols[j]:
                 buttonholders[idx] = st.empty()
 
-    tableholders = [st.empty() for _ in games_info]
-    for idx, game in enumerate(games_info):
+    tableholders = [st.empty() for _ in live_data['games_info']]
+    for idx, game in enumerate(live_data['games_info']):
         st.session_state.setdefault(f"boxscore_{idx}", False)
         
         home = game["homeTeam"]
@@ -168,12 +160,12 @@ else:
                 )
     
     if st.session_state.global_boxscores:
-        all_boxscores_df = (all_boxscores_df.sort_values(
+        all_boxscores_df = (live_data['global'].sort_values(
                     by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
                     ascending=[True, False] if st.session_state.live_scores_by_team else False)
                     .reset_index(drop=True))
                 
-        idx_pick = get_idx_pick(all_boxscores_df, game_night_date, 'playerName')
+        idx_pick = get_idx_pick(all_boxscores_df, live_data['gameDate'], 'playerName')
         html_df = df_to_html(all_boxscores_df, show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                         show_index = not st.session_state.live_scores_by_team,
                                         tooltips={
@@ -194,16 +186,16 @@ else:
         
     else:
 
-        for idx in range(len(games_info)):
+        for idx in range(len(live_data['games_info'])):
             if st.session_state[f"boxscore_{idx}"]:
 
-                live_games[idx] = (live_games[idx].sort_values(
+                live_data['live_games'][idx] = (live_data['live_games'][idx].sort_values(
                     by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
                     ascending=[True, False] if st.session_state.live_scores_by_team else False)
                     .reset_index(drop=True))
                 
-                idx_pick = get_idx_pick(live_games[idx], game_night_date, 'playerName')
-                html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
+                idx_pick = get_idx_pick(live_data['live_games'][idx], live_data['gameDate'], 'playerName')
+                html_df = df_to_html(live_data['live_games'][idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
                                                 show_index = not st.session_state.live_scores_by_team,
                                                 tooltips={
                                                     'TTFL' : 'perf_str',
@@ -220,7 +212,7 @@ else:
             else:
                 tableholders[idx].empty()
     
-    if pending_games :
+    if live_data['pending_games'] :
         total_steps = int(TTL * REFRESH_RATE)
         for step in range(int(start_pct * total_steps), total_steps + 1):
             pct = step / total_steps
