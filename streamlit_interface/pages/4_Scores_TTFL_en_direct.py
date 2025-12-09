@@ -69,7 +69,7 @@ if len(upcoming_games) > 0:
     
     vspace(2)
 
-if len(live_games) == 0:
+if len(live_games) == 0 and len(all_boxscores_df) == 0:
     st.subheader('Aucun match en cours.')
     vspace(50)
 else:
@@ -87,6 +87,8 @@ else:
             games_header_str = 'Matchs en cours :'
     else:
         games_header_str = 'Matchs finis :'
+        if len(all_boxscores_df) > 0:
+            st.session_state.global_boxscores = True
 
     if st.session_state.mobile_layout:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
@@ -185,6 +187,8 @@ else:
                                         color_tooltip_pct=False,
                                         highlight_index=idx_pick,
                                         best_pick_allowed=True)
+        if len(tableholders) == 0:
+            tableholders = [st.empty()]
         tableholders[0].markdown(html_df, unsafe_allow_html=True)
         
     else:

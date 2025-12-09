@@ -31,12 +31,7 @@ def get_live_games():
             games_info = []
 
             for game in games:
-                if game['gameStatus'] == 2:
-                    pending_games = True
-                if game['gameStatus'] == 3:
-                    finished_games = True   
-
-                elif game['gameStatus'] == 1:
+                if game['gameStatus'] == 1:
                     upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
                                            'awayTeam' : game['awayTeam']['teamTricode'],
                                            'gameTimeParis' : (datetime.fromisoformat(
@@ -45,6 +40,11 @@ def get_live_games():
                                                .strftime('%d %b. à %Hh%M'))
                                           })
                     continue
+                
+                elif game['gameStatus'] == 2:
+                    pending_games = True
+                elif game['gameStatus'] == 3:
+                    finished_games = True   
 
                 boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
                 games_info.append({'time' : boxscores['gameStatusText'],
@@ -188,12 +188,12 @@ def get_live_games():
                     gameStatus = game[3]
                     gameTimeStringET = game[4]
                     homeTeamID = game[6]
-                    awayTEAMID = game[7]
+                    awayTeamID = game[7]
                     
-                    if gameStatus != 1:
+                    if gameStatus != 1 or gameTimeStringET == 'TBD':
                         continue
                     upcoming_games.append({'homeTeam' : TEAM_IDS2TRICODE[homeTeamID],
-                                           'awayTeam' : TEAM_IDS2TRICODE[awayTEAMID],
+                                           'awayTeam' : TEAM_IDS2TRICODE[awayTeamID],
                                            'gameTimeParis' : (
                                                 datetime.strptime(gameTimeStringET.replace(" ET", ""), 
                                                                    "%I:%M %p")
@@ -212,6 +212,7 @@ def get_live_games():
     return all_boxscores_df, upcoming_games, games_info, live_games, pending_games, finished_games, date_ny_str, time.time()
 
 if __name__ == "__main__":
-    a, b, c, d = get_live_games()
-    for game in a:
-        print(game['homeTeam'], game['awayTeam'], game['gameTimeParis'])
+    live_data = get_live_games()
+    print(live_data)
+    # for game in b:
+    #     print(game['homeTeam'], game['awayTeam'], game['gameTimeParis'])
