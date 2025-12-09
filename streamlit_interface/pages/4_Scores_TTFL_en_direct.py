@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from streamlit_interface.streamlit_utils import SEO, config, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick
+from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.sidebar import sidebar
@@ -69,7 +70,7 @@ if len(upcoming_games) > 0:
     
     vspace(2)
 
-if len(live_games) == 0 and len(all_boxscores_df) == 0:
+if len(live_games) == 0 and not need_to_fetch_new_boxscores():
     st.subheader('Aucun match en cours.')
     vspace(50)
 else:
