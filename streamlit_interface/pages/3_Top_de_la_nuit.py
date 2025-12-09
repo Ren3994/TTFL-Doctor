@@ -60,7 +60,8 @@ cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscor
 
 update_top_nuit(st.session_state.date_text_nuit, 
                 st.session_state.get('matched_players_nuit', ''), 
-                st.session_state.byteam)
+                st.session_state.get('byteam', False),
+                st.session_state.get('show_my_pick', False))
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")
@@ -80,6 +81,8 @@ else:
     cont_lower.button('Clear', on_click=clear_search)
 
     pick, pick_team = get_pick(date=st.session_state.date_text_nuit, team=True)
+    if pick is not None:
+        cont_lower.button('Mon pick', on_click=show_my_pick, args=(pick, ))
             
     if st.session_state.top_nuit == 'did_not_play':
         st.subheader(f'Pas de boxscores pour {st.session_state.matched_players_nuit} '

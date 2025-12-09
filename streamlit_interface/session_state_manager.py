@@ -78,6 +78,9 @@ def init_session_state(page, arg=None):
 
         if st.session_state.date_text_nuit == "" or not st.session_state.date_text_nuit:
             st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
+        
+        if 'show_my_pick' not in st.session_state:
+            st.session_state.show_my_pick = False
     
     if page == 'live_scores':
         if 'live_scores_update_timestamp' not in st.session_state:

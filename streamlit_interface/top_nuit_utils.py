@@ -12,7 +12,7 @@ from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def get_top_de_la_nuit(date, matched_names, byteam):
+def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     conn = conn_db()                        
     df = run_sql_query(conn,
                     table='boxscores b', 
@@ -122,7 +122,7 @@ def get_top_de_la_nuit(date, matched_names, byteam):
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'},
-                             best_pick_allowed = not byteam
+                             best_pick_allowed = not byteam and not show_my_pick
                              )
             
         html_dfs[team] = html_df
@@ -143,7 +143,8 @@ def on_text_change_nuit():
         clear_search()
         update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
                         st.session_state.get('matched_players_nuit', ''),
-                        st.session_state.get('byteam', False))
+                        st.session_state.get('byteam', False),
+                        st.session_state.get('show_my_pick', False))
         clear_boxscore_vars()
     except ValueError:
         st.session_state.text_parse_error_nuit = True
@@ -154,7 +155,8 @@ def prev_date_nuit():
     clear_search()
     update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
                     st.session_state.get('matched_players_nuit', ''),
-                    st.session_state.get('byteam', False))
+                    st.session_state.get('byteam', False),
+                    st.session_state.get('show_my_pick', False))
     clear_boxscore_vars()
 
 def next_date_nuit():
@@ -163,11 +165,17 @@ def next_date_nuit():
     clear_search()
     update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
                     st.session_state.get('matched_players_nuit', ''),
-                    st.session_state.get('byteam', False))
+                    st.session_state.get('byteam', False),
+                    st.session_state.get('show_my_pick', False))
     clear_boxscore_vars()
 
-def update_top_nuit(date, name, byteam):
-    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam)
+def update_top_nuit(date, name, byteam, show_my_pick):
+    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam, show_my_pick)
+
+def show_my_pick(pick):
+    st.session_state.search_player_nuit = pick
+    st.session_state.show_my_pick = True
+    on_search_player_nuit()
 
 def on_search_player_nuit():
     player_name = st.session_state.search_player_nuit
@@ -182,6 +190,7 @@ def on_search_player_nuit():
 def clear_search():
     st.session_state.search_player_nuit = ''
     st.session_state.matched_players_nuit = ''
+    st.session_state.show_my_pick = False
 
 def clear_boxscore_vars():
     for key in list(st.session_state.keys()):
