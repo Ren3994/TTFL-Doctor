@@ -69,7 +69,8 @@ if st.session_state.top_nuit is None:
     for _ in range(50):
         st.write('')
 elif st.session_state.top_nuit == 'hier':
-    pending_games = get_live_games()['pending_games']
+    live_data = get_live_games()
+    pending_games = live_data['pending_games']
     if pending_games:
         st.subheader('Des matchs sont en cours actuellement')
         for _ in range(3):
@@ -77,6 +78,7 @@ elif st.session_state.top_nuit == 'hier':
         cont_see_live_games = st.container(horizontal_alignment='center')
         
         if cont_see_live_games.button('Voir les scores en direct'):
+            st.session_state.global_boxscores = True
             st.switch_page('pages/4_Scores_TTFL_en_direct.py')
     else:
         st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")
