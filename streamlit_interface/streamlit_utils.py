@@ -18,7 +18,7 @@ def conn_db():
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) 
     return conn
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, ttl=5*60)
 def conn_supabase():
     url = st.secrets.get("SUPABASE_URL", "unknown")
     key = st.secrets.get("SUPABASE_KEY", "unknown")
