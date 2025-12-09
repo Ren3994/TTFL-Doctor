@@ -1,7 +1,4 @@
-from nba_api.stats.endpoints import commonplayerinfo
-from nba_api.stats.static import players
 from tqdm import tqdm
-import pandas as pd
 import random
 import time
 import sys
@@ -13,6 +10,9 @@ from update_manager.boxscores_manager import normalize_name, normalize_position
 from misc.misc import SEASON, LEAGUE_ID
 
 def fetch_player_positions():
+    from nba_api.stats.endpoints import commonplayerinfo
+    from nba_api.stats.static import players
+    import pandas as pd
 
     active_players = players.get_active_players()
     player_ids = [player['id'] for player in active_players]

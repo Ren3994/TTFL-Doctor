@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import streamlit as st
-import numpy as np
 import sys
 import os
 
@@ -13,6 +12,8 @@ from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
+    import numpy as np
+
     conn = conn_db()                        
     df = run_sql_query(conn,
                     table='boxscores b', 

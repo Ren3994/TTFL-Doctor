@@ -1,7 +1,6 @@
 from datetime import datetime
 import streamlit as st
 from tqdm import tqdm
-import pandas as pd
 import random
 import time
 import sys
@@ -13,7 +12,8 @@ from data.sql_functions import init_db, save_to_db, get_missing_gameids, check_b
 from update_manager.boxscores_manager import get_boxscores, log_failure
 
 def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
-    
+    import pandas as pd
+
     new_games_found = True
 
     if init_database:

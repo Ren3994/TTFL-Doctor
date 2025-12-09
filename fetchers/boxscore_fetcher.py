@@ -1,9 +1,9 @@
-from nba_api.stats.endpoints import BoxScoreTraditionalV3
 from tqdm import tqdm
-import pandas as pd
 import time
 
 def fetch_boxscores(game_date, game_id, visitor_team, home_team):
+    from nba_api.stats.endpoints import BoxScoreTraditionalV3
+    import pandas as pd
     
     boxscore_df = pd.DataFrame()
     if not game_id:

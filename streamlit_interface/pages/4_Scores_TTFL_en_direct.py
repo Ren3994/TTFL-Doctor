@@ -1,5 +1,3 @@
-from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
-from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import time
 import sys
@@ -12,6 +10,7 @@ from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, 
 from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
+from streamlit_interface.lazy_loader import get_sc
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
 
@@ -24,6 +23,7 @@ live_data = get_live_games()
 init_session_state(page=PAGENAME, arg=live_data['timestamp'])
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
+sc = get_sc()
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -60,11 +60,13 @@ if len(live_data['upcoming_games']) > 0:
                     </div>
                     """, unsafe_allow_html=True)
     
-    vspace(2)
+    for _ in range(2):
+        st.write('')
 
 if len(live_data['live_games']) == 0 and not need_to_fetch_new_boxscores():
     st.subheader('Aucun match en cours.')
-    vspace(50)
+    for _ in range(50):
+        st.write('')
 else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     real_start_pct = min(1, elapsed / TTL)
@@ -119,7 +121,7 @@ else:
     buttonholders = [None] * len(live_data['games_info'])
     for i in range(0, len(live_data['games_info']), games_per_row):
         cols = st.columns(games_per_row)
-        vspace()
+        st.write('')
         for j in range(games_per_row):
             idx = i + j
             if idx >= len(live_data['games_info']):
@@ -223,5 +225,6 @@ else:
         
         st.rerun()
     else:
-        vspace(50)
+        for _ in range(50):
+            st.write('')
 SEO('footer')

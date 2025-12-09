@@ -1,5 +1,3 @@
-from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
-from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import sys
 import os
@@ -11,6 +9,7 @@ from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.classement_TTFL_utils import get_pick
+from streamlit_interface.lazy_loader import get_sc
 from streamlit_interface.top_nuit_utils import *
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
@@ -21,6 +20,7 @@ update_all_data()
 init_session_state(page=PAGENAME)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
+sc = get_sc()
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -66,12 +66,14 @@ update_top_nuit(st.session_state.date_text_nuit,
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")
-    vspace(50)
+    for _ in range(50):
+        st.write('')
 elif st.session_state.top_nuit == 'hier':
     pending_games = get_live_games()[4]
     if pending_games:
         st.subheader('Des matchs sont en cours actuellement')
-        vspace(3)
+        for _ in range(3):
+            st.write('')
         cont_see_live_games = st.container(horizontal_alignment='center')
         
         if cont_see_live_games.button('Voir les scores en direct'):
@@ -79,8 +81,8 @@ elif st.session_state.top_nuit == 'hier':
     else:
         st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")
 
-
-    vspace(50)
+    for _ in range(50):
+        st.write('')
 else:
     cont_lower.text_input(label='Rechercher joueur', 
                           placeholder='Rechercher joueur', 
@@ -105,7 +107,7 @@ else:
             teams = list(st.session_state.top_nuit.keys())
             for i in range(0, len(teams), buttons_per_row):
                 cols = st.columns(buttons_per_row, gap="small")
-                vspace()
+                st.write('')
                 row_items = teams[i:i + buttons_per_row]
                 for col, team in zip(cols, row_items):
                     logo = st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw = True)

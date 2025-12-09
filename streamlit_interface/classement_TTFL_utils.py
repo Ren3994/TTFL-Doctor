@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 import streamlit as st
-import pandas as pd
 import sys
 import os
 import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.resource_manager import conn_deepl, deepl_api_limit_reached
+# from streamlit_interface.resource_manager import conn_deepl, deepl_api_limit_reached
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.color_palette import get_palette
 from update_manager.topTTFL_manager import get_top_TTFL
@@ -50,6 +49,7 @@ def accentuate_pct(text: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def get_joueurs_pas_dispo(_conn, date) :
+    import pandas as pd
     
     try:
         date_dt = datetime.strptime(date, '%d/%m/%Y')
@@ -84,6 +84,7 @@ def get_joueurs_blesses(_conn):
 
 @st.cache_data(show_spinner=False)
 def get_low_game_count(_conn, date) :
+    import pandas as pd
     
     try:
         date_dt = datetime.strptime(date, '%d/%m/%Y')
@@ -130,6 +131,8 @@ def get_low_game_count(_conn, date) :
 
 @st.cache_data(show_spinner=False)
 def get_deadline(_conn, date):
+    import pandas as pd
+
     try:
         date_dt = datetime.strptime(date, '%d/%m/%Y')
     except:
@@ -145,15 +148,15 @@ def get_deadline(_conn, date):
     
     return result_str
 
-@st.cache_data(show_spinner=False)
-def translate_df_column(col_to_translate):
-    deepl_client = conn_deepl()
-    try:
-        translated_col_obj = deepl_client.translate_text(col_to_translate, target_lang='FR')
-        translated_col = [t.text for t in translated_col_obj]
-    except:
-        translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
-    return translated_col
+# @st.cache_data(show_spinner=False)
+# def translate_df_column(col_to_translate):
+#     deepl_client = conn_deepl()
+#     try:
+#         translated_col_obj = deepl_client.translate_text(col_to_translate, target_lang='FR')
+#         translated_col = [t.text for t in translated_col_obj]
+#     except:
+#         translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
+#     return translated_col
 
 def get_pick(date, team=False):
     pick = None
@@ -206,7 +209,7 @@ def df_to_html(
     highlight_index=None,
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
-    translate_cols = [],
+    # translate_cols = [],
     best_pick_allowed=False
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
@@ -316,13 +319,13 @@ def df_to_html(
     """
 
     # Translate columns
-    limit_reached, _ = deepl_api_limit_reached()
-    if len(translate_cols) > 0 and not limit_reached:
-        for col in translate_cols:
-            empty_string_mask = df[col] == ''
-            to_translate = df.loc[~empty_string_mask, col].tolist()
-            translated_text = translate_df_column(to_translate)
-            df.loc[~empty_string_mask, col] = translated_text
+    # limit_reached, _ = deepl_api_limit_reached()
+    # if len(translate_cols) > 0 and not limit_reached:
+    #     for col in translate_cols:
+    #         empty_string_mask = df[col] == ''
+    #         to_translate = df.loc[~empty_string_mask, col].tolist()
+    #         translated_text = translate_df_column(to_translate)
+    #         df.loc[~empty_string_mask, col] = translated_text
 
     # Build HTML table
     html = css + '<table class="custom-table-dark">'
@@ -424,7 +427,7 @@ def update_session_state_df(date):
     clear_classement_vars()
 
 @st.cache_data(show_spinner=False)
-def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, bool_translate, filter_JDP, filter_inj, selected_games):
+def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
     joueurs_pas_dispo = get_joueurs_pas_dispo(_conn, date)
     joueurs_blesses = get_joueurs_blesses(_conn)
 

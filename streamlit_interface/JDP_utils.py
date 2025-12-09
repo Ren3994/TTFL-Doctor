@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
-from rapidfuzz import fuzz, process
 from zoneinfo import ZoneInfo
 import streamlit as st
-import pandas as pd
 import sys
 import os
 import re
@@ -75,7 +73,9 @@ class JoueursDejaPick():
         else:
             self.existing_users = fetch_supabase_users(self.supabase)
             
-    def loadJDP(self) -> pd.DataFrame:
+    def loadJDP(self):
+        import pandas as pd
+
         if st.session_state.local_instance:
             df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
         else:
@@ -89,7 +89,9 @@ class JoueursDejaPick():
                                         ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
         return df
             
-    def initJDP(self) -> pd.DataFrame:
+    def initJDP(self):
+        import pandas as pd
+
         good_df = self.loadJDP()
         game_dates_completed = get_cached_game_dates_completed()
 
@@ -121,7 +123,7 @@ class JoueursDejaPick():
         
         return good_df
     
-    def saveJDP(self, df:pd.DataFrame, save=True):
+    def saveJDP(self, df, save=True):
 
         df = self.db_cols(df)
         df = self.completeCols(df)
@@ -153,7 +155,9 @@ class JoueursDejaPick():
         df = self.display_cols(df)
         return df
     
-    def completeCols(self, df:pd.DataFrame):
+    def completeCols(self, df):
+        import pandas as pd
+
         scoresTTFL = get_cached_scoresTTFL()
         avg_TTFL = get_cached_avg_TTFL()
         
@@ -188,7 +192,7 @@ class JoueursDejaPick():
 
         return df_completed
     
-    def display_cols(self, df:pd.DataFrame):
+    def display_cols(self, df):
         df = df.rename(columns={
             'joueur': 'Joueur',
             'datePick': 'Date du pick',
@@ -198,7 +202,7 @@ class JoueursDejaPick():
         })
         return df
     
-    def db_cols(self, df:pd.DataFrame):
+    def db_cols(self, df):
         df = df.rename(columns={
             'Joueur': 'joueur',
             'Date du pick': 'datePick',
@@ -208,7 +212,7 @@ class JoueursDejaPick():
         })
         return df
     
-    def dt_cols2str(self, df:pd.DataFrame):
+    def dt_cols2str(self, df):
         try:
             df['datePick'] = df['datePick'].dt.strftime('%d/%m/%Y')
         except:
@@ -219,7 +223,9 @@ class JoueursDejaPick():
             pass
         return df
     
-    def str_cols2dt(self, df:pd.DataFrame):
+    def str_cols2dt(self, df):
+        import pandas as pd
+
         try:
             df['datePick'] = pd.to_datetime(df['datePick'], errors='coerce', dayfirst=True)
         except:
@@ -287,6 +293,8 @@ def match_player(input_name, names_list=None, multi=False):
             matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
 
     elif matched_name is None:
+        from rapidfuzz import fuzz, process
+
         if multi:
             match_list = process.extract(input_name, names_list, scorer=fuzz.token_set_ratio, limit=10)
             matched_name = [name for name, _, _ in match_list]

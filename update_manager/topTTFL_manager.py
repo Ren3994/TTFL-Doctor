@@ -1,5 +1,3 @@
-import pandas as pd
-import numpy as np
 import sys
 import os
 
@@ -8,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import topTTFL_query
 
-def get_top_TTFL(game_date: str) -> pd.DataFrame:
+def get_top_TTFL(game_date: str):
 
     conn = conn_db()
 
@@ -18,6 +16,9 @@ def get_top_TTFL(game_date: str) -> pd.DataFrame:
     return prettydf
 
 def format_to_table(df) :
+    import pandas as pd
+    import numpy as np
+
     if df.empty :
         return df
 

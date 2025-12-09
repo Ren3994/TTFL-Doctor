@@ -1,4 +1,3 @@
-from nba_api.stats.endpoints import leaguedashteamstats
 from tqdm import tqdm
 import time
 import sys
@@ -9,6 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from misc.misc import SEASON, LEAGUE_ID, FULLNAME2TRICODE
 
 def get_team_stats():
+    from nba_api.stats.endpoints import leaguedashteamstats
+
     team_stats=None
     for attempt in range(5):
         try :

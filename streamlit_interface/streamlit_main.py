@@ -1,5 +1,3 @@
-from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
-from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import sys
 import os
@@ -20,7 +18,8 @@ st.markdown('<div class="date-title">TTFL Doctor</div>', unsafe_allow_html=True)
 col_spacer1, col_text, col_spacer2 = st.columns([2, 5, 2])
 with col_text:
     SEO('header')
-    vspace(5)
+    for _ in range(5):
+        st.write('')
 
 # st.markdown('<div class="date-title">Pages disponibles</div>', unsafe_allow_html=True)
 
@@ -51,7 +50,8 @@ with col_text:
 #     st.markdown('<div class="big-text">Stats par équipes</div>', unsafe_allow_html=True)
 # with col6:
 #     st.markdown('<div class="big-text">Stats par joueurs</div>', unsafe_allow_html=True)
-vspace(50)
+for _ in range(50):
+    st.write('')
 SEO('footer')
 
 st.switch_page('pages/1_Classement_TTFL.py')

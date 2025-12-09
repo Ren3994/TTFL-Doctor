@@ -1,4 +1,3 @@
-import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import streamlit as st
@@ -13,6 +12,8 @@ from streamlit_interface.cookies_manager import get_auth_token
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def init_session_state(page, arg=None):
+    import extra_streamlit_components as stx
+
     if 'local_instance' not in st.session_state:
         env = st.secrets.get("environment", "unknown")
         if env == 'local':

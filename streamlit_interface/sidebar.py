@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
 from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, forget_user
 from streamlit_interface.streamlit_utils import requests_form, centered, custom_CSS
-from streamlit_interface.resource_manager import deepl_api_limit_reached
+# from streamlit_interface.resource_manager import deepl_api_limit_reached
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
@@ -102,8 +102,8 @@ def sidebar(page):
         
         st.sidebar.header('Dev tools')
 
-        limit_reached, usage = deepl_api_limit_reached()
-        st.sidebar.write(f'Deepl : {usage} ({limit_reached})')
+        # limit_reached, usage = deepl_api_limit_reached()
+        # st.sidebar.write(f'Deepl : {usage} ({limit_reached})')
 
         if 'local_instance' in st.session_state:
             st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")

@@ -1,10 +1,6 @@
-from nba_api.live.nba.endpoints import boxscore, scoreboard
-from nba_api.stats.endpoints import scoreboardv2
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import streamlit as st
-import pandas as pd
-import numpy as np
 import isodate
 import time
 import sys
@@ -17,6 +13,11 @@ from misc.misc import TEAM_IDS2TRICODE
 
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
+    from nba_api.live.nba.endpoints import boxscore, scoreboard
+    from nba_api.stats.endpoints import scoreboardv2
+    import pandas as pd
+    import numpy as np
+    
     pat = get_cached_avg_TTFL()
     date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
     date_ny_str = date_new_york.strftime('%d/%m/%Y')

@@ -1,7 +1,6 @@
 from typing import List, Optional, Union, Dict, Any
 import streamlit as st
 from tqdm import tqdm
-import pandas as pd
 import sqlite3
 import sys
 import os
@@ -43,6 +42,7 @@ def init_db(conn):
         tqdm.write('Team stats table is None. Table could not be saved')
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team_player ON rosters(teamTricode, playerName);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team ON rosters(teamTricode);")
 
 def check_table_exists(conn, table):
     cursor=conn.cursor()
@@ -86,7 +86,7 @@ def update_helper_tables(conn):
     run_sql_query(
         conn,
         table="boxscores",
-        select=["playerName", "teamTricode", "gameId", "TTFL"],
+        select=["playerName AS playerA", "teamTricode", "gameId", "TTFL AS player_TTFL"],
         filters=["seconds > 0"],
         output_table="played"
     )
@@ -94,7 +94,7 @@ def update_helper_tables(conn):
     run_sql_query(
         conn,
         table="played",
-        select=["playerName AS teammate", "gameId"],
+        select=["playerA AS teammate", "gameId"],
         distinct=True,
         output_table="teammate_played"
     )
@@ -130,12 +130,23 @@ def update_helper_tables(conn):
                   group_by='teamTricode', 
                   order_by='avg_opp_TTFL', 
                   output_table='rel_avg_opp_TTFL')
+    
+    run_sql_query(conn, 
+                  table='rosters r1', 
+                  select=['r1.playerName AS playerA', 
+                               'r2.playerName AS teammate',
+                               'r1.teamTricode'],
+                  joins=[{'table' : 'rosters r2',
+                                       'on' : 'r1.teamTricode = r2.teamTricode'}],
+                  filters='r1.playerName <> r2.playerName',
+                  output_table='roster_pairs')
 
     cur = conn.cursor()
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_player_avg_TTFL_player ON player_avg_TTFL(playerName);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_team_games_team ON team_games(teamTricode);""")
-    cur.execute("""CREATE INDEX IF NOT EXISTS idx_played_player_game ON played(playerName, gameId);""")
+    cur.execute("""CREATE INDEX IF NOT EXISTS idx_played_player_game ON played(playerA, gameId);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_teammate_played_game ON teammate_played(teammate, gameId);""")
+    cur.execute("""CREATE INDEX IF NOT EXISTS idx_rp_team ON roster_pairs(teamTricode);""")
 
     conn.commit()
 
@@ -212,7 +223,7 @@ def add_missing_pos_to_rosters(conn):
     """)
     conn.commit()
 
-def update_tables(conn, progress=None):
+def update_tables(conn):
 
     conn.execute("PRAGMA journal_mode = WAL;")
 
@@ -230,6 +241,8 @@ def update_tables(conn, progress=None):
     # conn.execute("PRAGMA optimize;")
 
 def update_home_away_rel_TTFL(conn):
+    import pandas as pd
+
     query = """
     WITH home_away_TTFL AS (
     SELECT
@@ -264,6 +277,8 @@ def update_home_away_rel_TTFL(conn):
     save_to_db(conn, df, "home_away_rel_TTFL", if_exists="replace")
 
 def update_avg_TTFL_per_pos(conn):
+    import pandas as pd
+
     query="""
     WITH
         -- Expand composite positions so each player can count for G, F and/or C
@@ -294,6 +309,8 @@ def update_avg_TTFL_per_pos(conn):
     save_to_db(conn, df, "avg_TTFL_per_pos", if_exists="replace")
 
 def update_avg_TTFL_per_pos_per_opp(conn):
+    import pandas as pd
+
     query="""
     WITH
         -- Expand composite positions so each player can count for G, F and/or C
@@ -326,6 +343,7 @@ def update_avg_TTFL_per_pos_per_opp(conn):
     save_to_db(conn, df, "avg_TTFL_per_pos_per_opp", if_exists="replace")
 
 def update_rel_player_avg_ttfl_v_opp(conn):
+    import pandas as pd
     
     query = """
     WITH patop AS (
@@ -359,19 +377,10 @@ def update_rel_player_avg_ttfl_v_opp(conn):
     save_to_db(conn, df, "rel_patop", if_exists="replace")
 
 def update_absent_teammate_rel_impact(conn):
-    
+    import pandas as pd
+
     query = """
     WITH
-    -- roster_pairs = all (playerA, teammate) on same team
-    roster_pairs AS (
-      SELECT r1.playerName AS playerA,
-             r2.playerName AS teammate,
-             r1.teamTricode
-      FROM rosters r1
-      JOIN rosters r2
-        ON r1.teamTricode = r2.teamTricode
-      WHERE r1.playerName <> r2.playerName
-    ),
 
     -- pair_games = expand each pair across all team games
     pair_games AS (
@@ -379,12 +388,6 @@ def update_absent_teammate_rel_impact(conn):
       FROM roster_pairs rp
       JOIN team_games tg
         ON rp.teamTricode = tg.teamTricode
-    ),
-
-    -- player's TTFL per game (pre-filtered)
-    player_played AS (
-      SELECT playerName AS playerA, gameId, TTFL AS player_TTFL
-      FROM played
     ),
 
     --aggregation (without relative TTFL)
@@ -406,7 +409,7 @@ def update_absent_teammate_rel_impact(conn):
       AND pg.teammate = tp.teammate
 
       -- join player's TTFL for games they played
-      LEFT JOIN player_played pp
+      LEFT JOIN played pp
         ON pg.gameId = pp.gameId
       AND pg.playerA = pp.playerA
 
@@ -439,6 +442,8 @@ def update_absent_teammate_rel_impact(conn):
     conn.commit()
     
 def updates_games_missed_by_players(conn):
+    import pandas as pd
+
     query = """
     SELECT
         tg.gameId,
@@ -465,6 +470,7 @@ def updates_games_missed_by_players(conn):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_games_missed_team_game ON games_missed_by_players(gameId, team);")
     
 def update_opp_pos_avg_per_game(conn):
+    import pandas as pd
 
     query="""
     WITH
@@ -520,7 +526,8 @@ def update_opp_pos_avg_per_game(conn):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_opp_pos_avg_per_game_team_game ON opp_pos_avg_per_game(gameId, teamTricode);")
 
 def topTTFL_query(conn, game_date):
-        
+    import pandas as pd
+
     query = """
 
     WITH
@@ -877,7 +884,9 @@ def run_sql_query(
     verbose: bool = False,
     group_agg: Optional[Dict[str, Union[str, Dict[str, Any], None]]] = None,
     dtypes: Optional[Dict[str, str]] = None,
-) -> Optional[pd.DataFrame]:
+    ):
+    import pandas as pd
+
     """
     Parameters
     ----------
@@ -1062,6 +1071,7 @@ def get_missing_gameids(conn):
     - games from the regular season (id starts with 002)
     - but not yet present in 'boxscores'
     """
+    import pandas as pd
 
     cursor = conn.cursor()
     query = """
@@ -1091,6 +1101,8 @@ def get_missing_gameids(conn):
     return missing_games
 
 def get_games_for_date(conn, game_date_str):
+    import pandas as pd
+
     df = pd.read_sql_query(f"SELECT * FROM schedule WHERE gameDate = '{game_date_str}'", conn)
     
     df['homeTeam'] = df['homeTeam'].fillna('TBD') # For games where teams have not yet been determined (IST final bracket, ...)

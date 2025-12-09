@@ -1,4 +1,3 @@
-from nba_api.stats.endpoints import CommonAllPlayers
 from tqdm import tqdm
 import time
 import sys
@@ -10,6 +9,8 @@ from misc.misc import SEASON, LEAGUE_ID
 from update_manager.boxscores_manager import normalize_name
 
 def get_rosters():
+    from nba_api.stats.endpoints import CommonAllPlayers
+
     rosters_df = None
     for attempt in range(5) :
         try:

@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, UTC
 from zoneinfo import ZoneInfo
 import streamlit as st
-import pandas as pd
 import sys
 import os
 
@@ -23,6 +22,8 @@ def get_cached_upcoming_games():
     return upcoming_games
 
 def need_to_fetch_new_boxscores():
+    import pandas as pd
+
     conn = conn_db()
     df_missing_games = get_missing_gameids(conn)
     if not df_missing_games.empty:
@@ -39,7 +40,7 @@ def need_to_fetch_new_boxscores():
     now_utc = datetime.now(UTC)
     return now_utc >= next_game_end
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def cached_update_injury_report():
     conn=conn_db()
     update_injury_report(conn)

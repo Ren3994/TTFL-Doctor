@@ -1,11 +1,6 @@
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import matplotlib.dates as mdates
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
 from datetime import datetime
 from io import BytesIO
 import streamlit as st
-import seaborn as sns
 import base64
 import sys
 import os
@@ -16,6 +11,7 @@ from misc.misc import RESIZED_LOGOS_PATH
 
 @st.cache_data(show_spinner=False)
 def load_logo(path):
+    import matplotlib.image as mpimg
     return mpimg.imread(path)
 
 def generate_all_plots(row_nographs, date, parallelize=False):
@@ -43,6 +39,11 @@ def cached_generate_plot_row(requested_date,
                              graph_TTFLs, 
                              graph_wins, 
                              avgTTFL):
+    
+    from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    import seaborn as sns
 
     dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
@@ -121,7 +122,7 @@ def cached_generate_plot_row(requested_date,
     ax.grid(axis='both', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
 
     # plt.show()
-    fig.tight_layout()
+    # fig.tight_layout()
     buf = BytesIO()
     fig.savefig(buf, format="jpg", dpi=120)
     plt.close(fig)

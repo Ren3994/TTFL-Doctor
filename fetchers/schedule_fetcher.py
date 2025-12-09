@@ -1,6 +1,4 @@
-from nba_api.stats.endpoints import ScheduleLeagueV2
 from tqdm import tqdm
-import pandas as pd
 import time
 import sys
 import os
@@ -10,6 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 
 def get_schedule():
+    from nba_api.stats.endpoints import ScheduleLeagueV2
+    import pandas as pd
 
     schedule = None
     for attempt in range(5):

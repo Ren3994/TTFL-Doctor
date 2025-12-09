@@ -1,6 +1,7 @@
-import requests
 
 def check_internet_connection():
+    import requests
+
     try:
         requests.get('https://clients3.google.com/generate_204', timeout=5)
         return True

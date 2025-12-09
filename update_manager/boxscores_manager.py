@@ -1,9 +1,7 @@
 from datetime import datetime
-import pandas as pd
 import unicodedata
-import numpy as np
-import os
 import sys
+import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -11,6 +9,8 @@ from misc.misc import FAILED_LOG_PATH, CHAR_MAP, NAME2TRICODE
 from fetchers.boxscore_fetcher import fetch_boxscores
 
 def get_boxscores(game_date, game_id, visitor_team, home_team):
+    import pandas as pd
+
     boxscores = fetch_boxscores(game_date, game_id, visitor_team, home_team)
     if boxscores.empty:
         return pd.DataFrame()
@@ -72,6 +72,7 @@ def normalize_position(pos: str) -> str:
         return mapping.get(pos, pos)
 
 def add_columns(df) :
+    import numpy as np
 
     df['playerName'] = df['firstName'] + ' ' + df['familyName']
     df['playerName'] = df['playerName'].apply(normalize_name)

@@ -1,11 +1,12 @@
-from bs4 import BeautifulSoup
 from datetime import datetime
 from tqdm import tqdm
-import pandas as pd
-import requests
 import time
 
-def get_injury_report() -> pd.DataFrame:
+def get_injury_report():
+    from bs4 import BeautifulSoup
+    import pandas as pd
+    import requests
+
     df = None
     for attempt in range(5) :
         try :

@@ -1,5 +1,3 @@
-from streamlit_extras.add_vertical_space  import add_vertical_space as vspace
-from streamlit_extras.stylable_container import stylable_container as sc
 import streamlit as st
 import sys
 import os
@@ -13,6 +11,7 @@ from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.classement_TTFL_utils import *
+from streamlit_interface.lazy_loader import get_sc
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 
@@ -23,6 +22,7 @@ init_session_state(page=PAGENAME)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
 conn = conn_db()
+sc = get_sc()
 
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -82,15 +82,15 @@ cont_date_obj.button("▶️", on_click=next_date)
 cont_right.markdown(get_low_game_count(conn, st.session_state.date_text), unsafe_allow_html=True)
 deadline = get_deadline(conn, st.session_state.date_text)
 cont_right.markdown(deadline, unsafe_allow_html=True)
-cont_right.toggle('Traduire les détails des blessures', key='bool_translate')
-limit_reached, _ = deepl_api_limit_reached()
-translate_col = []
-if not limit_reached:
-    if st.session_state.bool_translate:
-        translate_col = ['details']
+# cont_right.toggle('Traduire les détails des blessures', key='bool_translate')
+# limit_reached, _ = deepl_api_limit_reached()
+# translate_col = []
+# if not limit_reached:
+#     if st.session_state.bool_translate:
+#         translate_col = ['details']
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-vspace()
+st.write('')
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
@@ -132,13 +132,12 @@ for i in range(0, len(games_for_date), games_per_row):
                               on_click=lambda k=idx: st.session_state.update(
                             {f"classement_{k}": not st.session_state[f"classement_{k}"]})
                              )
-vspace()
+st.write('')
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
-vspace()
-
+st.write('')
 # Display the TTFL table
 if st.session_state.topTTFL_df.empty:
     if not st.session_state.games_TBD:
@@ -167,7 +166,7 @@ else:
                 st.session_state.plot_calc_start:
                 st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
-            topTTFL_html = df_to_html(st.session_state.topTTFL_df, translate_cols=translate_col)
+            topTTFL_html = df_to_html(st.session_state.topTTFL_df)#, translate_cols=translate_col)
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
@@ -190,14 +189,14 @@ else:
                                            st.session_state.date_text,
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,
-                                           st.session_state.bool_translate,
+                                        #    st.session_state.bool_translate,
                                            filter_JDP,
                                            filter_inj,
                                            selected_games)
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
     display_df_html = df_to_html(st.session_state.display_df, 
-                                 translate_cols=translate_col, 
+                                #  translate_cols=translate_col, 
                                  highlight_index=idx_pick)
     
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
