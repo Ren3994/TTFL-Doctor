@@ -7,7 +7,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_deepl, deepl_api_limit_reached
+from streamlit_interface.resource_manager import conn_deepl, deepl_api_limit_reached
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.color_palette import get_palette
 from update_manager.topTTFL_manager import get_top_TTFL

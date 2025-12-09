@@ -6,7 +6,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_supabase
+from streamlit_interface.resource_manager import conn_supabase
 
 def forget_user():
     auth_token = st.session_state.auth_token

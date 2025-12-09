@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)

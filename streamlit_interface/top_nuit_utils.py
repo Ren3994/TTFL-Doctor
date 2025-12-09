@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo, get_idx_pick
-from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 

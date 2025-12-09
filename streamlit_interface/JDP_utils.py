@@ -9,7 +9,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_db, conn_supabase, fetch_supabase_users
+from streamlit_interface.resource_manager import conn_db, conn_supabase, fetch_supabase_users
 from data.sql_functions import run_sql_query
 from misc.misc import NICKNAMES
 

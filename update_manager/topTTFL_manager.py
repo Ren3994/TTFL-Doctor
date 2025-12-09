@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import topTTFL_query
 
 def get_top_TTFL(game_date: str) -> pd.DataFrame:

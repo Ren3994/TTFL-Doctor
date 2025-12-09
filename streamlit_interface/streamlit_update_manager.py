@@ -11,7 +11,7 @@ from streamlit_interface.clear_cache_functions import clear_after_db_update, cle
 from data.sql_functions import run_sql_query, update_tables, get_missing_gameids, check_table_exists
 from update_manager.injury_report_manager import update_injury_report
 from update_manager.nba_api_manager import update_nba_data
-from streamlit_interface.streamlit_utils import conn_db
+from streamlit_interface.resource_manager import conn_db
 
 @st.cache_data(show_spinner=False)
 def get_cached_upcoming_games():
