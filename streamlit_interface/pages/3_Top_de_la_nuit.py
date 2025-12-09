@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from streamlit_interface.streamlit_utils import SEO, config, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
+from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.classement_TTFL_utils import get_pick
 from streamlit_interface.top_nuit_utils import *
 from streamlit_interface.sidebar import sidebar
@@ -67,10 +68,20 @@ if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")
     vspace(50)
 elif st.session_state.top_nuit == 'hier':
-    st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")
+    pending_games = get_live_games()[4]
+    if pending_games:
+        st.subheader('Des matchs sont en cours actuellement')
+        vspace(3)
+        cont_see_live_games = st.container(horizontal_alignment='center')
+        
+        if cont_see_live_games.button('Voir les scores en direct'):
+            st.switch_page('pages/4_Scores_TTFL_en_direct.py')
+    else:
+        st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")
+
+
     vspace(50)
 else:
-    
     cont_lower.text_input(label='Rechercher joueur', 
                           placeholder='Rechercher joueur', 
                           key='search_player_nuit', 

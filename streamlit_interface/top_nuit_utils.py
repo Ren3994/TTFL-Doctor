@@ -117,6 +117,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
                                         'Reb' : 'rebSplit',
                                         'Mins' : 'ttfl_per_min'
                                     },
+                             show_index = len(dfteam) > 10,
                              col_header_tooltips=[],
                              image_tooltips=[],
                              color_tooltip_pct=False,

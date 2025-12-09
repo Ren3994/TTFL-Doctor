@@ -17,7 +17,17 @@ from misc.misc import RESIZED_LOGOS_PATH
 # ---------- Initialize session state ----------
 PAGENAME = 'live_scores'
 REFRESH_RATE, TTL = 30, 15
-upcoming_games, games_info, live_games, pending_games, finished_games, game_night_date, timestamp = get_live_games()
+
+live_data = get_live_games()
+all_boxscores_df = live_data[0]
+upcoming_games = live_data[1]
+games_info = live_data[2]
+live_games = live_data[3]
+pending_games = live_data[4]
+finished_games = live_data[5]
+game_night_date = live_data[6]
+timestamp = live_data[7]
+
 init_session_state(page=PAGENAME, arg=timestamp)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
@@ -67,12 +77,12 @@ else:
     real_start_pct = min(1, elapsed / TTL)
     start_pct = max(real_start_pct, st.session_state.progress_pct)
     
-    widths = [2.5, 1.5, 4, 1.5]
+    widths = [2.5, 1, 2, 1.5, 1.5]
     pick, pick_team = get_pick(date=game_night_date, team=True)
     if pending_games:
         if finished_games:
             games_header_str = 'Matchs en cours/matchs finis :'
-            widths = [3.2, 1, 2, 1.2]
+            widths = [3.2, 1, 1, 1.3, 1.3]
         else:
             games_header_str = 'Matchs en cours :'
     else:
@@ -83,10 +93,11 @@ else:
         col_subheader = st.columns([1])[0]
         col_progress, col_progress_text = st.columns([1, 1])
         col_toggle = st.columns([1])[0]
+        col_global_boxscores_toggle = st.columns([1])[0]
         prog_width=100
         games_per_row = 1
     else:
-        col_subheader, col_progress_text, col_progress, col_toggle = st.columns(widths, gap='small')
+        col_subheader, col_progress_text, col_progress, col_toggle, col_global_boxscores_toggle = st.columns(widths, gap='small')
         prog_width=300
         games_per_row = 3
     
@@ -95,7 +106,11 @@ else:
 
     col_toggle.space('small')
     with col_toggle:
-        new_toggle_value = st.toggle('Par équipe', key='live_scores_by_team')
+        st.toggle('Par équipe', key='live_scores_by_team')
+    
+    col_global_boxscores_toggle.space('small')
+    with col_global_boxscores_toggle:
+        st.toggle('Global', key='global_boxscores')
 
     col_progress.space('small')
     if pending_games:
@@ -148,32 +163,57 @@ else:
                         {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
                     width=255
                 )
+    
+    if st.session_state.global_boxscores:
+        all_boxscores_df = (all_boxscores_df.sort_values(
+                    by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
+                    ascending=[True, False] if st.session_state.live_scores_by_team else False)
+                    .reset_index(drop=True))
+                
+        idx_pick = get_idx_pick(all_boxscores_df, game_night_date, 'playerName')
+        html_df = df_to_html(all_boxscores_df, show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
+                                        show_index = not st.session_state.live_scores_by_team,
+                                        tooltips={
+                                            'TTFL' : 'perf_str',
+                                            'FG' : 'FGpct',
+                                            'FG3' : 'FG3pct',
+                                            'FT' : 'FTpct'
+                                        },
+                                        col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
+                                        col_header_tooltips=[],
+                                        image_tooltips=[],
+                                        color_tooltip_pct=False,
+                                        highlight_index=idx_pick,
+                                        best_pick_allowed=True)
+        tableholders[0].markdown(html_df, unsafe_allow_html=True)
+        
+    else:
 
-    for idx in range(len(games_info)):
-        if st.session_state[f"boxscore_{idx}"]:
+        for idx in range(len(games_info)):
+            if st.session_state[f"boxscore_{idx}"]:
 
-            live_games[idx] = (live_games[idx].sort_values(
-                by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
-                ascending=[True, False] if st.session_state.live_scores_by_team else False)
-                .reset_index(drop=True))
-            
-            idx_pick = get_idx_pick(live_games[idx], game_night_date, 'playerName')
-            html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
-                                            show_index=False,
-                                            tooltips={
-                                                'TTFL' : 'perf_str',
-                                                'FG' : 'FGpct',
-                                                'FG3' : 'FG3pct',
-                                                'FT' : 'FTpct'
-                                            },
-                                            col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
-                                            col_header_tooltips=[],
-                                            image_tooltips=[],
-                                            color_tooltip_pct=False,
-                                            highlight_index=idx_pick)
-            tableholders[idx].markdown(html_df, unsafe_allow_html=True)
-        else:
-            tableholders[idx].empty()
+                live_games[idx] = (live_games[idx].sort_values(
+                    by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
+                    ascending=[True, False] if st.session_state.live_scores_by_team else False)
+                    .reset_index(drop=True))
+                
+                idx_pick = get_idx_pick(live_games[idx], game_night_date, 'playerName')
+                html_df = df_to_html(live_games[idx], show_cols=['Joueur', 'Equipe', 'Min', 'TTFL', 'Pts', 'Ast', 'Reb', 'OReb', 'DReb', 'Blk', 'Stl', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'PF'],
+                                                show_index = not st.session_state.live_scores_by_team,
+                                                tooltips={
+                                                    'TTFL' : 'perf_str',
+                                                    'FG' : 'FGpct',
+                                                    'FG3' : 'FG3pct',
+                                                    'FT' : 'FTpct'
+                                                },
+                                                col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
+                                                col_header_tooltips=[],
+                                                image_tooltips=[],
+                                                color_tooltip_pct=False,
+                                                highlight_index=idx_pick)
+                tableholders[idx].markdown(html_df, unsafe_allow_html=True)
+            else:
+                tableholders[idx].empty()
     
     if pending_games :
         total_steps = int(TTL * REFRESH_RATE)

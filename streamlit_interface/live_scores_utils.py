@@ -25,6 +25,7 @@ def get_live_games():
     for attempt in range(5):
         try:
             games = scoreboard.ScoreBoard().games.get_dict()
+            all_boxscores_df = pd.DataFrame()
             upcoming_games = []
             live_games = []
             games_info = []
@@ -164,6 +165,7 @@ def get_live_games():
 
                 boxscore_df = clean_player_names(boxscore_df, 'Joueur')
                 live_games.append(boxscore_df)
+                all_boxscores_df = pd.concat([all_boxscores_df, boxscore_df], ignore_index=True)
             break
 
         except Exception as e:
@@ -207,7 +209,7 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
 
-    return upcoming_games, games_info, live_games, pending_games, finished_games, date_ny_str, time.time()
+    return all_boxscores_df, upcoming_games, games_info, live_games, pending_games, finished_games, date_ny_str, time.time()
 
 if __name__ == "__main__":
     a, b, c, d = get_live_games()
