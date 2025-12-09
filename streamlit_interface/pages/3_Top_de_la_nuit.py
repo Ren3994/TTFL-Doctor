@@ -69,7 +69,7 @@ if st.session_state.top_nuit is None:
     for _ in range(50):
         st.write('')
 elif st.session_state.top_nuit == 'hier':
-    pending_games = get_live_games()[4]
+    pending_games = get_live_games()['pending_games']
     if pending_games:
         st.subheader('Des matchs sont en cours actuellement')
         for _ in range(3):
