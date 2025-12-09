@@ -248,34 +248,55 @@ def clean_player_names(df, colname, names_list=None):
     df[colname] = clean_names
     return df
 
-def match_player(input_name, names_list=None):
+def match_player(input_name, names_list=None, multi=False):
+
+    matched_name = None
 
     if names_list is None:
         names_list = get_cached_player_list()
 
     if input_name in names_list:
-        return input_name
+        return [input_name] if multi else input_name
     
     input_upper = input_name.upper().replace('.', '')
     abbv_map, splits = generate_dicts(names_list)
-
-    if input_upper in NICKNAMES:
-        return NICKNAMES[input_upper]
-    if input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
-        return abbv_map[input_upper][0]
-    if input_upper in splits and len(splits[input_upper]) == 1:
-        return splits[input_upper][0]
-    if input_upper in abbv_map:
-        pat = get_cached_pat()
-        filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
-        return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
-    if input_upper in splits:
-        pat = get_cached_pat()
-        filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
-        return filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     
-    match, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
-    return match
+    # Single match -> return it
+    if input_upper in NICKNAMES:
+        matched_name = NICKNAMES[input_upper]
+    elif input_upper in abbv_map and len(abbv_map[input_upper]) == 1:
+        matched_name = abbv_map[input_upper][0]
+    elif input_upper in splits and len(splits[input_upper]) == 1:
+        matched_name = splits[input_upper][0]
+    
+    # Multi match
+    elif input_upper in abbv_map:
+        if multi:
+            matched_name = abbv_map[input_upper]
+        else:
+            pat = get_cached_pat()
+            filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
+            matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
+    
+    elif input_upper in splits:
+        if multi:
+            matched_name = splits[input_upper]
+        else:
+            pat = get_cached_pat()
+            filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
+            matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
+
+    elif matched_name is None:
+        if multi:
+            match_list = process.extract(input_name, names_list, scorer=fuzz.token_set_ratio, limit=10)
+            matched_name = [name for name, _, _ in match_list]
+        else:
+            matched_name, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
+    
+    elif multi and isinstance(matched_name, str):
+        matched_name = [matched_name]
+
+    return matched_name
 
 @st.cache_data(show_spinner=False)
 def generate_dicts(names_list):

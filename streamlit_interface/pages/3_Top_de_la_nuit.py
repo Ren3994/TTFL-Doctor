@@ -59,7 +59,7 @@ cont_date_obj.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
 
 update_top_nuit(st.session_state.date_text_nuit, 
-                st.session_state.get('search_player_nuit', ''), 
+                st.session_state.get('matched_players_nuit', ''), 
                 st.session_state.byteam)
 
 if st.session_state.top_nuit is None:
@@ -82,7 +82,7 @@ else:
     pick, pick_team = get_pick(date=st.session_state.date_text_nuit, team=True)
             
     if st.session_state.top_nuit == 'did_not_play':
-        st.subheader(f'Pas de boxscores pour {st.session_state.search_player_nuit}'
+        st.subheader(f'Pas de boxscores pour {st.session_state.matched_players_nuit} '
                      f'le {st.session_state.date_text_nuit}')
     else:
         if not st.session_state.byteam:
