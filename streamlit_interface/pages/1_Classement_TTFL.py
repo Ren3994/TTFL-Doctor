@@ -4,14 +4,13 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import SEO, config, vspace, custom_error, st_image_crisp, custom_button_css, custom_CSS
+from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_error, st_image_crisp, custom_button_css, custom_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
 from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.classement_TTFL_utils import *
-from streamlit_interface.lazy_loader import get_sc
 from data.sql_functions import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 

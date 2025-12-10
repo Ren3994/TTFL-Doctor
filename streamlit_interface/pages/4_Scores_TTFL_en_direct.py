@@ -5,12 +5,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import SEO, config, vspace, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick
 from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
-from streamlit_interface.lazy_loader import get_sc
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
 

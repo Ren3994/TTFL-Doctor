@@ -110,9 +110,18 @@ def centered(sidebar=False, origin=None):
     else:
         return origin.container(horizontal_alignment='center', border=True)
     
-def vspace(numlines=1):
-    for _ in range(numlines):
-        st.write('')
+def vspace(numlines=1, container=None):
+    if container is None:
+        for _ in range(numlines):
+            st.write('')
+    else :
+        for _ in range(numlines):
+            container.write('')
+
+@st.cache_resource(show_spinner=False)
+def get_sc():
+    from streamlit_extras.stylable_container import stylable_container as sc
+    return sc
 
 def custom_button_css(selected, fontsize=18, min_width=0, button_team=None, pick_team=None):
     palette = get_palette('button')
