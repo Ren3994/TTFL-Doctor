@@ -60,8 +60,7 @@ if len(live_data['upcoming_games']) > 0:
                     </div>
                     """, unsafe_allow_html=True)
     
-    for _ in range(2):
-        st.write('')
+    st.write('')
 
 if len(live_data['live_games']) == 0 and not need_to_fetch_new_boxscores():
     st.subheader('Aucun match en cours.')
@@ -72,12 +71,14 @@ else:
     real_start_pct = min(1, elapsed / TTL)
     start_pct = max(real_start_pct, st.session_state.progress_pct)
     
-    widths = [2.5, 1, 2, 1.5, 1.5]
+    subheader_width = 280
+    prog_width = 180
     pick, pick_team = get_pick(date=live_data['gameDate'], team=True)
     if live_data['pending_games']:
         if live_data['finished_games']:
             games_header_str = 'Matchs en cours/matchs finis :'
-            widths = [3.2, 1, 1, 1.3, 1.3]
+            subheader_width = 360
+            prog_width = 120
         else:
             games_header_str = 'Matchs en cours :'
     else:
@@ -87,36 +88,38 @@ else:
 
     if st.session_state.mobile_layout:
         st.markdown(custom_mobile_CSS, unsafe_allow_html=True)
-        col_subheader = st.columns([1])[0]
-        col_progress, col_progress_text = st.columns([1, 1])
-        col_toggle = st.columns([1])[0]
-        col_global_boxscores_toggle = st.columns([1])[0]
-        prog_width=100
+        cont = st.container()
+        cont.empty()
+        cont_subheader = cont.container()
+        cont_progress = cont.container(horizontal=True, horizontal_alignment='center')
+        cont_prog_text = cont_progress.container(horizontal_alignment='center')
+        cont_progress = cont_progress.container(horizontal_alignment='center')
+        cont_toggles = cont.container(horizontal=True, horizontal_alignment='center')
+        cont_toggle_byteam = cont_toggles.container(horizontal_alignment='center')
+        cont_toggle_global = cont_toggles.container(horizontal_alignment='center')
         games_per_row = 1
     else:
-        col_subheader, col_progress_text, col_progress, col_toggle, col_global_boxscores_toggle = st.columns(widths, gap='small')
-        prog_width=300
+        cont = st.container(horizontal=True)
+        cont.empty()
+        cont_subheader = cont.container(width = subheader_width)
+        cont_prog_text = cont.container(horizontal_alignment='center')
+        cont_progress = cont.container(horizontal_alignment='center', width=prog_width)
+        cont_toggle_byteam = cont.container(horizontal_alignment='center')
+        cont_toggle_global = cont.container(horizontal_alignment='center')
+        cont_toggle_byteam.space('small')
+        cont_toggle_global.space('small')
+        cont_progress.space('small')
+        cont_prog_text.space('small')
         games_per_row = 3
-    
-    with col_subheader:
-        st.subheader(games_header_str)
 
-    col_toggle.space('small')
-    with col_toggle:
-        st.toggle('Par équipe', key='live_scores_by_team')
-    
-    col_global_boxscores_toggle.space('small')
-    with col_global_boxscores_toggle:
-        st.toggle('Global', key='global_boxscores')
+    cont_subheader.subheader(games_header_str)
 
-    col_progress.space('small')
     if live_data['pending_games']:
-        with col_progress:
-            progress_bar = st.progress(value=start_pct, width=prog_width)
-        col_progress_text.space('small')
-
-        with col_progress_text:
-            progress_text = st.empty()
+        progress_bar = cont_progress.progress(value=start_pct)
+        progress_text = cont_prog_text.empty()
+    
+    cont_toggle_byteam.toggle('Par équipe', key='live_scores_by_team')
+    cont_toggle_global.toggle('Global', key='global_boxscores')
 
     buttonholders = [None] * len(live_data['games_info'])
     for i in range(0, len(live_data['games_info']), games_per_row):
@@ -129,7 +132,8 @@ else:
 
             with cols[j]:
                 buttonholders[idx] = st.empty()
-
+                
+    st.write('')
     tableholders = [st.empty() for _ in live_data['games_info']]
     for idx, game in enumerate(live_data['games_info']):
         st.session_state.setdefault(f"boxscore_{idx}", False)
