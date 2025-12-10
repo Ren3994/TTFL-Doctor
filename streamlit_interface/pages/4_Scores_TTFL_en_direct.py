@@ -120,52 +120,56 @@ else:
     
     cont_toggle_byteam.toggle('Par équipe', key='live_scores_by_team')
     cont_toggle_global.toggle('Global', key='global_boxscores')
-    
-    st.write('')
-    buttonholders = [None] * len(live_data['games_info'])
-    for i in range(0, len(live_data['games_info']), games_per_row):
-        cols = st.columns(games_per_row)
-        st.write('')
-        for j in range(games_per_row):
-            idx = i + j
-            if idx >= len(live_data['games_info']):
-                break
 
-            with cols[j]:
-                buttonholders[idx] = st.empty()
-                
+    st.write('')
+
+    cont_buttons = st.container(horizontal_alignment='center')
+    cont_buttons.empty()
+    for i in range(0, len(live_data['games_info']), games_per_row):
+        row_buttons = live_data['games_info'][i:i + games_per_row]
+        cont_row_button = cont_buttons.container(horizontal=True, horizontal_alignment='center')
+        cont_row_button.empty()
+        cont_buttons.write('')
+        if st.session_state.mobile_layout:
+            cont_row_button.write('')
+        for j, game in enumerate(row_buttons):
+            idx = i + j
+            st.session_state.setdefault(f"boxscore_{idx}", False)
+            cont_button = cont_row_button.container(width=280)
+
+            home = game["homeTeam"]
+            away = game["awayTeam"]
+            matchup = f'{home}-{away}'
+            scores = [game["awayScore"], game["homeScore"]]
+
+            logos = [
+                st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True)
+                for team in [away, home]
+            ]
+
+            btn_text = (
+                f'![icon](data:image/png;base64,{logos[0]})'
+                f'&nbsp;&nbsp;&nbsp;{away} {scores[0]} - {scores[1]} {home}&nbsp;&nbsp;&nbsp;'
+                f'![icon](data:image/png;base64,{logos[1]})'
+                f'&nbsp;&nbsp;&nbsp;({game["time"]})'
+            )
+            
+            with cont_button.container():
+                with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
+                    st.session_state[f"boxscore_{idx}"], button_team=matchup, pick_team=pick_team)
+                ):
+                    st.button(btn_text,
+                        key=f"btn_{idx}",
+                        on_click=lambda k=idx: st.session_state.update(
+                            {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
+                        width=280
+                    )
+        if st.session_state.mobile_layout:
+            cont_row_button.write('')
+
     st.write('')
     tableholders = [st.empty() for _ in live_data['games_info']]
-    for idx, game in enumerate(live_data['games_info']):
-        st.session_state.setdefault(f"boxscore_{idx}", False)
-        
-        home = game["homeTeam"]
-        away = game["awayTeam"]
-        matchup = f'{home}-{away}'
-        scores = [game["awayScore"], game["homeScore"]]
-        logos = [
-            st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True)
-            for team in [away, home]
-        ]
 
-        btn_text = (
-            f'![icon](data:image/png;base64,{logos[0]})'
-            f'{away} {scores[0]} - {scores[1]} {home}'
-            f'![icon](data:image/png;base64,{logos[1]})'
-            f'({game["time"]})'
-        )
-
-        with buttonholders[idx].container():
-            with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
-                st.session_state[f"boxscore_{idx}"], button_team=matchup, pick_team=pick_team)
-            ):
-                st.button(btn_text,
-                    key=f"btn_{idx}",
-                    on_click=lambda k=idx: st.session_state.update(
-                        {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
-                    width=255
-                )
-    
     if st.session_state.global_boxscores:
         all_boxscores_df = (live_data['global'].sort_values(
                     by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
@@ -192,7 +196,6 @@ else:
         tableholders[0].markdown(html_df, unsafe_allow_html=True)
         
     else:
-
         for idx in range(len(live_data['games_info'])):
             if st.session_state[f"boxscore_{idx}"]:
 
