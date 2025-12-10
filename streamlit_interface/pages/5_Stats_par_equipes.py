@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_button_css, st_image_crisp, custom_CSS
-from misc.misc import TEAM_STATS_COLUMN_DEF, TRICODE2NAME, RESIZED_LOGOS_PATH
+from misc.misc import TRICODE2NAME, RESIZED_LOGOS_PATH, TEAM_STATS_COLUMN_DEF
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.team_stats_utils import get_team_stats
