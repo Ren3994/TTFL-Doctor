@@ -120,7 +120,8 @@ else:
     
     cont_toggle_byteam.toggle('Par équipe', key='live_scores_by_team')
     cont_toggle_global.toggle('Global', key='global_boxscores')
-
+    
+    st.write('')
     buttonholders = [None] * len(live_data['games_info'])
     for i in range(0, len(live_data['games_info']), games_per_row):
         cols = st.columns(games_per_row)
