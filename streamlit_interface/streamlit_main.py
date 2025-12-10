@@ -4,8 +4,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.streamlit_utils import config, SEO, vspace, custom_CSS
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.streamlit_utils import config, SEO, custom_CSS
 
 # ---------- Initialize session state ----------
 PAGENAME = 'main'
@@ -18,8 +18,7 @@ st.markdown('<div class="date-title">TTFL Doctor</div>', unsafe_allow_html=True)
 col_spacer1, col_text, col_spacer2 = st.columns([2, 5, 2])
 with col_text:
     SEO('header')
-    for _ in range(5):
-        st.write('')
+    vspace(5)
 
 # st.markdown('<div class="date-title">Pages disponibles</div>', unsafe_allow_html=True)
 
@@ -50,8 +49,7 @@ with col_text:
 #     st.markdown('<div class="big-text">Stats par équipes</div>', unsafe_allow_html=True)
 # with col6:
 #     st.markdown('<div class="big-text">Stats par joueurs</div>', unsafe_allow_html=True)
-for _ in range(50):
-    st.write('')
+vspace(50)
 SEO('footer')
 
 st.switch_page('pages/1_Classement_TTFL.py')

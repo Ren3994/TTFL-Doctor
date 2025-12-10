@@ -4,9 +4,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from streamlit_interface.streamlit_utils import SEO, config, vspace, custom_CSS
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.streamlit_utils import SEO, config, custom_CSS
 from streamlit_interface.team_stats_utils import get_team_stats
 from streamlit_interface.sidebar import sidebar
 
@@ -20,121 +20,83 @@ config(page=PAGENAME)
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Statistiques des équipes</div>', unsafe_allow_html=True)
-
-st.subheader('Work in progress...')
+vspace(4)
 
 team_stats = get_team_stats()
-# cols2rename={'teamTricode' : 'Équipe',
-#              'GP' : 'MJ',
-#              'AST_TO' : 'Ast/tov'}
-            #  'OREB_PCT' : 'OReb%',
-            #  'DREB_PCT' : 'DReb%',
-            #  'EFG_PCT' : 'eFG%',
-            #  'TS_PCT' : 'TS%',
-            #  'avg_team_TTFL' : 'TTFL',
-            #  'avg_opp_TTFL' : 'TTFL adv.',
-            #  'net_TTFL' : 'ΔTTFL',
-            #  'rel_team_avg_TTFL' : 'TTFL%',
-            #  'rel_opp_avg_TTFL' : 'TTFL% adv.',
-            #  'net_rel_TTFL' : 'ΔTTFL%'}
 
-# team_stats = team_stats.rename(columns=cols2rename)
-cols2hide = ['W_PCT', 'TM_TOV_PCT', 'AST_PCT', 'REB_PCT']
-for col in cols2hide:
-    team_stats = team_stats.drop(columns=[col])
+stats_dict = {
+    
+    # Regular stats
+    'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : None, 'help' : None},
+    'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : None, 'help' : 'Nombre de matchs joués'},
+    'W' : {'col' : 'num', 'display' : 'W', 'format' : None, 'width' : None, 'help' : 'Nombre de matchs gagnés'},
+    'L' : {'col' : 'num', 'display' : 'L', 'format' : None, 'width' : None, 'help' : 'Nombre de matchs perdus'},
+    'W_PCT' : {'col' : 'num', 'display' : 'W%', 'format' : "%.0f%%", 'width' : None, 'help' : 'Pourcentage de matchs gagnés'},
+    'PTS' : {'col' : 'num', 'display' : 'Pts', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de points marqués'},
+    'AST' : {'col' : 'num', 'display' : 'Ast', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de passes décisives'},
+    'REB' : {'col' : 'num', 'display' : 'Reb', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de rebonds'},
+    'OREB' : {'col' : 'num', 'display' : 'Oreb', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de rebonds offensifs'},
+    'DREB' : {'col' : 'num', 'display' : 'Dreb', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de rebonds défensifs'},
+    'STL' : {'col' : 'num', 'display' : 'Stl', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne d\'interceptions'},
+    'BLK' : {'col' : 'num', 'display' : 'Blk', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs contrés'},
+    'TOV' : {'col' : 'num', 'display' : 'Tov', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de balles perdues'},
+    
+    # Advanced stats
+    'AST_TO' : {'col' : 'num', 'display' : 'Ast/tov', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de passes décisives divisée par la moyenne de balles perdues'},
+    'AST_PCT' : {'col' : 'num', 'display' : 'Ast%', 'format' : "%.0f%%", 'width' : 60, 'help' : 'Pourcentage de tirs marqués après une passe décisive'},
+    'REB_PCT' : {'col' : 'num', 'display' : 'Reb%', 'format' : "%.0f%%", 'width' : 60, 'help' : 'Pourcentage de rebonds captés'},
+    'OREB_PCT' : {'col' : 'num', 'display' : 'Oreb%', 'format' : "%.0f%%", 'width' : 60, 'help' : 'Pourcentage de rebonds offensifs captés'},
+    'DREB_PCT' : {'col' : 'num', 'display' : 'Dreb%', 'format' : "%.0f%%", 'width' : 60, 'help' : 'Pourcentage de rebonds défensifs captés'},
+    'Pace' : {'col' : 'num', 'display' : 'Pace', 'format' : '%.1f', 'width' : None, 'help' : 'Nombre de possessions par match'},
+    'ORtg' : {'col' : 'num', 'display' : 'ORtg', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de points pour 100 possessions'},
+    'DRtg' : {'col' : 'num', 'display' : 'DRtg', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de points marqués par les adversaires pour 100 possessions'},
+    'NRtg' : {'col' : 'num', 'display' : 'NRtg', 'format' : '%+.1f', 'width' : None, 'help' : 'Différence entre Ortg et Drtg'},
+    'TM_TOV_PCT' : {'col' : 'num', 'display' : 'Tov%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de possessions qui finissent en balle perdue'},
+    'BLKA' : {'col' : 'num', 'display' : 'BlkA', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs tentés qui se sont fait bloquer'},
+    'PFD' : {'col' : 'num', 'display' : 'Fa. prov.', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de fautes provoquées'},
+    'AST_RATIO' : {'col' : 'num', 'display' : 'Ast ratio', 'format' : '%.1f', 'width' : 60, 'help' : 'Moyenne de passes décisives pour 100 possessions'},
+    'FG3_ratio' : {'col' : 'num', 'display' : 'Ratio 3pts', 'format' : "%.1f%%", 'width' : None, 'help' : 'Pourcentage de tirs tentés qui sont des 3 pts'},
 
-st.data_editor(team_stats, disabled=True, hide_index=True, 
-               column_order=('teamTricode', 'GP', 'W', 'L', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
-                             'rel_team_avg_TTFL', 'rel_opp_avg_TTFL', 'net_rel_TTFL',
-                             'ORtg', 'DRtg', 'NRtg', 'AST_TO', 'Pace', 'OREB_PCT', 'DREB_PCT', 'EFG_PCT', 'TS_PCT'),
-               column_config={
-                    'teamTricode' : st.column_config.TextColumn(
-                        'Équipe',
-                        width=50),
-                   'GP' : st.column_config.NumberColumn(
-                       width=30
-                    ),
-                    'W' : st.column_config.NumberColumn(
-                       width=30
-                    ),
-                    'L' : st.column_config.NumberColumn(
-                       width=30
-                    ),
-                    'AST_TO' : st.column_config.NumberColumn(
-                       'Ast/tov',
-                        format='%.1f',
-                        help="Ratio assists/turnovers de l'équipe.",
-                   ),
-                   'avg_team_TTFL' : st.column_config.NumberColumn(
-                        'TTFL',
-                        format='%d',
-                        help="Moyenne TTFL de l'équipe.",
-                   ),
-                   'avg_opp_TTFL' : st.column_config.NumberColumn(
-                        'TTFL adv.',
-                        format='%d',
-                        help="Moyenne TTFL de l'équipe adverse.",
-                   ),
-                   'net_TTFL' : st.column_config.NumberColumn(
-                       'ΔTTFL',
-                        format='%+d',
-                        help="Différence entre la moyenne TTFL de l'équipe et celle de l'équipe adverse.",
-                   ),
-                   'rel_team_avg_TTFL' : st.column_config.NumberColumn(
-                       'TTFL%',
-                       format='%.0f%%',
-                       help="Moyenne TTFL de l'équipe par rapport à la moyenne TTFL de toutes les équipes.",
-                   ),
-                   'rel_opp_avg_TTFL' : st.column_config.NumberColumn(
-                       'TTFL% adv.',
-                       format='%.0f%%',
-                       help="Moyenne TTFL de l'équipe adverse par rapport à la moyenne TTFL de toutes les équipes.",
-                   ),
-                   'net_rel_TTFL' : st.column_config.NumberColumn(
-                       'ΔTTFL%',
-                       format='%+d%%',
-                       help="Différence entre la moyenne TTFL de l'équipe et celle de l'équipe adverse par rapport à la moyenne TTFL de toutes les équipes.",
-                   ),
-                   'NRtg' : st.column_config.NumberColumn(
-                       'NRtg',
-                       format='%+f',
-                       help="Net Rating : différence entre les points marqués et les points encaissés pour 100 possessions.",
-                   ),
-                   'ORtg' : st.column_config.NumberColumn(
-                       'ORtg',
-                       format='%d',
-                       help="Offensive Rating : nombre de points marqués par 100 possessions.",
-                   ),
-                   'DRtg' : st.column_config.NumberColumn(
-                       'DRtg',
-                       format='%d',
-                       help="Defensive Rating : nombre de points encaissés par 100 possessions.",
-                   ),
-                   'Pace' : st.column_config.NumberColumn(
-                       'Pace',
-                       format='%d',
-                       help="Nombre de possessions par match.",
-                   ),
-                   'OREB_PCT' : st.column_config.NumberColumn(
-                       'OReb%',
-                       format="%.0f%%",
-                       help="Offensive Rebound Percentage : pourcentage de rebonds offensifs captés par l'équipe lorsqu'elle est en attaque.",
-                   ),
-                   'DREB_PCT' : st.column_config.NumberColumn(
-                       'DReb%',
-                       format="%.0f%%",
-                       help="Defensive Rebound Percentage : pourcentage de rebonds défensifs captés par l'équipe lorsqu'elle est en défense.",
-                   ),
-                   'EFG_PCT' : st.column_config.NumberColumn(
-                       'eFG%',
-                       format="%.0f%%",
-                       help="Effective Field Goal Percentage : pourcentage de réussite aux tirs pondéré en faveur des tirs à 3 points.",
-                   ),
-                   'TS_PCT' : st.column_config.NumberColumn(
-                       'TS%',
-                       format="%.0f%%",
-                       help="True Shooting Percentage : pourcentage de réussite aux tirs prenant en compte les tirs à 3 points et les lancers francs.",
-                   ),
-               })
+    # Shooting stats
+    'FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs marqués'},
+    'FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs tentés'},
+    'FG_PCT' : {'col' : 'num', 'display' : 'FG%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Pourcentage de tirs réussis'},
+    'FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs à 3 points marqués'},
+    'FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs à 3 points tentés'},
+    'FG3_PCT' : {'col' : 'num', 'display' : 'FG3%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Pourcentage de tirs à 3 pts réussis'},
+    'FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de lancers-francs réussis'},
+    'FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de lancers-francs tentés'},
+    'FT_PCT' : {'col' : 'num', 'display' : 'FT%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Pourcentage de lancers-francs réussis'},
+    'FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs à 2 pts réussis'},
+    'FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.1f', 'width' : None, 'help' : 'Moyenne de tirs à 2 pts tentés'},
+    'FG2_PCT' : {'col' : 'num', 'display' : 'FG2%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Pourcentage de tirs à 2 pts réussis'},
+    'EFG_PCT' : {'col' : 'num', 'display' : 'eFG%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Moyenne aux tirs pondérée qui prend en compte que les tirs à 3 points valent plus'},
+    'TS_PCT' : {'col' : 'num', 'display' : 'TS%', 'format' : "%.1f%%", 'width' : None, 'help' : 'Moyenne aux tirs pondérée pour prendre en compte les 3 points et les lancers francs'},
+    
+    # TTFL stats
+    'avg_team_TTFL' : {'col' : 'num', 'display' : 'TTFL', 'format' : '%.1f', 'width' : None, 'help' : "Moyenne TTFL de l'équipe"},
+    'avg_opp_TTFL' : {'col' : 'num', 'display' : 'TTFL adv.', 'format' : '%.1f', 'width' : None, 'help' : "Moyenne TTFL des adversaires"},
+    'net_TTFL' : {'col' : 'num', 'display' : 'ΔTTFL', 'format' : '%+.1f', 'width' : None, 'help' : "Différence entre TTFL et TTFL adv."},
+    'rel_team_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL%', 'format' : "%+.1f%%", 'width' : None, 'help' : "Moyenne TTFL de l'équipe par rapport à la moyenne TTFL de toutes les équipes"},
+    'rel_opp_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL% adv.', 'format' : "%+.1f%%", 'width' : None, 'help' : "Moyenne TTFL des adversaires par rapport à la moyenne TTFL de toutes les équipes"},
+    'net_rel_TTFL' : {'col' : 'num', 'display' : 'ΔTTFL%', 'format' : '%+.1f', 'width' : None, 'help' : "Différence entre TTFL% et TTFL% adv."},
+}
+for table in team_stats:
+    with st.expander(table):
+        st.dataframe(team_stats[table], height='content', hide_index=True,
+                    column_config={stat : (
+                        st.column_config.NumberColumn(
+                        stats_dict[stat]['display'],
+                        width = stats_dict[stat]['width'],
+                        format = stats_dict[stat]['format'],
+                        help = stats_dict[stat]['help'])
+                        if stats_dict[stat]['col'] == 'num' else 
+                        st.column_config.TextColumn(
+                        stats_dict[stat]['display'],
+                        width = stats_dict[stat]['width'],
+                        help = stats_dict[stat]['help']))
+                        for stat in team_stats[table]})
+
+vspace(30)
 
 SEO('footer')

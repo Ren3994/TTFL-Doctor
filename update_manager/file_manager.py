@@ -11,7 +11,10 @@ from misc.misc import DB_PATH, BACKUP_DIR_PATH, SEASON
 
 def cleanup_db():
     with sqlite3.connect(DB_PATH) as conn:
-        for table in ['team_games', 'played', 'teammate_played', 'rel_avg_opp_TTFL', 'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'avg_TTFL_per_pos_per_opp', 'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 'opp_pos_avg_per_game', 'roster_pairs']:
+        for table in ['team_games', 'played', 'teammate_played', 'rel_avg_opp_TTFL', 
+                      'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'avg_TTFL_per_pos_per_opp', 
+                      'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 
+                      'opp_pos_avg_per_game', 'roster_pairs']:
             drop_table(conn, table)
         for attempt in range(3):
             try:

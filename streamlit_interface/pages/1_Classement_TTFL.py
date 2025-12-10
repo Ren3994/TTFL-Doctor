@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import SEO, config, custom_error, st_image_crisp, custom_button_css, custom_CSS
+from streamlit_interface.streamlit_utils import SEO, config, vspace, custom_error, st_image_crisp, custom_button_css, custom_CSS
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
@@ -90,7 +90,7 @@ cont_right.markdown(deadline, unsafe_allow_html=True)
 #         translate_col = ['details']
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
-st.write('')
+vspace()
 
 # Display tonight's games
 games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
@@ -132,12 +132,12 @@ for i in range(0, len(games_for_date), games_per_row):
                               on_click=lambda k=idx: st.session_state.update(
                             {f"classement_{k}": not st.session_state[f"classement_{k}"]})
                              )
-st.write('')
+vspace()
 
 if len(games_for_date) > 0:
     st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 
-st.write('')
+vspace()
 # Display the TTFL table
 if st.session_state.topTTFL_df.empty:
     if not st.session_state.games_TBD:

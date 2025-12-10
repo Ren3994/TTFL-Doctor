@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.streamlit_utils import SEO, config, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.streamlit_utils import SEO, config, vspace, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick
 from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
 from streamlit_interface.session_state_manager import init_session_state
@@ -60,12 +60,11 @@ if len(live_data['upcoming_games']) > 0:
                     </div>
                     """, unsafe_allow_html=True)
     
-    st.write('')
+    vspace()
 
 if len(live_data['live_games']) == 0 and not need_to_fetch_new_boxscores():
     st.subheader('Aucun match en cours.')
-    for _ in range(50):
-        st.write('')
+    vspace(50)
 else:
     elapsed = time.time() - st.session_state.live_scores_update_timestamp
     real_start_pct = min(1, elapsed / TTL)
@@ -121,7 +120,7 @@ else:
     cont_toggle_byteam.toggle('Par équipe', key='live_scores_by_team')
     cont_toggle_global.toggle('Global', key='global_boxscores')
 
-    st.write('')
+    vspace()
 
     cont_buttons = st.container(horizontal_alignment='center')
     cont_buttons.empty()
@@ -167,7 +166,7 @@ else:
         if st.session_state.mobile_layout:
             cont_row_button.write('')
 
-    st.write('')
+    vspace()
     tableholders = [st.empty() for _ in live_data['games_info']]
 
     if st.session_state.global_boxscores:
@@ -233,6 +232,5 @@ else:
         
         st.rerun()
     else:
-        for _ in range(50):
-            st.write('')
+        vspace(50)
 SEO('footer')

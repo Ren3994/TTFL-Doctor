@@ -109,6 +109,10 @@ def centered(sidebar=False, origin=None):
             return st.container(horizontal_alignment='center', border=True)
     else:
         return origin.container(horizontal_alignment='center', border=True)
+    
+def vspace(numlines=1):
+    for _ in range(numlines):
+        st.write('')
 
 def custom_button_css(selected, fontsize=18, min_width=0, button_team=None, pick_team=None):
     palette = get_palette('button')
