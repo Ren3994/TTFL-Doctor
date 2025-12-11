@@ -46,19 +46,29 @@ Montre les boxscores classiques en direct (mis à jour toutes les 15s) avec une 
 
 <img width="1410" height="797" alt="live boxscores" src="https://github.com/user-attachments/assets/7f291fdc-258a-42dc-9149-e6c7d231006c" />
 
-### 5. Stats par équipes (en construction)
+### 5. Stats par équipes
 
-Donne les stats par équipes (offensive rating, defensive rating, TS%, EFG%, pace, ...) plus différentes stats de TTFL d'équipe (quelles équipes fait les meilleurs scores, quelles équipes sont les meilleurs spots TTFL, ...). 
+Cliquez sur des équipes pour les comparer, ou sur aucune pour voir toutes les équipes. 
+Il y a 4 tableaux : 
+- Stats générales : Matchs joués, victoires, points, passes décisives, rebonds, ...
+- Stats de tirs : Pourcentages à 2 pts, à 3 points, aux lancers francs, eFG%, TS%, ...
+- Stats avancées : Ratings offensif et défensif, pace, ast/tov, ...
+- Stats TTFL : Moyennes TTFl de l'équipe, des adversaires, ...
 
-Cliquer sur les en-têtes des colonnes permet de classer le tableau par ordre croissant/décroissant par rapport à cette colonne.
+<img width="4346" height="5136" alt="team_stats" src="https://github.com/user-attachments/assets/673c997d-9bf2-43d7-82e8-c3b7532281b7" />
 
-<img width="1360" height="732" alt="team_stats" src="https://github.com/user-attachments/assets/0bbbc069-bb0b-47b1-83aa-451201368929" />
+### 6. Stats par joueurs
 
-### 6. Stats par joueurs (en construction)
+Classez tous les joueurs par la stat que vous voulez, ou sélectionner certains joueurs pour les comparer.
+Des filtres sont disponibles pour ajouter des minimums de matchs joués, min par match, ...
 
-Donne les stats des joueurs. Classable par colonnes.
+- Tableaux de comparaisons :
 
-<img width="1364" height="757" alt="player_stats" src="https://github.com/user-attachments/assets/9230316f-d507-401a-b428-bfbcd07d6cda" />
+<img width="4400" height="4153" alt="player_stats_compare" src="https://github.com/user-attachments/assets/e9cc9c7c-f229-4f40-a4b0-c0779c7bee70" />
+
+Si un seul joueur est sélectionné, on voit ses moyennes de stats contre chaque équipe, et l'historique de ses lignes de stats :
+
+<img width="4400" height="3611" alt="player_stats_indiv" src="https://github.com/user-attachments/assets/925224bb-cd73-42ee-8ad6-88e4767cd3df" />
 
 ## Installation
 
