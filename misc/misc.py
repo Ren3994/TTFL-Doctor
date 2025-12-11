@@ -123,17 +123,16 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'HALI' : 'Tyrese Haliburton',
              'AR15' : 'Austin Reaves',
              'AR-15' : 'Austin Reaves',
-             'FVV' : 'Fred VanVleet',
-             'LUKA' : 'Luka Doncic'
+             'FVV' : 'Fred VanVleet'
              }
 
 TEAM_STATS_COLUMN_DEF = {
     
     # Regular stats
     'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : None, 'help' : None},
-    'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : 20, 'help' : 'Nombre de matchs joués'},
-    'W' : {'col' : 'num', 'display' : 'W', 'format' : None, 'width' : 20, 'help' : 'Nombre de matchs gagnés'},
-    'L' : {'col' : 'num', 'display' : 'L', 'format' : None, 'width' : 20, 'help' : 'Nombre de matchs perdus'},
+    'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs joués'},
+    'W' : {'col' : 'num', 'display' : 'W', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs gagnés'},
+    'L' : {'col' : 'num', 'display' : 'L', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs perdus'},
     'W_PCT' : {'col' : 'num', 'display' : 'W%', 'format' : "%.0f%%", 'width' : 50, 'help' : 'Pourcentage de matchs gagnés'},
     'PTS' : {'col' : 'num', 'display' : 'Pts', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de points marqués'},
     'AST' : {'col' : 'num', 'display' : 'Ast', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de passes décisives'},
@@ -181,7 +180,7 @@ TEAM_STATS_COLUMN_DEF = {
     'avg_opp_TTFL' : {'col' : 'num', 'display' : 'TTFL adv.', 'format' : '%.1f', 'width' : 70, 'help' : "Moyenne TTFL des adversaires"},
     'net_TTFL' : {'col' : 'num', 'display' : 'ΔTTFL', 'format' : '%+.1f', 'width' : 70, 'help' : "Différence entre TTFL et TTFL adv."},
     'rel_team_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL%', 'format' : "%+.1f%%", 'width' : 70, 'help' : "Moyenne TTFL de l'équipe par rapport à la moyenne TTFL de toutes les équipes"},
-    'rel_opp_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL% adv.', 'format' : "%+.1f%%", 'width' : 70, 'help' : "Moyenne TTFL des adversaires par rapport à la moyenne TTFL de toutes les équipes"},
+    'rel_opp_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL% adv.', 'format' : "%+.1f%%", 'width' : 85, 'help' : "Moyenne TTFL des adversaires par rapport à la moyenne TTFL de toutes les équipes"},
     'net_rel_TTFL' : {'col' : 'num', 'display' : 'ΔTTFL%', 'format' : '%+.1f', 'width' : 70, 'help' : "Différence entre TTFL% et TTFL% adv."},
 }
 
@@ -189,7 +188,8 @@ PLAYER_STATS_COLUMN_DEF = {
     
     # Regular stats
     'playerName' : {'col' : 'text', 'display' : 'Joueur', 'format' : None, 'width' : 150, 'help' : None},
-    'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : 45, 'help' : None},
+    'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : 50, 'help' : None},
+    'opponent' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : 50, 'help' : None},
     'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : 35, 'help' : 'Nombre de matchs joués'},
     'Pts' : {'col' : 'num', 'display' : 'Pts', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne de points marqués'},
     'Ast' : {'col' : 'num', 'display' : 'Ast', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne de passes décisives'},
@@ -221,29 +221,29 @@ PLAYER_STATS_COLUMN_DEF = {
     'ast_to_tov' : {'col' : 'num', 'display' : 'Ast/tov', 'format' : '%.2f', 'width' : 60, 'help' : 'Moyenne de passes décisives divisée par la moyenne de balles perdues'},
     'FG3_ratio' : {'col' : 'num', 'display' : 'Ratio 3pts', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs tentés qui sont des 3 pts'},
     'MINUTES' : {'col' : 'text', 'display' : 'Min', 'format' : None, 'width' : 45, 'help' : 'Moyenne de minutes jouées par match'},
-    'EFG' : {'col' : 'num', 'display' : 'eFG%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Moyenne aux tirs pondérée qui prend en compte que les tirs à 3 points valent plus'},
-    'TS' : {'col' : 'num', 'display' : 'TS%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Moyenne aux tirs pondérée pour prendre en compte les 3 points et les lancers francs'},
+    'EFG' : {'col' : 'num', 'display' : 'eFG%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Moyenne aux tirs pondérée qui prend en compte que les tirs à 3 points valent plus'},
+    'TS' : {'col' : 'num', 'display' : 'TS%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Moyenne aux tirs pondérée pour prendre en compte les 3 points et les lancers francs'},
 
     # Shooting stats
-    'FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs marqués'},
-    'FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs tentés'},
-    'FG_PCT' : {'col' : 'num', 'display' : 'FG%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs réussis'},
-    'FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 3 points marqués'},
-    'FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 3 points tentés'},
-    'FG3_PCT' : {'col' : 'num', 'display' : 'FG3%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs à 3 pts réussis'},
-    'FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de lancers-francs réussis'},
-    'FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de lancers-francs tentés'},
-    'FT_PCT' : {'col' : 'num', 'display' : 'FT%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de lancers-francs réussis'},
-    'FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 2 pts réussis'},
-    'FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 2 pts tentés'},
-    'FG2_PCT' : {'col' : 'num', 'display' : 'FG2%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs à 2 pts réussis'},
+    'FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs marqués'},
+    'FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs tentés'},
+    'FG_PCT' : {'col' : 'num', 'display' : 'FG%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Pourcentage de tirs réussis'},
+    'FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs à 3 points marqués'},
+    'FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs à 3 points tentés'},
+    'FG3_PCT' : {'col' : 'num', 'display' : 'FG3%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Pourcentage de tirs à 3 pts réussis'},
+    'FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne de lancers-francs réussis'},
+    'FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne de lancers-francs tentés'},
+    'FT_PCT' : {'col' : 'num', 'display' : 'FT%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Pourcentage de lancers-francs réussis'},
+    'FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs à 2 pts réussis'},
+    'FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs à 2 pts tentés'},
+    'FG2_PCT' : {'col' : 'num', 'display' : 'FG2%', 'format' : "%.1f%%", 'width' : 50, 'help' : 'Pourcentage de tirs à 2 pts réussis'},
 
-    'TOT_FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs marqués'},
-    'TOT_FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs tentés'},
-    'TOT_FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 3 points marqués'},
-    'TOT_FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 3 points tentés'},
-    'TOT_FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de lancers-francs réussis'},
-    'TOT_FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de lancers-francs tentés'},
-    'TOT_FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 2 pts réussis'},
-    'TOT_FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 2 pts tentés'},
+    'TOT_FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs marqués'},
+    'TOT_FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs tentés'},
+    'TOT_FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 3 points marqués'},
+    'TOT_FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 3 points tentés'},
+    'TOT_FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de lancers-francs réussis'},
+    'TOT_FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de lancers-francs tentés'},
+    'TOT_FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 2 pts réussis'},
+    'TOT_FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 2 pts tentés'},
 }

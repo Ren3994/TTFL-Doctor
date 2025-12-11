@@ -72,15 +72,15 @@ def get_team_stats(selected_teams=[]):
     
     shooting_stats = (team_stats[['teamTricode', 'FGM', 'FGA', 'FG_PCT', 'FG2M', 'FG2A', 'FG2_PCT', 
                                 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'EFG_PCT', 'TS_PCT']]
-                                .sort_values(by='FG_PCT', ascending=False))
+                                .sort_values(by='TS_PCT', ascending=False))
     
     ttfl_stats = (team_stats[['teamTricode', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
                             'rel_team_avg_TTFL', 'rel_opp_avg_TTFL', 'net_rel_TTFL']]
                             .sort_values(by='net_TTFL', ascending=False))
     
     all_stats = {'Statistiques basiques' : reg_stats,
-                 'Statistiques avancées' : adv_stats,
                  'Statistiques de tir' : shooting_stats,
+                 'Statistiques avancées' : adv_stats,
                  'Statistiques TTFL' : ttfl_stats}
 
     return all_stats

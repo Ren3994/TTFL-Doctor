@@ -53,18 +53,34 @@ for i in range(0, len(team_list), items_per_row):
                                                    {f"team_stats_button_{k}": 
                                                     not st.session_state[f"team_stats_button_{k}"]}))
 vspace()
-cont_clear = st.container(horizontal_alignment='right')
-if cont_clear.button('Clear'):
+cont_options = st.container(horizontal_alignment='right', horizontal=True)
+if cont_options.button('Clear'):
     clear_team_stats_vars()
     st.rerun()
+color_cells = cont_options.checkbox('Colorer les cases')
 
 true_vars = [i for i, val in enumerate(session_state_vars) if val]
 selected_teams = [team_list[i] for i in true_vars]
 team_stats = get_team_stats(selected_teams=selected_teams)
 
 for table in team_stats:
+    df = team_stats[table]
     with st.expander(table, expanded=any(true_vars)):
-        st.dataframe(team_stats[table], height='content', hide_index=True,
+        show_df = df
+        negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL']
+        positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode']]
+        negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode']]
+        
+        if color_cells:
+            show_df = (df.style
+                       .background_gradient(
+                            subset=positive_in_df,
+                            cmap="YlGn")
+                       .background_gradient(
+                            subset=negative_in_df,
+                            cmap="YlGn_r"))
+            
+        st.dataframe(show_df, height='content', hide_index=True,
                     column_config={stat : (
                         st.column_config.NumberColumn(
                         TEAM_STATS_COLUMN_DEF[stat]['display'],
@@ -76,7 +92,7 @@ for table in team_stats:
                         TEAM_STATS_COLUMN_DEF[stat]['display'],
                         width = TEAM_STATS_COLUMN_DEF[stat]['width'],
                         help = TEAM_STATS_COLUMN_DEF[stat]['help']))
-                        for stat in team_stats[table]})
+                        for stat in df})
 
 vspace(30)
 
