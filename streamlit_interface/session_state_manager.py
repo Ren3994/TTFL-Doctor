@@ -95,3 +95,14 @@ def init_session_state(page, arg=None):
 
         if 'live_scores_by_team' not in st.session_state:
             st.session_state.live_scores_by_team = False
+
+    if page == 'stats_joueurs':
+        if 'player_stats_matched' not in st.session_state:
+            st.session_state.player_stats_matched = ''
+        if 'search_player_indiv_stats' not in st.session_state:
+            st.session_state.search_player_indiv_stats = ''
+        if 'compare_players' not in st.session_state:
+            st.session_state.compare_players = []
+        if 'player_stats' not in st.session_state:
+            st.session_state.player_stats = None
+        

@@ -301,7 +301,7 @@ def match_player(input_name, names_list=None, multi=False):
         else:
             matched_name, _, _ = process.extractOne(input_name, names_list, scorer=fuzz.token_set_ratio)
     
-    elif multi and isinstance(matched_name, str):
+    if multi and isinstance(matched_name, str):
         matched_name = [matched_name]
 
     return matched_name
