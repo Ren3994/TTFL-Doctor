@@ -8,7 +8,7 @@ from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, cus
 from misc.misc import TRICODE2NAME, RESIZED_LOGOS_PATH, TEAM_STATS_COLUMN_DEF
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.team_stats_utils import get_team_stats
+from streamlit_interface.team_stats_utils import *
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
@@ -53,6 +53,10 @@ for i in range(0, len(team_list), items_per_row):
                                                    {f"team_stats_button_{k}": 
                                                     not st.session_state[f"team_stats_button_{k}"]}))
 vspace()
+cont_clear = st.container(horizontal_alignment='right')
+if cont_clear.button('Clear'):
+    clear_team_stats_vars()
+    st.rerun()
 
 true_vars = [i for i, val in enumerate(session_state_vars) if val]
 selected_teams = [team_list[i] for i in true_vars]

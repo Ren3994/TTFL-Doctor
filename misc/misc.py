@@ -203,7 +203,20 @@ PLAYER_STATS_COLUMN_DEF = {
     'TTFL' : {'col' : 'num', 'display' : 'TTFL', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL'},
     'ttfl_per_min' : {'col' : 'num', 'display' : 'TTFL/min', 'format' : '%.2f', 'width' : 70, 'help' : 'Moyenne TTFL par minute'},
     'PM' : {'col' : 'num', 'display' : '±', 'format' : '%+.1f', 'width' : 40, 'help' : 'Plus/minus'},
-    
+
+    'TOT_Pts' : {'col' : 'num', 'display' : 'Pts', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de points marqués'},
+    'TOT_Ast' : {'col' : 'num', 'display' : 'Ast', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de passes décisives'},
+    'TOT_Reb' : {'col' : 'num', 'display' : 'Reb', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de rebonds'},
+    'TOT_Oreb' : {'col' : 'num', 'display' : 'Oreb', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de rebonds offensifs'},
+    'TOT_Dreb' : {'col' : 'num', 'display' : 'Dreb', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de rebonds défensifs'},
+    'TOT_Stl' : {'col' : 'num', 'display' : 'Stl', 'format' : '%.0f', 'width' : 35, 'help' : 'Total d\'interceptions'},
+    'TOT_Blk' : {'col' : 'num', 'display' : 'Blk', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de tirs contrés'},
+    'TOT_Tov' : {'col' : 'num', 'display' : 'Tov', 'format' : '%.0f', 'width' : 35, 'help' : 'Total de balles perdues'},
+    'TOT_Stk' : {'col' : 'num', 'display' : 'Stk', 'format' : '%.0f', 'width' : 35, 'help' : 'Total : steals + blocks'},
+    'TOT_TTFL' : {'col' : 'num', 'display' : 'TTFL', 'format' : '%.0f', 'width' : 35, 'help' : 'Total TTFL'},
+    'TOT_PM' : {'col' : 'num', 'display' : '±', 'format' : '%+.0f', 'width' : 40, 'help' : 'Plus/minus cumulé'},
+    'TOT_MINUTES' : {'col' : 'text', 'display' : 'Min', 'format' : None, 'width' : 45, 'help' : 'Total de minutes jouées'},
+
     # Advanced stats
     'ast_to_tov' : {'col' : 'num', 'display' : 'Ast/tov', 'format' : '%.2f', 'width' : 60, 'help' : 'Moyenne de passes décisives divisée par la moyenne de balles perdues'},
     'FG3_ratio' : {'col' : 'num', 'display' : 'Ratio 3pts', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs tentés qui sont des 3 pts'},
@@ -224,4 +237,13 @@ PLAYER_STATS_COLUMN_DEF = {
     'FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 2 pts réussis'},
     'FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de tirs à 2 pts tentés'},
     'FG2_PCT' : {'col' : 'num', 'display' : 'FG2%', 'format' : "%.1f%%", 'width' : 60, 'help' : 'Pourcentage de tirs à 2 pts réussis'},
+
+    'TOT_FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs marqués'},
+    'TOT_FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs tentés'},
+    'TOT_FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 3 points marqués'},
+    'TOT_FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 3 points tentés'},
+    'TOT_FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de lancers-francs réussis'},
+    'TOT_FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de lancers-francs tentés'},
+    'TOT_FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 2 pts réussis'},
+    'TOT_FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.0f', 'width' : 50, 'help' : 'Total de tirs à 2 pts tentés'},
 }

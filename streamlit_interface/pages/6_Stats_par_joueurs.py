@@ -33,7 +33,7 @@ slider_gp = cont_sliders.slider('Nombre de matchs minimum', key='slider_gp',
 vspace(container=cont_sliders)
 slider_min = cont_sliders.slider('Minutes par match minimum', key='slider_min',
                                  min_value=0, max_value=48, value=10, step=1, width=300)
-vspace(container=cont_sliders)
+totals = cont_sliders.toggle('Voir les totaux', key='player_stats_agg')
 
 cont_search.text_input(label='Rechercher joueur', 
                           placeholder='Rechercher joueur', 
@@ -56,11 +56,28 @@ if len(st.session_state.compare_players) > 0:
 elif st.session_state.player_stats_matched != '':
     players_to_show = st.session_state.player_stats_matched
 
-st.session_state.player_stats = get_all_player_stats(slider_gp, slider_min, players_to_show)
+st.session_state.player_stats = get_all_player_stats(slider_gp, slider_min, players_to_show, totals)
 
 for table in st.session_state.player_stats:
+    df = st.session_state.player_stats[table]
     with st.expander(table, expanded=len(players_to_show) > 0):
-        st.dataframe(st.session_state.player_stats[table], height='content', hide_index=True,
+        if table in ['Statistiques avancées', 'Statistiques de tir']:
+            cont_sliders_fg = st.container(horizontal=True, horizontal_alignment='center')
+            fg = cont_sliders_fg.slider('FG minimum', value=0, min_value=0, 
+                                        max_value=df['TOT_FGM'].max(),
+                                        key=f'slider_fg_{table}')
+            fg3 = cont_sliders_fg.slider('FG3 minimum', value=0, min_value=0, 
+                                         max_value=df['TOT_FG3M'].max(),
+                                        key=f'slider_fg3_{table}')
+            ft = cont_sliders_fg.slider('FT minimum', value=0, min_value=0, 
+                                        max_value=df['TOT_FTM'].max(),
+                                        key=f'slider_ft_{table}')
+            df = df[df['TOT_FGM'] > fg]
+            df = df[df['TOT_FG3M'] > fg3]
+            df = df[df['TOT_FTM'] > ft]
+            if not totals:
+                df = df.drop(columns=['TOT_FGM', 'TOT_FG3M', 'TOT_FTM'])
+        st.dataframe(df, height='content', hide_index=True,
                     column_config={stat : (
                         st.column_config.NumberColumn(
                         PLAYER_STATS_COLUMN_DEF[stat]['display'],
@@ -72,7 +89,7 @@ for table in st.session_state.player_stats:
                         PLAYER_STATS_COLUMN_DEF[stat]['display'],
                         width = PLAYER_STATS_COLUMN_DEF[stat]['width'],
                         help = PLAYER_STATS_COLUMN_DEF[stat]['help']))
-                        for stat in st.session_state.player_stats[table]})
+                        for stat in df})
 
 vspace(30)
 

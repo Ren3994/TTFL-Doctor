@@ -8,7 +8,7 @@ from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def get_team_stats(selected_teams=[]):
+def query_team_stats():
     conn = conn_db()
     team_stats = run_sql_query(conn, table='team_stats ts', joins=[{
         "table" : "rel_avg_opp_TTFL relt",
@@ -34,6 +34,11 @@ def get_team_stats(selected_teams=[]):
             'relt.avg_team_TTFL', 'relt.avg_opp_TTFL',
             'relt.avg_team_TTFL - relt.avg_opp_TTFL AS net_TTFL'
             ])
+    return team_stats
+
+def get_team_stats(selected_teams=[]):
+    
+    team_stats = query_team_stats()
     
     if len(selected_teams) > 0:
         team_stats = team_stats[team_stats['teamTricode'].isin(selected_teams)]
@@ -79,6 +84,11 @@ def get_team_stats(selected_teams=[]):
                  'Statistiques TTFL' : ttfl_stats}
 
     return all_stats
+
+def clear_team_stats_vars():
+    for key in list(st.session_state.keys()):
+        if key.startswith('team_stats_button_'):
+            st.session_state[key] = False
 
 if __name__ == '__main__':
     a = get_team_stats()
