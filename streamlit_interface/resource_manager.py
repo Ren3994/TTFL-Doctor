@@ -1,5 +1,7 @@
 import streamlit as st
 import sqlite3
+import httpx
+import time
 import sys
 import os
 
@@ -19,33 +21,38 @@ class SafeSupabase:
         self.client = _create_supabase_client()
 
     def _reset(self):
-        st.cache_resource.clear()
+        _create_supabase_client.clear()
         self.client = _create_supabase_client()
 
     def __getattr__(self, name):
-        attr = getattr(self.client, name)
-
-        if not callable(attr):
-            return attr
-
         def wrapper(*args, **kwargs):
-            try:
-                return attr(*args, **kwargs)
-            except Exception:
-                self._reset()
-                attr2 = getattr(self.client, name)
-                return attr2(*args, **kwargs)
+            max_retries = 3
+            backoff = 0.5
+            for attempt in range(max_retries):
+                try:
+                    attr = getattr(self.client, name)
+                    if not callable(attr):
+                        return attr
+                    
+                    return attr(*args, **kwargs)
+
+                except httpx.HTTPError:
+                    if attempt == max_retries - 1:
+                        raise
+                    time.sleep(backoff)
+                    backoff *= 2
+                    self._reset()
 
         return wrapper
+    
+def conn_supabase():
+    return SafeSupabase()
     
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_supabase_users(_supabase):
     import pandas as pd
     data = _supabase.table("ttfl_doctor_user_picks").select("username").execute().data
     return pd.DataFrame(data)['username'].tolist()
-
-def conn_supabase():
-    return SafeSupabase()
 
 @st.cache_resource(show_spinner=False)
 def conn_db():
