@@ -19,8 +19,8 @@ def get_live_games():
     import numpy as np
     
     pat = get_cached_avg_TTFL()
-    date_new_york = datetime.now(ZoneInfo("America/New_York")).date()
-    date_ny_str = date_new_york.strftime('%d/%m/%Y')
+    date_la = datetime.now(ZoneInfo("America/Los_Angeles")).date()
+    date_la_str = date_la.strftime('%d/%m/%Y')
     pending_games, finished_games = False, False
     all_live_data = {}
 
@@ -199,9 +199,9 @@ def get_live_games():
                                            'gameTimeParis' : (
                                                 datetime.strptime(gameTimeStringET.replace(" ET", ""), 
                                                                    "%I:%M %p")
-                                                         .replace(year=date_new_york.year, 
-                                                                  month=date_new_york.month, 
-                                                                  day=date_new_york.day, 
+                                                         .replace(year=date_la.year, 
+                                                                  month=date_la.month, 
+                                                                  day=date_la.day, 
                                                                   tzinfo=ZoneInfo("America/New_York"))
                                                          .astimezone(ZoneInfo("Europe/Paris"))
                                                          .strftime('%d %b. à %Hh%M'))
@@ -217,7 +217,7 @@ def get_live_games():
                      'live_games' : live_games,
                      'pending_games' : pending_games,
                      'finished_games' : finished_games,
-                     'gameDate' : date_ny_str,
+                     'gameDate' : date_la_str,
                      'timestamp' : time.time()}
 
     return all_live_data
