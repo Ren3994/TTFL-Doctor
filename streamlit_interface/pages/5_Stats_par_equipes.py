@@ -57,7 +57,7 @@ cont_options = st.container(horizontal_alignment='right', horizontal=True)
 if cont_options.button('Clear'):
     clear_team_stats_vars()
     st.rerun()
-color_cells = cont_options.checkbox('Colorer les cases')
+color_cells = cont_options.checkbox('Colorer les cases', key='team_stats_color_cells')
 
 true_vars = [i for i, val in enumerate(session_state_vars) if val]
 selected_teams = [team_list[i] for i in true_vars]

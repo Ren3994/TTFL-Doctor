@@ -98,6 +98,7 @@ with st.expander('Filtrer les résultats'):
     cont_check.checkbox('Voir les totaux', key='player_stats_agg')
     cont_check.checkbox('Colorer cases', key='color_cells')
     cont_check.button('Reset', on_click=reset_filters)
+    st.write('NB : colorer les cases sur la table qui contient tous les joueurs va entrainer du lag')
 
 for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]

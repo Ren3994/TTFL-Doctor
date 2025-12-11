@@ -90,5 +90,7 @@ def clear_team_stats_vars():
         if key.startswith('team_stats_button_'):
             st.session_state[key] = False
 
+    st.session_state.team_stats_color_cells = False
+
 if __name__ == '__main__':
     a = get_team_stats()
