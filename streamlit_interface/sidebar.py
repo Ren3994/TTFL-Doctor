@@ -91,7 +91,7 @@ def sidebar(page):
     st.sidebar.page_link('pages/3_Top_de_la_nuit.py', label='3 - Top de la nuit')
     st.sidebar.page_link('pages/4_Scores_TTFL_en_direct.py', label='4 - Scores TTFL en direct')
     st.sidebar.page_link('pages/5_Stats_par_equipes.py', label='5 - Stats par équipes')
-    st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs (WIP)')
+    st.sidebar.page_link('pages/6_Stats_par_joueurs.py', label='6 - Stats par joueurs')
 
     if st.session_state.get('username', '') == 'dev' or st.secrets.environment == 'local':
         st.sidebar.page_link('pages/7_Test_page.py', label='7 - tests')
