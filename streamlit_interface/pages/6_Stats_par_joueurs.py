@@ -18,6 +18,10 @@ init_session_state(page=PAGENAME)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
 
+if 'slider_gp' not in st.session_state:
+    set_filters_default()
+    reset_filters()
+
 # ---------- UI ----------
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Statistiques des joueurs</div>', unsafe_allow_html=True)
@@ -26,6 +30,7 @@ cont_search = st.container(horizontal=True)
 cont_show_compared_players = st.container(horizontal=True)
 vspace()
 
+# Player(s) search box
 cont_search.text_input(label='Rechercher joueur', 
                           placeholder='Rechercher joueur', 
                           key='search_player_indiv_stats', 
@@ -47,68 +52,54 @@ if len(st.session_state.compare_players) > 0:
 elif st.session_state.player_stats_matched != '':
     players_to_show = st.session_state.player_stats_matched
 
-if 'slider_gp' not in st.session_state:
-    reset_filters()
+# Filters
+filter_exp_str, filter_exp_bool = filter_expander_vars()
+with st.expander(filter_exp_str, expanded=filter_exp_bool):
+    cont_exp_filters = st.container(horizontal_alignment='center')
+    cont_check = cont_exp_filters.container(horizontal_alignment='center', horizontal=True, gap="large")
 
-st.session_state.player_stats, maximums = get_all_player_stats(
+    cont_check.segmented_control('Aggregation', ['Moyennes', 'Totaux', 'Moyennes par 36 min'], 
+                                 key = 'player_stats_agg', 
+                                 label_visibility='collapsed')
+
+    cont_check.checkbox('Colorer cases', key='color_cells')
+    cont_check.button('Réinitialiser les filtres', on_click=reset_filters)
+    cont_sliders = cont_exp_filters.container(horizontal=True, horizontal_alignment='center')
+    cont_sliders.slider('Nombre de matchs', key='slider_gp', min_value=0, step=1,
+                        max_value=st.session_state.max_games)
+    cont_sliders.slider('Minutes par match', key='slider_min', min_value=0, max_value=48, step=1)
+    cont_sliders.slider('Tirs', key='slider_fg', min_value=0, step=1,
+                        max_value=st.session_state.max_fg)
+    cont_sliders.slider('Tirs à 3 points', key='slider_fg3', min_value=0, step=1,
+                        max_value=st.session_state.max_fg3)
+    cont_sliders.slider('Lancers francs', key='slider_ft', min_value=0, step=1,
+                        max_value=st.session_state.max_ft)
+        
+    st.write('NB : colorer les cases sur la table qui contient tous les joueurs va entrainer du lag')
+
+# Get stats depending on filters and searched players
+st.session_state.player_stats = get_all_player_stats(
     matched=players_to_show,
     min_games = st.session_state.slider_gp,
     min_min_per_game = st.session_state.slider_min,
     fg_min = st.session_state.slider_fg,
     fg3_min = st.session_state.slider_fg3,
     ft_min = st.session_state.slider_ft,
-    totals = st.session_state.player_stats_agg)
+    agg = st.session_state.player_stats_agg)
 
-if 'max_games' not in st.session_state:
-    st.session_state.max_games = maximums['GP']
-    st.session_state.max_fg = maximums['FG']
-    st.session_state.max_fg3 = maximums['FG3']
-    st.session_state.max_ft = maximums['FT']
-
-with st.expander('Filtrer les résultats'):
-    cont_sliders = st.container(horizontal=True, horizontal_alignment='center')
-    cont_sliders.slider('Nombre de matchs', 
-                        key='slider_gp',     
-                        min_value=0, 
-                        max_value=st.session_state.max_games, 
-                        step=1)
-    cont_sliders.slider('Minutes par match', 
-                        key='slider_min',
-                        min_value=0, 
-                        max_value=48, 
-                        step=1)
-    cont_sliders.slider('Tirs', 
-                        key='slider_fg',
-                        min_value=0, 
-                        max_value=st.session_state.max_fg, 
-                        step=1)
-    cont_sliders.slider('Tirs à 3 points', 
-                        key='slider_fg3',
-                        min_value=0, 
-                        max_value=st.session_state.max_fg3, 
-                        step=1)
-    cont_sliders.slider('Lancers francs', 
-                        key='slider_ft',
-                        min_value=0, 
-                        max_value=st.session_state.max_ft, 
-                        step=1)
-    
-    cont_check = cont_sliders.container(horizontal_alignment='center')
-
-    cont_check.checkbox('Voir les totaux', key='player_stats_agg')
-    cont_check.checkbox('Colorer cases', key='color_cells')
-    cont_check.button('Reset', on_click=reset_filters)
-    st.write('NB : colorer les cases sur la table qui contient tous les joueurs va entrainer du lag')
-
+# Display stats tables
 for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]
     if df.empty:
         if table == 'Statistiques basiques':
-            st.write('Aucun joueur recherché ne correspond aux filtres')
+            st.write('Aucun joueur trouvé')
     else:
         table_str = table
         if table == 'Statistiques du joueur par adversaire':
             table_str = table.replace('du joueur', f'de {players_to_show[0]}')
+        elif (table in ['Statistiques basiques', 'Statistiques de tir/avancées'] and 
+            st.session_state.player_stats_agg != 'Moyennes'):
+            table_str +=  f' {uspace(6)} ● {uspace(6)} {st.session_state.player_stats_agg}'
         with st.expander(table_str, expanded=len(players_to_show) > 1):
             show_df = df
             excluded_cols = ['playerName', 'teamTricode', 'MINUTES', 'GP', 'TOT_MINUTES', 'opponent']
@@ -141,6 +132,7 @@ for table in st.session_state.player_stats:
                             st.session_state.mobile_layout else False))
                             for stat in df})
 
+# Display individual stats tables
 onlyone = len(players_to_show) == 1
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match et par adversaire' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):

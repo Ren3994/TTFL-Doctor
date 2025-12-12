@@ -129,8 +129,7 @@ for i in range(0, len(games_for_date), games_per_row):
                               key=f"btn_{idx}",
                               width=button_width,
                               on_click=lambda k=idx: st.session_state.update(
-                            {f"classement_{k}": not st.session_state[f"classement_{k}"]})
-                             )
+                            {f"classement_{k}": not st.session_state[f"classement_{k}"]}))
 vspace()
 
 if len(games_for_date) > 0:

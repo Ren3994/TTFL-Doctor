@@ -88,7 +88,8 @@ def is_mobile_layout():
 
 @st.dialog('Requêtes / Bugs')
 def requests_form():
-    request_type = st.segmented_control('Vous voulez...', ['Signaler un bug', 'Demander une nouvelle fonctionnalité'])
+    request_type = st.segmented_control('Vous voulez...', 
+                                        ['Signaler un bug', 'Demander une nouvelle fonctionnalité'])
     description = st.text_input('request_description', placeholder='Description', label_visibility='collapsed')
     contact = st.text_input('contact', label_visibility='collapsed', placeholder='Contact (optionnel)')
     if st.button('OK'):
@@ -117,6 +118,10 @@ def vspace(numlines=1, container=None):
     else :
         for _ in range(numlines):
             container.write('')
+
+def uspace(numlines = 1):
+    unicode_space = '\u00A0'
+    return unicode_space * numlines
 
 @st.cache_resource(show_spinner=False)
 def get_sc():
