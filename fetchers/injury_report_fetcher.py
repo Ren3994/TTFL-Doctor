@@ -30,52 +30,58 @@ def get_injury_report():
                     est_return = cells[2].get_text(strip=True)
                     status = cells[3].get_text(strip=True)
                     info = cells[4].get_text(strip=True)
-
-                    # Parse ESPN date (e.g. "Oct 3")
+                    
                     try:
-                        est_return_dt = datetime.strptime(est_return, "%b %d")
-                        est_return_dt = est_return_dt.replace(year=datetime.now().year)
+                        est_return_fmt = (datetime.strptime(
+                            f'{est_return} {datetime.now().year}', '%b %d %Y')
+                            .strftime("%d/%m"))
                     except Exception:
-                        est_return_dt = None
+                        est_return_fmt = '??'
+                    
+                    if info != '' and ':' in info:
+                        text_lower = info.lower()
+                        simplified = status
+                        if status.lower() == "day-to-day":
+                            if any(x in text_lower for x in ["will not suit up", 
+                                                            "won't suit up", 
+                                                            "isn't warming up", 
+                                                            "is not warming up", 
+                                                            "not participating", 
+                                                            "will be rested", 
+                                                            "ruled out", 
+                                                            "won't play", 
+                                                            "will not play",
+                                                            "will not return",
+                                                            "is out", 
+                                                            "personal", 
+                                                            "is not starting", 
+                                                            "is not in the starting", 
+                                                            "no timetable", 
+                                                            "will not be available", 
+                                                            "won't be available"]):
+                                simplified = "Out"
+                            elif "questionable" in text_lower:
+                                simplified = "Questionable"
+                            elif "probable" in text_lower:
+                                simplified = "Probable"
 
-                    # Simplify status logic
-                    text_lower = info.lower()
-                    simplified = status
-                    if status.lower() == "day-to-day":
-                        if any(x in text_lower for x in ["will not suit up", 
-                                                         "won't suit up", 
-                                                         "isn't warming up", 
-                                                         "is not warming up", 
-                                                         "not participating", 
-                                                         "will be rested", 
-                                                         "ruled out", 
-                                                         "won't play", 
-                                                         "will not play",
-                                                         "will not return",
-                                                         "is out", 
-                                                         "personal", 
-                                                         "is not starting", 
-                                                         "is not in the starting", 
-                                                         "no timetable", 
-                                                         "will not be available", 
-                                                         "won't be available"]):
-                            simplified = "Out"
-                        elif "questionable" in text_lower:
-                            simplified = "Questionable"
-                        elif "probable" in text_lower:
-                            simplified = "Probable"
+                        try:
+                            last_update_fmt = (datetime.strptime(
+                                f'{info.split(':')[0]} {datetime.now().year}', "%b %d %Y")
+                                .strftime("%d/%m"))
+                        except:
+                            last_update_fmt = '?'
 
-                    # Parse last update
-                    last_update = datetime.strptime(info.split(':')[0], "%b %d")
-                    last_update = last_update.replace(year=datetime.now().year)
-
-                    # Remove date from info string
-                    short_info = info.split(':')[1]
+                        short_info = info.split(':')[1]
+                    else:
+                        last_update_fmt = '?? '
+                        simplified = ''
+                        short_info = ''
 
                     records.append({
                         "player_name": player,
                         "simplified_status": simplified,
-                        "injury_status": f'{last_update.strftime("%d/%m")}: {simplified} (retour est. : {est_return_dt.strftime("%d/%m")})',
+                        "injury_status": f'{last_update_fmt}: {simplified} (retour est. : {est_return_fmt})',
                         "details": short_info
                     })
 
@@ -92,3 +98,6 @@ def get_injury_report():
         return df
 
     return df
+
+if __name__ == '__main__':
+    get_injury_report()
