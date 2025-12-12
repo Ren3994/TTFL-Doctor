@@ -60,23 +60,21 @@ def get_team_stats(selected_teams=[]):
     team_stats['FG2_PCT'] = (100 * team_stats['FG2M'] / team_stats['FG2A']).round(1)
 
     team_stats['FG3_ratio'] = (100 * team_stats['FG3A'] / team_stats['FGA']).round(1)
+
+    team_stats = team_stats.sort_values(by=['W', 'W_PCT'], ascending=[False, False])
     
-    reg_stats = (team_stats[['teamTricode', 'GP', 'W', 'L', 'W_PCT','PTS', 'AST', 'REB', 
+    reg_stats = team_stats[['teamTricode', 'GP', 'W', 'L', 'W_PCT','PTS', 'AST', 'REB', 
                             'OREB', 'DREB', 'STL', 'BLK', 'TOV']]
-                            .sort_values(by='W_PCT', ascending=False))
     
-    adv_stats = (team_stats[['teamTricode', 'ORtg', 'DRtg', 'NRtg', 'FG3_ratio', 'Pace', 'AST_TO',
+    adv_stats = team_stats[['teamTricode', 'ORtg', 'DRtg', 'NRtg', 'FG3_ratio', 'Pace', 'AST_TO',
                              'REB_PCT','OREB_PCT', 'DREB_PCT', 'TM_TOV_PCT',
                             'AST_PCT', 'AST_RATIO', 'BLKA', 'PFD']]
-                            .sort_values(by='NRtg', ascending=False))
     
-    shooting_stats = (team_stats[['teamTricode', 'FGM', 'FGA', 'FG_PCT', 'FG2M', 'FG2A', 'FG2_PCT', 
+    shooting_stats = team_stats[['teamTricode', 'FGM', 'FGA', 'FG_PCT', 'FG2M', 'FG2A', 'FG2_PCT', 
                                 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'EFG_PCT', 'TS_PCT']]
-                                .sort_values(by='TS_PCT', ascending=False))
     
-    ttfl_stats = (team_stats[['teamTricode', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
+    ttfl_stats = team_stats[['teamTricode', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
                             'rel_team_avg_TTFL', 'rel_opp_avg_TTFL', 'net_rel_TTFL']]
-                            .sort_values(by='net_TTFL', ascending=False))
     
     all_stats = {'Statistiques basiques' : reg_stats,
                  'Statistiques de tir' : shooting_stats,
