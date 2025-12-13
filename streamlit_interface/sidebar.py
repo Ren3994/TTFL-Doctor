@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
 from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, forget_user
-from streamlit_interface.streamlit_utils import requests_form, centered, custom_CSS
+from streamlit_interface.streamlit_utils import requests_form, centered, vspace, custom_CSS
 # from streamlit_interface.resource_manager import deepl_api_limit_reached
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
@@ -41,32 +41,25 @@ def sidebar(page):
             st.rerun()
 
         if "last_update" in st.session_state:
-            st.sidebar.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
+            cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
+            vspace(container=cont)
+            cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
         if not st.session_state.local_instance:
-            
-            if st.session_state.get('auth_token', None) is not None:
-                user_found = check_user_cookies_to_login()
-                if user_found:
-                    on_username_change()
+            if st.session_state.get('username', '') == '':
+                if st.session_state.get('auth_token', None) is not None:
+                    user_found = check_user_cookies_to_login()
+                    if user_found:
+                        on_username_change()
 
-            if st.session_state.get('username', '') != '':
-                st.sidebar.write(f'Utilisateur : {st.session_state.username}')
-            else:
-                st.sidebar.write('Pas d\'utilisateur connecté')
-            
-            col_username_input, col_accept_username = st.sidebar.columns([2, 1], gap='small')
-            with col_username_input:
-                st.text_input(
-                    label="Nom d'utilisateur",
-                    placeholder="Nom d'utilisateur",
-                    key="username",
-                    on_change=on_username_change,
-                    label_visibility='collapsed',
-                    width=200)
-
-            with col_accept_username:
-                st.button('Login')
+            cont_input_login = st.sidebar.container(horizontal=True, horizontal_alignment='center')
+            cont_input_login.text_input(
+                label="Nom d'utilisateur",
+                placeholder="Nom d'utilisateur",
+                key="username",
+                on_change=on_username_change,
+                label_visibility='collapsed',
+                width=200)
             
             if st.session_state.get('username', '') != '':
                 cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
@@ -81,6 +74,8 @@ def sidebar(page):
                     forget_user()
                     on_username_change()
                     st.rerun()
+            else:
+                cont_input_login.button('Login')
                 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
@@ -129,5 +124,6 @@ def sidebar(page):
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
         cont = centered(sidebar=True)
+        vspace(container = cont)
         if cont.button('Requêtes/Bugs'):
             requests_form()
