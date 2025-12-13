@@ -100,7 +100,7 @@ for table in st.session_state.player_stats:
         elif (table in ['Statistiques basiques', 'Statistiques de tir/avancées'] and 
             st.session_state.player_stats_agg != 'Moyennes'):
             table_str +=  f' {uspace(6)} ● {uspace(6)} {st.session_state.player_stats_agg}'
-        with st.expander(table_str, expanded=len(players_to_show) > 1):
+        with st.expander(table_str, expanded=len(players_to_show) >= 1):
             show_df = df
             excluded_cols = ['playerName', 'teamTricode', 'MINUTES', 'GP', 'TOT_MINUTES', 'opponent']
             negative_cols = ['Tov', 'TOT_Tov']

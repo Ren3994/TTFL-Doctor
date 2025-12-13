@@ -229,6 +229,7 @@ def update_tables(conn):
 
     add_missing_pos_to_rosters(conn)
     update_helper_tables(conn)
+    calc_median_TTFL(conn)
     update_home_away_rel_TTFL(conn)
     update_avg_TTFL_per_pos(conn)
     update_avg_TTFL_per_pos_per_opp(conn)
@@ -239,6 +240,34 @@ def update_tables(conn):
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
+
+def calc_median_TTFL(conn):
+    import pandas as pd
+
+    query = """
+    WITH ordered AS (
+    SELECT
+        playerName,
+        TTFL,
+        ROW_NUMBER() OVER (
+        PARTITION BY playerName
+        ORDER BY TTFL
+        ) AS rn,
+        COUNT(*) OVER (
+        PARTITION BY playerName
+        ) AS cnt
+    FROM boxscores
+    WHERE seconds > 0
+    )
+    SELECT
+    playerName,
+    AVG(TTFL) AS median_TTFL
+    FROM ordered
+    WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+    GROUP BY playerName
+    """
+    df = pd.read_sql_query(query, conn)
+    save_to_db(conn, df, "median_TTFL", if_exists="replace")
 
 def update_home_away_rel_TTFL(conn):
     import pandas as pd
@@ -643,8 +672,10 @@ def topTTFL_query(conn, game_date):
     -- Giannis Antetokounmpo  |    59.7    |     11.6
     --     Nikola Jokic       |    54.7    |     14.6
 
-    SELECT playerName, avg_TTFL, stddev_TTFL
-    FROM player_avg_TTFL
+    SELECT p.playerName, p.avg_TTFL, p.stddev_TTFL, m.median_TTFL
+    FROM player_avg_TTFL p
+    JOIN median_TTFL m
+    ON p.playerName = m.playerName
     ),
 
     games_missed AS (
@@ -804,7 +835,7 @@ def topTTFL_query(conn, game_date):
     ap.playerName, ap.pos, ap.isHome, 
     ap.team, ap.teamWins, ap.teamLosses,
     ap.opponent, ap.oppWins, ap.oppLosses,
-    pat.avg_TTFL, pat.stddev_TTFL,
+    pat.avg_TTFL, pat.stddev_TTFL, pat.median_TTFL,
 
     -- Player injury status
     ir.injury_status, ir.details,
@@ -838,7 +869,7 @@ def topTTFL_query(conn, game_date):
     gd.graph_wins
 
     FROM all_players ap
-    JOIN player_avg_TTFL pat
+    JOIN player_avgTTFL pat
         ON ap.playerName = pat.playerName
     LEFT JOIN inj_report ir
         ON ap.playerName = ir.player_name
