@@ -38,6 +38,7 @@ def format_to_table(df) :
     prettydf['details'] = df['details'].fillna('')
     prettydf['opp'] = df['opponent']
     prettydf['is_b2b'] = df['is_b2b']
+    prettydf['n_btb'] = df['n_btb']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
 
     # -------------------------------------------- Graph stuff -------------------------------------------------
@@ -53,6 +54,7 @@ def format_to_table(df) :
     df['rel_TTFL_v_opp'] = pd.to_numeric(df['rel_TTFL_v_opp'], errors='coerce')
     df['ha_rel_TTFL'] = pd.to_numeric(df['ha_rel_TTFL'], errors='coerce')
     df['rel_btb_TTFL'] = pd.to_numeric(df['rel_btb_TTFL'], errors='coerce')
+    df['n_btb'] = pd.to_numeric(df['n_btb'], errors='coerce').fillna(0)
 
     prettydf['pos_rel_TTFL_v_team'] = np.select([df['pos_rel_TTFL_v_team'].isna(), df['pos_rel_TTFL_v_team'] >= 0], 
                             [       'N/A',                        '+' + df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%'],
@@ -75,8 +77,8 @@ def format_to_table(df) :
     
     prettydf['rel_btb_TTFL'] = df['playerName'] + ' en back to back : ' + \
                                 np.select([df['rel_btb_TTFL'].isna(), df['rel_btb_TTFL'] >= 0],
-                                [           'N/A<br>',           '+' + df['rel_btb_TTFL'].round(1).astype(str) + '%<br>'],
-                                df['rel_btb_TTFL'].round(1).astype(str) + '%<br>')
+                                [           'N/A<br>',           '+' + df['rel_btb_TTFL'].round(1).astype(str) + '% (' + df['n_btb'].astype(int).astype(str) + ' matchs)<br>'],
+                                df['rel_btb_TTFL'].round(1).astype(str) + '% (' + df['n_btb'].astype(int).astype(str) + ' matchs)<br>')
     
     prettydf['rel_btb_TTFL_with_br'] = prettydf['rel_btb_TTFL'].where(prettydf['is_b2b'] == 1, '')
     

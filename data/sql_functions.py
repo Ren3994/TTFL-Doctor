@@ -311,7 +311,7 @@ def update_back_to_back_rel_TTFL(conn):
 
     query = """
     WITH back_to_back AS (
-    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as btbTTFL
+    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as btbTTFL, COUNT(*) AS n_btb
     FROM boxscores curr
     JOIN boxscores prev
     ON curr.playerName = prev.playerName
@@ -319,7 +319,7 @@ def update_back_to_back_rel_TTFL(conn):
     GROUP BY curr.playerName
     )
 
-    SELECT pat.playerName, btb.btbTTFL,
+    SELECT pat.playerName, btb.btbTTFL, btb.n_btb,
         CASE 
             WHEN pat.avg_TTFL IS NULL OR pat.avg_TTFL = 0 THEN NULL
             ELSE 100 * (btb.btbTTFL - pat.avg_TTFL) / pat.avg_TTFL
@@ -889,7 +889,7 @@ def topTTFL_query(conn, game_date_ymd):
         ELSE hart.away_rel_TTFL
     END AS ha_rel_TTFL,
     raot.rel_opp_avg_TTFL,
-    btb.rel_btb_TTFL, ibtb.is_b2b,
+    btb.rel_btb_TTFL, btb.n_btb, ibtb.is_b2b,
 
     -- Concatenated injured teammates info
     GROUP_CONCAT(itri.injured_player) AS injured_teammates,

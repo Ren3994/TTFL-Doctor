@@ -259,5 +259,6 @@ PLAYER_STATS_COLUMN_DEF = {
     'home_rel_TTFL' : {'col' : 'num', 'display' : 'Home%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL à la maison'},
     'away_rel_TTFL' : {'col' : 'num', 'display' : 'Away%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL à l\'extérieur'},
     'btbTTFL' : {'col' : 'num', 'display' : 'B2B', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL en back to back'},
+    'n_btb' : {'col' : 'num', 'display' : 'Nb. B2B', 'format' : '%.0f', 'width' : 35, 'help' : 'Nombre de matchs en back to back'},
     'rel_btb_TTFL' : {'col' : 'num', 'display' : 'B2B%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL en back to back'},
 }

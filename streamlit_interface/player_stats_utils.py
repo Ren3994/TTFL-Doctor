@@ -66,6 +66,7 @@ def query_player_stats():
                            'ha.away_avg_TTFL',
                            'btb.btbTTFL',
                            'btb.rel_btb_TTFL',
+                           'btb.n_btb',
                            'pat.stddev_TTFL',
                            'MAX(TTFL) AS max_ttfl',
                            'MIN(TTFL) AS min_ttfl'],
@@ -143,7 +144,8 @@ def get_all_player_stats(matched=[]):
     player_stats['away_rel_TTFL'] = player_stats['away_rel_TTFL'].fillna(0)
     player_stats['btbTTFL'] = player_stats['btbTTFL'].fillna(0)
     player_stats['rel_btb_TTFL'] = player_stats['rel_btb_TTFL'].fillna(0)
-
+    player_stats['n_btb'] = player_stats['n_btb'].fillna(0)
+    
     player_stats['playerName'] = player_stats['playerName'].apply(french_flag)
     
     if agg == 'Moyennes':
@@ -187,7 +189,7 @@ def get_all_player_stats(matched=[]):
     shooting_stats = (player_stats[shoot_cols].sort_values(by=shoot_sort_col, ascending=False))
     ttfl_stats = (player_stats[['playerName', 'TTFL', 'stddev_TTFL', 'median_TTFL', 'max_ttfl', 'min_ttfl', 
                                 'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 
-                                'away_rel_TTFL', 'btbTTFL', 'rel_btb_TTFL']]
+                                'away_rel_TTFL', 'btbTTFL', 'rel_btb_TTFL', 'n_btb']]
                   .sort_values(by='TTFL', ascending=False))
     
     player_v_team_df = player_v_team(matched)
