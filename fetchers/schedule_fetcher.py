@@ -40,6 +40,7 @@ def get_schedule():
             schedule['gameDateTimeUTC'] = pd.to_datetime(schedule['gameDateTimeUTC'], errors='coerce')
 
             schedule['gameDate'] = schedule['gameDate'].dt.strftime('%d/%m/%Y')
+            schedule['gameDate_ymd'] = schedule['gameDate'].dt.strftime('%Y-%m-%d')
             schedule['gameDateTime'] = schedule['gameDateTimeUTC'].dt.tz_convert('Europe/Paris')
 
             schedule.rename(columns={

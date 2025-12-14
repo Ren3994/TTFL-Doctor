@@ -237,6 +237,7 @@ def update_tables(conn):
     update_absent_teammate_rel_impact(conn)
     updates_games_missed_by_players(conn)
     update_opp_pos_avg_per_game(conn)
+    update_back_to_back_rel_TTFL(conn)
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
@@ -304,6 +305,33 @@ def update_home_away_rel_TTFL(conn):
     """
     df = pd.read_sql_query(query, conn)
     save_to_db(conn, df, "home_away_rel_TTFL", if_exists="replace")
+
+def update_back_to_back_rel_TTFL(conn):
+    import pandas as pd
+
+    query = """
+    WITH back_to_back AS (
+    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as TTFL
+    FROM boxscores curr
+    JOIN boxscores prev
+    ON curr.playerName = prev.playerName
+    AND prev.gameDate_ymd = date(curr.gameDate_ymd, '-1 day')
+    GROUP BY curr.playerName
+    )
+
+    SELECT pat.playerName,
+        CASE 
+            WHEN pat.avg_TTFL IS NULL OR pat.avg_TTFL = 0 THEN NULL
+            ELSE 100 * (btb.TTFL - pat.avg_TTFL) / pat.avg_TTFL
+        END AS rel_btb_TTFL
+
+    FROM player_avg_TTFL pat
+    LEFT JOIN back_to_back btb
+    ON btb.playerName = pat.playerName
+    """
+
+    df = pd.read_sql_query(query, conn)
+    df.to_sql('rel_btb_TTFL', conn, if_exists='replace', index=False)
 
 def update_avg_TTFL_per_pos(conn):
     import pandas as pd
@@ -554,7 +582,7 @@ def update_opp_pos_avg_per_game(conn):
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_opp_pos_avg_per_game_team_game ON opp_pos_avg_per_game(gameId, teamTricode);")
 
-def topTTFL_query(conn, game_date):
+def topTTFL_query(conn, game_date_ymd):
     import pandas as pd
 
     query = """
@@ -569,7 +597,7 @@ def topTTFL_query(conn, game_date):
 
     SELECT homeTeam, homeTeam_wins, homeTeam_losses, awayTeam, awayTeam_wins, awayTeam_losses
     FROM schedule
-    WHERE gameDate = ?
+    WHERE gameDate_ymd = :date
     ),
 
     position_expansion AS (
@@ -623,6 +651,19 @@ def topTTFL_query(conn, game_date):
     UNION ALL
     SELECT playerName, pos, team, teamWins, teamLosses, opponent, oppWins, oppLosses, isHome
     FROM away_players
+    ),
+    
+    is_back_to_back AS (
+    SELECT
+    ap.playerName,
+    EXISTS (
+        SELECT 1
+        FROM boxscores b
+        WHERE b.playerName = ap.playerName
+          AND b.seconds > 0
+          AND b.gameDate_ymd = date(:date, '-1 day')
+    ) AS is_b2b
+    FROM all_players ap
     ),
 
     inj_report AS (
@@ -848,6 +889,7 @@ def topTTFL_query(conn, game_date):
         ELSE hart.away_rel_TTFL
     END AS ha_rel_TTFL,
     raot.rel_opp_avg_TTFL,
+    btb.rel_btb_TTFL, ibtb.is_b2b,
 
     -- Concatenated injured teammates info
     GROUP_CONCAT(itri.injured_player) AS injured_teammates,
@@ -890,11 +932,15 @@ def topTTFL_query(conn, game_date):
       ON ap.playerName = gd.playerName
     JOIN rel_avg_opp_TTFL2 raot
         ON ap.opponent = raot.teamTricode
+    JOIN rel_btb_TTFL btb
+        ON btb.playerName = ap.playerName
+    JOIN is_back_to_back ibtb
+        ON ibtb.playerName = ap.playerName
     GROUP BY ap.playerName, ap.team, ap.pos
     ORDER BY pat.avg_TTFL DESC
         """
 
-    df = pd.read_sql_query(query, conn, params=(game_date,))
+    df = pd.read_sql_query(query, conn, params={'date' : game_date_ymd})
 
     return df
 

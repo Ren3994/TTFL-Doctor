@@ -4,12 +4,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.streamlit_utils import uspace, french_flag
 from streamlit_interface.classement_TTFL_utils import df_to_html
 from streamlit_interface.resource_manager import conn_db
-from streamlit_interface.streamlit_utils import uspace
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
-from misc.misc import FRENCHIES
 
 @st.cache_data(show_spinner=False)
 def query_player_stats():
@@ -101,8 +100,7 @@ def get_all_player_stats(matched=[], min_games=5, min_min_per_game=0, fg_min=0, 
 
     player_stats['FG3_ratio'] = (100 * player_stats['FG3A'] / player_stats['FGA']).fillna(0).round(1)
 
-    player_stats.loc[player_stats['playerName'].isin(FRENCHIES), 'playerName'] = (
-        player_stats.loc[player_stats['playerName'].isin(FRENCHIES), 'playerName'] + ' 🇫🇷')
+    player_stats['playerName'] = player_stats['playerName'].apply(french_flag)
     
     if agg == 'Moyennes':
         reg_cols = ['playerName', 'teamTricode', 'GP', 'MINUTES', 'TTFL', 'ttfl_per_min',

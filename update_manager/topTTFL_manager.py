@@ -6,11 +6,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import topTTFL_query
 
-def get_top_TTFL(game_date: str):
+def get_top_TTFL(game_date_ymd: str):
 
     conn = conn_db()
 
-    df = topTTFL_query(conn, game_date)
+    df = topTTFL_query(conn, game_date_ymd)
     prettydf = format_to_table(df)
 
     return prettydf
@@ -37,6 +37,8 @@ def format_to_table(df) :
     prettydf['Statut'] = df['injury_status'].fillna('')
     prettydf['details'] = df['details'].fillna('')
     prettydf['opp'] = df['opponent']
+    prettydf['is_b2b'] = df['is_b2b']
+    prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
 
     # -------------------------------------------- Graph stuff -------------------------------------------------
 
@@ -50,6 +52,7 @@ def format_to_table(df) :
     df['pos_rel_TTFL_v_team'] = pd.to_numeric(df['pos_rel_TTFL_v_team'], errors='coerce')
     df['rel_TTFL_v_opp'] = pd.to_numeric(df['rel_TTFL_v_opp'], errors='coerce')
     df['ha_rel_TTFL'] = pd.to_numeric(df['ha_rel_TTFL'], errors='coerce')
+    df['rel_btb_TTFL'] = pd.to_numeric(df['rel_btb_TTFL'], errors='coerce')
 
     prettydf['pos_rel_TTFL_v_team'] = np.select([df['pos_rel_TTFL_v_team'].isna(), df['pos_rel_TTFL_v_team'] >= 0], 
                             [       'N/A',                        '+' + df['pos_rel_TTFL_v_team'].round(1).astype(str) + '%'],
@@ -69,7 +72,14 @@ def format_to_table(df) :
                                 np.select([df['rel_opp_avg_TTFL'].isna(), df['rel_opp_avg_TTFL'] >= 0],
                                 [           'N/A',           '+' + df['rel_opp_avg_TTFL'].round(1).astype(str) + '%'],
                                 df['rel_opp_avg_TTFL'].round(1).astype(str) + '%')
-
+    
+    prettydf['rel_btb_TTFL'] = 'En back to back : ' + \
+                                np.select([df['rel_btb_TTFL'].isna(), df['rel_btb_TTFL'] >= 0],
+                                [           'N/A<br>',           '+' + df['rel_btb_TTFL'].round(1).astype(str) + '%<br>'],
+                                df['rel_btb_TTFL'].round(1).astype(str) + '%<br>')
+    
+    prettydf['rel_btb_TTFL_with_br'] = prettydf['rel_btb_TTFL'].where(prettydf['is_b2b'] == 1, '')
+    
     # -------------------------------------------- Team injury status ------------------------------------------------
 
     df['inj_team_split'] = df['injured_teammates'].str.split(",")
@@ -285,6 +295,7 @@ def format_to_table(df) :
                           prettydf['rel_TTFL_v_opp'] + '<br>' + 
                           prettydf['ha_rel_TTFL'] + '<br>' + 
                           prettydf['pos_v_team'] + '<br>' + 
+                          prettydf['rel_btb_TTFL_with_br'] +
                           'Médiane/Ecart-type : ' + 
                           prettydf['median_TTFL'].astype(str) + '/' +
                           prettydf['stdTTFL'].astype(str))

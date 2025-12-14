@@ -8,10 +8,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # from streamlit_interface.resource_manager import conn_deepl, deepl_api_limit_reached
 from streamlit_interface.JDP_utils import get_cached_rosters
+from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.color_palette import get_palette
 from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
-from misc.misc import FRENCHIES
 
 def accentuate_pct(text: str) -> str:
     palette = get_palette('pct')
@@ -363,9 +363,8 @@ def df_to_html(
         for col in show_cols:
             cell_value = getattr(row, col)
 
-            if highlight_frenchies and (
-                cell_value in FRENCHIES or str(cell_value)[:-1] in FRENCHIES):
-                cell_value = f"{cell_value} &nbsp;🇫🇷"
+            if highlight_frenchies:
+                cell_value = french_flag(cell_value, html=True)
 
             if image_tooltips and col in image_tooltips:
                 img_col = image_tooltips[col]
@@ -391,8 +390,8 @@ def df_to_html(
     return html
 
 @st.cache_data(show_spinner=False)
-def cached_get_top_TTFL(date):
-    topTTFL_df = get_top_TTFL(date)
+def cached_get_top_TTFL(date_ymd):
+    topTTFL_df = get_top_TTFL(date_ymd)
     return topTTFL_df
 
 def on_text_change():
@@ -402,22 +401,25 @@ def on_text_change():
         new_date = datetime.strptime(text_value, "%d/%m/%Y").date()
         st.session_state.selected_date = new_date
         st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-        update_session_state_df(st.session_state.date_text)
+        st.session_state.date_text_ymd = st.session_state.selected_date.strftime("%Y-%m-%d")
+        update_session_state_df(st.session_state.date_text_ymd)
     except ValueError:
         st.session_state.text_parse_error = True
 
 def prev_date():
     st.session_state.selected_date -= timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    update_session_state_df(st.session_state.date_text)
+    st.session_state.date_text_ymd = st.session_state.selected_date.strftime("%Y-%m-%d")
+    update_session_state_df(st.session_state.date_text_ymd)
 
 def next_date():
     st.session_state.selected_date += timedelta(days=1)
     st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
-    update_session_state_df(st.session_state.date_text)
+    st.session_state.date_text_ymd = st.session_state.selected_date.strftime("%Y-%m-%d")
+    update_session_state_df(st.session_state.date_text_ymd)
 
-def update_session_state_df(date):
-    topTTFL_df = cached_get_top_TTFL(date)
+def update_session_state_df(date_ymd):
+    topTTFL_df = cached_get_top_TTFL(date_ymd)
     st.session_state.topTTFL_df = topTTFL_df
     st.session_state.plot_calc_incr = 20
     st.session_state.plot_calc_start = 0
@@ -433,9 +435,9 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, f
 
     filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
     if filter_JDP:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_pas_dispo)]
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \(B2B\)').str[0].isin(joueurs_pas_dispo)]
     if filter_inj:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].isin(joueurs_blesses)]
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \(B2B\)').str[0].isin(joueurs_blesses)]
     
     if len(selected_games) > 0:
         selected_teams = []

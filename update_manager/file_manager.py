@@ -31,12 +31,15 @@ def manage_backups():
 
     existing_backup_dates = []
     for filename in os.listdir(BACKUP_DIR_PATH):
-        backup_date = filename[:-3].split('_')[-1]
-        backup_date_dt = datetime.strptime(backup_date, '%d-%m-%Y')
-        existing_backup_dates.append(backup_date)
+        try:
+            backup_date = filename[:-3].split('_')[-1]
+            backup_date_dt = datetime.strptime(backup_date, '%d-%m-%Y')
+            existing_backup_dates.append(backup_date)
 
-        if backup_date_dt < delete_backup_date:
-            os.remove(os.path.join(BACKUP_DIR_PATH, filename))
+            if backup_date_dt < delete_backup_date:
+                os.remove(os.path.join(BACKUP_DIR_PATH, filename))
+        except:
+            print(f'Could not backup {filename}')
 
     if current_date_str not in existing_backup_dates:
         new_backup_path = os.path.join(BACKUP_DIR_PATH, f'backup_db_{SEASON}_{current_date_str}.db')
@@ -56,5 +59,5 @@ def drop_table(conn, table_name: str):
 
 if __name__ == "__main__":
     # manage_files()
-    # cleanup_db()
-    manage_backups()
+    cleanup_db()
+    # manage_backups()

@@ -40,12 +40,18 @@ def init_session_state(page, arg=None):
 
         st.session_state.date_text = st.session_state.get("date_text",
             st.session_state.selected_date.strftime("%d/%m/%Y"))
+        
+        st.session_state.date_text_ymd = st.session_state.get("date_text_ymd",
+            st.session_state.selected_date.strftime("%Y-%m-%d"))
 
         if st.session_state.date_text == "" or not st.session_state.date_text:
             st.session_state.date_text = st.session_state.selected_date.strftime("%d/%m/%Y")
 
+        if st.session_state.date_text_ymd == "" or not st.session_state.date_text_ymd:
+            st.session_state.date_text_ymd = st.session_state.selected_date.strftime("%Y-%m-%d")
+
         if "topTTFL_df" not in st.session_state:
-            update_session_state_df(st.session_state.date_text)
+            update_session_state_df(st.session_state.date_text_ymd)
 
         if 'games_TBD' not in st.session_state:
             st.session_state.games_TBD = False

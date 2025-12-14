@@ -25,6 +25,7 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
             boxscore_df['homeTeam'] = home_team
             boxscore_df['visitorTeam'] = visitor_team
             boxscore_df['gameDate'] = game_date.strftime('%d/%m/%Y')
+            boxscore_df['gameDate_ymd'] = game_date.strftime('%Y-%m-%d')
             return boxscore_df
 
         except ValueError:

@@ -6,8 +6,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from misc.misc import STREAMLIT_MAIN_PY_PATH, TBD_LOGO_PATH, FRENCHIES
 from streamlit_interface.resource_manager import conn_supabase
-from misc.misc import STREAMLIT_MAIN_PY_PATH, TBD_LOGO_PATH
 from streamlit_interface.color_palette import get_palette
 
 def launch_GUI():
@@ -111,6 +111,28 @@ def centered(sidebar=False, origin=None):
     else:
         return origin.container(horizontal_alignment='center', border=True)
     
+def french_flag(name, html=False, unicode=False, nspace = 1, pre=False, post=True):
+    if not isinstance(name, str):
+        return name
+    
+    name_split = name.split('(')[0]
+    name_split = name_split.split('*')[0]
+    name_split = name_split.strip()
+
+    if name_split in FRENCHIES:
+        sep = ' '
+        if html:
+            sep = '&nbsp;' * nspace
+        elif unicode:
+            sep = uspace(nspace)
+
+        pre_str = f'🇫🇷{sep}' if pre else ''
+        post_str = f'{sep}🇫🇷' if post else ''
+
+        return f'{pre_str}{name}{post_str}'
+    
+    return name
+
 def vspace(numlines=1, container=None):
     if container is None:
         for _ in range(numlines):
