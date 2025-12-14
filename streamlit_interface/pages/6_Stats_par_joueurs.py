@@ -67,7 +67,8 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     cont_sliders = cont_exp_filters.container(horizontal=True, horizontal_alignment='center')
     cont_sliders.slider('Nombre de matchs', key='slider_gp', min_value=0, step=1,
                         max_value=st.session_state.max_games)
-    cont_sliders.slider('Minutes par match', key='slider_min', min_value=0, max_value=48, step=1)
+    cont_sliders.slider('Minutes par match', key='slider_min', min_value=0, step=1,
+                        max_value=st.session_state.max_min)
     cont_sliders.slider('Tirs', key='slider_fg', min_value=0, step=1,
                         max_value=st.session_state.max_fg)
     cont_sliders.slider('Tirs à 3 points', key='slider_fg3', min_value=0, step=1,
@@ -77,15 +78,8 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
         
     st.write('NB : colorer les cases sur la table qui contient tous les joueurs va entrainer du lag')
 
-# Get stats depending on filters and searched players
-st.session_state.player_stats = get_all_player_stats(
-    matched=players_to_show,
-    min_games = st.session_state.slider_gp,
-    min_min_per_game = st.session_state.slider_min,
-    fg_min = st.session_state.slider_fg,
-    fg3_min = st.session_state.slider_fg3,
-    ft_min = st.session_state.slider_ft,
-    agg = st.session_state.player_stats_agg)
+# Update tables to account for searched players and filters
+update_player_stats(players_to_show)
 
 # Display stats tables
 for table in st.session_state.player_stats:
@@ -99,11 +93,11 @@ for table in st.session_state.player_stats:
             table_str = table.replace('du joueur', f'de {players_to_show[0]}')
         elif (table in ['Statistiques basiques', 'Statistiques de tir/avancées'] and 
             st.session_state.player_stats_agg != 'Moyennes'):
-            table_str +=  f' {uspace(6)} ● {uspace(6)} {st.session_state.player_stats_agg}'
+            table_str +=  f' {uspace(2)} ● {uspace(2)} {st.session_state.player_stats_agg}'
         with st.expander(table_str, expanded=len(players_to_show) >= 1):
             show_df = df
             excluded_cols = ['playerName', 'teamTricode', 'MINUTES', 'GP', 'TOT_MINUTES', 'opponent']
-            negative_cols = ['Tov', 'TOT_Tov']
+            negative_cols = ['Tov', 'TOT_Tov', 'stddev_TTFL']
             positive_in_df = [col for col in df.columns if col not in negative_cols and col not in excluded_cols]
             negative_in_df = [col for col in df.columns if col in negative_cols and col not in excluded_cols]
 

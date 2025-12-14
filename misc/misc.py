@@ -247,4 +247,17 @@ PLAYER_STATS_COLUMN_DEF = {
     'TOT_FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de lancers-francs tentés'},
     'TOT_FG2M' : {'col' : 'num', 'display' : 'FG2', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 2 pts réussis'},
     'TOT_FG2A' : {'col' : 'num', 'display' : 'FG2A', 'format' : '%.0f', 'width' : 40, 'help' : 'Total de tirs à 2 pts tentés'},
+
+    # TTFL stats
+    'TTFL' : {'col' : 'num', 'display' : 'TTFL', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL'},
+    'max_ttfl' : {'col' : 'num', 'display' : 'Max', 'format' : '%.0f', 'width' : 35, 'help' : 'Score TTFL maximum'},
+    'min_ttfl' : {'col' : 'num', 'display' : 'Min', 'format' : '%.0f', 'width' : 35, 'help' : 'Score TTFL minimum'},
+    'median_TTFL' : {'col' : 'num', 'display' : 'Médiane', 'format' : '%.1f', 'width' : 35, 'help' : 'Médiane TTFL'},
+    'stddev_TTFL' : {'col' : 'num', 'display' : 'Ecart-type', 'format' : '%.1f', 'width' : 45, 'help' : 'Écart-type TTFL'},
+    'home_avg_TTFL' : {'col' : 'num', 'display' : 'Home', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL à la maison'},
+    'away_avg_TTFL' : {'col' : 'num', 'display' : 'Away', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL à l\'extérieur'},
+    'home_rel_TTFL' : {'col' : 'num', 'display' : 'Home%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL à la maison'},
+    'away_rel_TTFL' : {'col' : 'num', 'display' : 'Away%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL à l\'extérieur'},
+    'btbTTFL' : {'col' : 'num', 'display' : 'B2B', 'format' : '%.1f', 'width' : 35, 'help' : 'Moyenne TTFL en back to back'},
+    'rel_btb_TTFL' : {'col' : 'num', 'display' : 'B2B%', 'format' : "%+.1f%%", 'width' : 50, 'help' : 'Variation de la moyenne TTFL en back to back'},
 }

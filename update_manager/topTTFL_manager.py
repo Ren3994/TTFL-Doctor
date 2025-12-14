@@ -73,7 +73,7 @@ def format_to_table(df) :
                                 [           'N/A',           '+' + df['rel_opp_avg_TTFL'].round(1).astype(str) + '%'],
                                 df['rel_opp_avg_TTFL'].round(1).astype(str) + '%')
     
-    prettydf['rel_btb_TTFL'] = 'En back to back : ' + \
+    prettydf['rel_btb_TTFL'] = df['playerName'] + ' en back to back : ' + \
                                 np.select([df['rel_btb_TTFL'].isna(), df['rel_btb_TTFL'] >= 0],
                                 [           'N/A<br>',           '+' + df['rel_btb_TTFL'].round(1).astype(str) + '%<br>'],
                                 df['rel_btb_TTFL'].round(1).astype(str) + '%<br>')

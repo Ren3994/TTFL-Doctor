@@ -311,7 +311,7 @@ def update_back_to_back_rel_TTFL(conn):
 
     query = """
     WITH back_to_back AS (
-    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as TTFL
+    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as btbTTFL
     FROM boxscores curr
     JOIN boxscores prev
     ON curr.playerName = prev.playerName
@@ -319,10 +319,10 @@ def update_back_to_back_rel_TTFL(conn):
     GROUP BY curr.playerName
     )
 
-    SELECT pat.playerName,
+    SELECT pat.playerName, btb.btbTTFL,
         CASE 
             WHEN pat.avg_TTFL IS NULL OR pat.avg_TTFL = 0 THEN NULL
-            ELSE 100 * (btb.TTFL - pat.avg_TTFL) / pat.avg_TTFL
+            ELSE 100 * (btb.btbTTFL - pat.avg_TTFL) / pat.avg_TTFL
         END AS rel_btb_TTFL
 
     FROM player_avg_TTFL pat

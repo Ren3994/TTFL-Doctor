@@ -13,8 +13,8 @@ from data.sql_functions import run_sql_query
 @st.cache_data(show_spinner=False)
 def query_player_stats():
     conn = conn_db()
-    player_stats = run_sql_query(conn, table='boxscores', filters='seconds > 0',
-                   select=['playerName', 'teamTricode',
+    player_stats = run_sql_query(conn, table='boxscores b', filters='seconds > 0',
+                   select=['b.playerName', 'teamTricode',
                            'ROUND(AVG(seconds), 1) AS SECONDS',
                            'SUM(seconds) AS TOT_SECONDS',
                            'COUNT(*) AS GP',
@@ -58,16 +58,53 @@ def query_player_stats():
                            '(AVG(assists) / NULLIF(AVG(turnovers), 0)) AS ast_to_tov',
                            'AVG(TTFL) AS TTFL',
                            'SUM(TTFL) AS TOT_TTFL',
-                           'AVG(TTFL) / (AVG(seconds) / 60) AS ttfl_per_min'],
-                           group_by=['playerName', 'teamTricode'],
+                           'AVG(TTFL) / (AVG(seconds) / 60) AS ttfl_per_min',
+                           'med.median_TTFL',
+                           'ha.home_rel_TTFL',
+                           'ha.away_rel_TTFL',
+                           'ha.home_avg_TTFL',
+                           'ha.away_avg_TTFL',
+                           'btb.btbTTFL',
+                           'btb.rel_btb_TTFL',
+                           'pat.stddev_TTFL',
+                           'MAX(TTFL) AS max_ttfl',
+                           'MIN(TTFL) AS min_ttfl'],
+                           joins=[{
+                               'table' : 'median_TTFL med',
+                               'on' : 'med.playerName = b.playerName',
+                               'type' : 'left'
+                                  },
+                                  {
+                                      'table' : 'home_away_rel_TTFL ha',
+                                      'on' : 'ha.playerName = b.playerName',
+                                      'type' : 'left'
+                                  },
+                                  {
+                                      'table' : 'rel_btb_TTFL btb',
+                                      'on' : 'btb.playerName = b.playerName',
+                                      'type' : 'left'
+                                  },
+                                  {
+                                      'table' : 'player_avg_TTFL pat',
+                                      'on' : 'pat.playerName = b.playerName',
+                                      'type' : 'left'
+                                  }],
+                           group_by=['b.playerName', 'teamTricode'],
                            order_by='AVG(TTFL) DESC')
     return player_stats
 
-def get_all_player_stats(matched=[], min_games=5, min_min_per_game=0, fg_min=0, fg3_min=0, ft_min=0, agg='Moyennes'): 
+def get_all_player_stats(matched=[]): 
 
     player_stats = query_player_stats()
+
+    min_games = st.session_state.get('slider_gp', 5) 
+    min_min_per_game = st.session_state.get('slider_min', 0) 
+    fg_min = st.session_state.get('slider_fg', 0) 
+    fg3_min = st.session_state.get('slider_fg3', 0) 
+    ft_min = st.session_state.get('slider_ft', 0) 
+    agg = st.session_state.get('player_stats_agg', 'Moyennes')
     
-    if len(matched) > 1:
+    if len(matched) != 1:
         player_stats = player_stats[player_stats['GP'] >= min_games]
         player_stats = player_stats[player_stats['SECONDS'] // 60 >= min_min_per_game]
         player_stats = player_stats[player_stats['TOT_FGM'] >= fg_min]
@@ -99,6 +136,13 @@ def get_all_player_stats(matched=[], min_games=5, min_min_per_game=0, fg_min=0, 
     player_stats['FG2_PCT'] = (100 * player_stats['FG2M'] / player_stats['FG2A']).round(1).fillna(0)
 
     player_stats['FG3_ratio'] = (100 * player_stats['FG3A'] / player_stats['FGA']).fillna(0).round(1)
+
+    player_stats['home_avg_TTFL'] = player_stats['home_avg_TTFL'].fillna(0)
+    player_stats['away_avg_TTFL'] = player_stats['away_avg_TTFL'].fillna(0)
+    player_stats['home_rel_TTFL'] = player_stats['home_rel_TTFL'].fillna(0)
+    player_stats['away_rel_TTFL'] = player_stats['away_rel_TTFL'].fillna(0)
+    player_stats['btbTTFL'] = player_stats['btbTTFL'].fillna(0)
+    player_stats['rel_btb_TTFL'] = player_stats['rel_btb_TTFL'].fillna(0)
 
     player_stats['playerName'] = player_stats['playerName'].apply(french_flag)
     
@@ -141,10 +185,16 @@ def get_all_player_stats(matched=[], min_games=5, min_min_per_game=0, fg_min=0, 
     
     regular_stats = (player_stats[reg_cols].sort_values(by=reg_sort_col, ascending=False))
     shooting_stats = (player_stats[shoot_cols].sort_values(by=shoot_sort_col, ascending=False))
+    ttfl_stats = (player_stats[['playerName', 'TTFL', 'stddev_TTFL', 'median_TTFL', 'max_ttfl', 'min_ttfl', 
+                                'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 
+                                'away_rel_TTFL', 'btbTTFL', 'rel_btb_TTFL']]
+                  .sort_values(by='TTFL', ascending=False))
+    
     player_v_team_df = player_v_team(matched)
     
     all_stats = {'Statistiques basiques' : regular_stats,
                  'Statistiques de tir/avancées' : shooting_stats,
+                 'Statistiques TTFL' : ttfl_stats,
                  'Statistiques du joueur par adversaire' : player_v_team_df}
 
     return all_stats
@@ -153,14 +203,16 @@ def get_all_player_stats(matched=[], min_games=5, min_min_per_game=0, fg_min=0, 
 def get_maximums():
     conn = conn_db()
     df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
-                                                        'SUM(fieldGoalsMade) as FG',
-                                                        'SUM(threePointersMade) as FG3',
-                                                        'SUM(freeThrowsMade) as FT',
+                                                        'SUM(fieldGoalsMade) AS FG',
+                                                        'SUM(threePointersMade) AS FG3',
+                                                        'SUM(freeThrowsMade) AS FT',
+                                                        'AVG(SECONDS) / 60 AS MIN'
                                                         ], group_by='playerName')
     maximums = {'GP' : df['GP'].max(),
                 'FG' : df['FG'].max(),
                 'FG3' : df['FG3'].max(),
-                'FT' : df['FT'].max()}
+                'FT' : df['FT'].max(),
+                'MIN' : int(df['MIN'].max())}
     
     return maximums
 
@@ -311,6 +363,7 @@ def set_filters_default():
     st.session_state.max_fg = maximums['FG']
     st.session_state.max_fg3 = maximums['FG3']
     st.session_state.max_ft = maximums['FT']
+    st.session_state.max_min = maximums['MIN']
     
     st.session_state.slider_gp_default = set_filt(st.session_state.max_games, 10, 5)
     st.session_state.slider_fg_default = set_filt(st.session_state.max_fg, 10, 10)
@@ -337,13 +390,14 @@ def filters_to_zero():
     st.session_state.slider_ft = 0
 
 def filter_expander_vars():
+    n = 3
     label = ('Filtrer les résultats' + 
-    (f' {uspace(6)} ● {uspace(6)} {st.session_state.player_stats_agg}') + 
-    (f' {uspace(6)} ● {uspace(6)} GP {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_gp}') + 
-    (f' {uspace(6)} ● {uspace(6)} min {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_min}') + 
-    (f' {uspace(6)} ● {uspace(6)} FG {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg}') + 
-    (f' {uspace(6)} ● {uspace(6)} FG3 {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg3}') + 
-    (f' {uspace(6)} ● {uspace(6)} FT {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_ft}'))
+    (f' {uspace(n)} ● {uspace(n)} {st.session_state.player_stats_agg}') + 
+    (f' {uspace(n)} ● {uspace(n)} GP {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_gp}') + 
+    (f' {uspace(n)} ● {uspace(n)} min {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_min}') + 
+    (f' {uspace(n)} ● {uspace(n)} FG {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg}') + 
+    (f' {uspace(n)} ● {uspace(n)} FG3 {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg3}') + 
+    (f' {uspace(n)} ● {uspace(n)} FT {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_ft}'))
 
     bool = (any([st.session_state.slider_gp != st.session_state.slider_gp_default,
                         st.session_state.slider_min != st.session_state.slider_min_default,
@@ -359,6 +413,9 @@ def filter_expander_vars():
                         st.session_state.player_stats_agg == st.session_state.player_stats_agg_default]))
     
     return label, bool
+
+def update_player_stats(players_to_show):
+    st.session_state.player_stats = get_all_player_stats(matched=players_to_show)
 
 if __name__ == '__main__':
     get_all_player_stats(0, 0)
