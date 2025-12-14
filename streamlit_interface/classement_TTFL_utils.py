@@ -177,9 +177,11 @@ def get_pick(date, team=False):
 def get_idx_pick(df, date, colname):
     idx_pick = None
     pick = get_pick(date)
+    dfcopy = df.copy()
+    dfcopy[colname] = dfcopy[colname].str.split(r' \(B2B\)').str[0]
     if (pick is not None and pick != '' and 
-        pick in df[colname].tolist()):
-        idx_pick = df.index[df[colname] == pick] + 1
+        pick in dfcopy[colname].tolist()):
+        idx_pick = dfcopy.index[dfcopy[colname] == pick] + 1
 
     return idx_pick
 
