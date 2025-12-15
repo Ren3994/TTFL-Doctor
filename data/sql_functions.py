@@ -1162,6 +1162,15 @@ def get_missing_gameids(conn):
     """
 
     try:
+        cursor.execute("""SELECT gameId, gameDate, hometeam, awayTeam FROM schedule;""")
+    except:
+        schedule = get_schedule()
+        if schedule is not None:
+            save_to_db(conn, schedule, "schedule", if_exists="replace")
+        else :
+            tqdm.write("Schedule is None. Table could not be saved.")
+
+    try:
         cursor.execute("""SELECT * FROM boxscores;""")
 
     except sqlite3.OperationalError as e:
