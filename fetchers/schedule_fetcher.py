@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 
-def get_schedule():
+def get_schedule(season=SEASON):
     from nba_api.stats.endpoints import ScheduleLeagueV2
     import pandas as pd
 
@@ -16,7 +16,7 @@ def get_schedule():
         try :
             full_schedule = ScheduleLeagueV2(
                 league_id=LEAGUE_ID,
-                season=SEASON
+                season=season
             )
 
             schedule_df = full_schedule.get_data_frames()[0]
@@ -48,9 +48,10 @@ def get_schedule():
                 "homeTeam_teamName": "homeTeam",
                 "awayTeam_teamName": "awayTeam"
             }, inplace=True)
-
-            schedule['homeTeam'] = schedule['homeTeam'].replace(NAME2TRICODE)
-            schedule['awayTeam'] = schedule['awayTeam'].replace(NAME2TRICODE)
+            
+            schedule['homeTeam'] = schedule['homeTeam'].apply(replace_team_name)
+            schedule['awayTeam'] = schedule['awayTeam'].apply(replace_team_name)
+            schedule['season'] = season
 
             # schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('006')].copy()
 
@@ -67,10 +68,15 @@ def get_schedule():
 
     return schedule
 
+def replace_team_name(team):
+    if team in NAME2TRICODE:
+        return NAME2TRICODE[team]
+    return team
+
 # Game IDs : starting with 001 : preseason, 002 : regular season, 003 : all-star game, 004 : playoffs, 005 : play-in tournament, 006 : IST finals
 
 if __name__ == '__main__':
-    df = get_schedule()
-    for i, row in df.iterrows():
-        print(row['homeTeam'], row['awayTeam'], row['gameDate'], type(row['gameTime']))
+    df = get_schedule(season='2024-25')
+    # for i, row in df.iterrows():
+    #     print(row['homeTeam'], row['awayTeam'], row['gameDate'], type(row['gameTime']))
         # print(row['gameDate'] == row['dateEST'], row['gameDate'] == row['dateUTC'])

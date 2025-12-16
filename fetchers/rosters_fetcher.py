@@ -14,13 +14,16 @@ def get_rosters():
     rosters_df = None
     for attempt in range(5) :
         try:
-            allPlayers = CommonAllPlayers(is_only_current_season=1, league_id= LEAGUE_ID, season=SEASON).get_data_frames()[0]
+            allPlayers = CommonAllPlayers(is_only_current_season=1, 
+                                          league_id= LEAGUE_ID, 
+                                          season=SEASON).get_data_frames()[0]
 
             allPlayers['teamTricode'] = allPlayers['TEAM_ABBREVIATION']
             allPlayers['playerName'] = allPlayers['DISPLAY_FIRST_LAST']
             allPlayers['playerName'] = allPlayers['playerName'].apply(normalize_name)
 
             rosters_df = allPlayers[['playerName', 'teamTricode']]
+            rosters_df['season'] = SEASON
             break
 
         except Exception as e:

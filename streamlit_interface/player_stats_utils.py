@@ -4,15 +4,18 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.resource_manager import conn_db, conn_hist_db
 from streamlit_interface.streamlit_utils import uspace, french_flag
 from streamlit_interface.classement_TTFL_utils import df_to_html
-from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def query_player_stats():
-    conn = conn_db()
+def query_player_stats(historical_data=False):
+    if not historical_data:
+        conn = conn_db()
+    else:
+        conn = conn_hist_db()
     player_stats = run_sql_query(conn, table='boxscores b', filters='seconds > 0',
                    select=['b.playerName', 'teamTricode',
                            'ROUND(AVG(seconds), 1) AS SECONDS',
@@ -90,8 +93,7 @@ def query_player_stats():
                                       'on' : 'pat.playerName = b.playerName',
                                       'type' : 'left'
                                   }],
-                           group_by=['b.playerName', 'teamTricode'],
-                           order_by='AVG(TTFL) DESC')
+                           group_by=['b.playerName', 'teamTricode'])
     return player_stats
 
 def get_all_player_stats(matched=[]): 

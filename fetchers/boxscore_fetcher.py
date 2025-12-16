@@ -9,7 +9,7 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
     if not game_id:
         return boxscore_df
 
-    for attempt in range(5):
+    for attempt in range(3):
         try:
             boxscore = BoxScoreTraditionalV3(
                 game_id=game_id,
@@ -29,16 +29,21 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
             return boxscore_df
 
         except ValueError:
-            tqdm.write(f'Données du boxscore de {home_team}-{visitor_team} du {game_date} malformées chez la source. Réessayer dans quelques heures.')
+            tqdm.write(f'Données du boxscore de {game_id} : {home_team}-{visitor_team} du {game_date} malformées chez la source. Réessayer dans quelques heures.')
+            return boxscore_df
+        
+        except AttributeError:
+            tqdm.write(f'Données du boxscore de {game_id} : {home_team}-{visitor_team} du {game_date} malformées chez la source. Réessayer dans quelques heures.')
             return boxscore_df
     
         except Exception as e:
-            tqdm.write(f'Erreur lors du téléchargement du boxscore de {home_team}-{visitor_team} du {game_date} : {e}. Nouvel essai dans {30 * (attempt + 1)}s')
+            tqdm.write(f'Erreur lors du téléchargement du boxscore de {game_id} : {home_team}-{visitor_team} du {game_date} : {e}. Nouvel essai dans {30 * (attempt + 1)}s')
             time.sleep(30 * (attempt + 1))
             continue
 
     return boxscore_df
 
-# if __name__ == '__main__':
-#     df = fetch_boxscores(datetime.strptime('10/11/2025', '%d/%m/%Y'), '0022500202', 'CHI', 'SAS')
-#     print(df)
+if __name__ == '__main__':
+    from datetime import datetime
+    df = fetch_boxscores(datetime.strptime('15/12/2025', '%d/%m/%Y'), '0022501227', 'TOR', 'MIA')
+    print(df)

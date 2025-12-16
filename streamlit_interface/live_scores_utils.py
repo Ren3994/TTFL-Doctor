@@ -192,7 +192,7 @@ def get_live_games():
                     homeTeamID = game[6]
                     awayTeamID = game[7]
                     
-                    if gameStatus != 1 or gameTimeStringET == 'TBD':
+                    if gameStatus != 1 or gameTimeStringET == 'TBD' or homeTeamID is None:
                         continue
                     upcoming_games.append({'homeTeam' : TEAM_IDS2TRICODE[homeTeamID],
                                            'awayTeam' : TEAM_IDS2TRICODE[awayTeamID],

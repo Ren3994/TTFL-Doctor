@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import FAILED_LOG_PATH, CHAR_MAP, NAME2TRICODE
+from misc.misc import FAILED_LOG_PATH, CHAR_MAP, NAME2TRICODE, SEASON
 from fetchers.boxscore_fetcher import fetch_boxscores
 
 def get_boxscores(game_date, game_id, visitor_team, home_team):
@@ -73,6 +73,7 @@ def normalize_position(pos: str) -> str:
 
 def add_columns(df) :
     import numpy as np
+    df['season'] = SEASON
 
     df['playerName'] = df['firstName'] + ' ' + df['familyName']
     df['playerName'] = df['playerName'].apply(normalize_name)
@@ -124,7 +125,7 @@ def clean_boxscores(df):
         'freeThrowsMade', 'freeThrowsAttempted', 'plusMinusPoints', 'TTFL',
         'teamPoints', 'opponentPoints', 'win', 'teamTTFL', 'opponentTTFL',
         'homeTeam', 'visitorTeam', 'seconds', 'gameDate', 'gameDate_ymd',
-        'reboundsOffensive', 'reboundsDefensive', 'position'
+        'reboundsOffensive', 'reboundsDefensive', 'position', 'season'
     ]    
     cols_to_remap = ['opponent', 'homeTeam', 'visitorTeam']
     

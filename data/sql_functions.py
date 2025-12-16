@@ -11,6 +11,7 @@ from fetchers.player_position_fetcher import fetch_player_positions
 from fetchers.team_stats_fetcher import get_team_stats
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
+from misc.misc import SEASON
 
 def init_db(conn):
     try :
@@ -137,7 +138,7 @@ def update_helper_tables(conn):
                                'r2.playerName AS teammate',
                                'r1.teamTricode'],
                   joins=[{'table' : 'rosters r2',
-                                       'on' : 'r1.teamTricode = r2.teamTricode'}],
+                        'on' : 'r1.teamTricode = r2.teamTricode'}],
                   filters='r1.playerName <> r2.playerName',
                   output_table='roster_pairs')
 
@@ -223,21 +224,27 @@ def add_missing_pos_to_rosters(conn):
     """)
     conn.commit()
 
-def update_tables(conn):
+def update_tables(conn, historical=False):
 
     conn.execute("PRAGMA journal_mode = WAL;")
 
-    add_missing_pos_to_rosters(conn)
     update_helper_tables(conn)
+    print('helper done')
     calc_median_TTFL(conn)
+    print('median done')
     update_home_away_rel_TTFL(conn)
-    update_avg_TTFL_per_pos(conn)
-    update_avg_TTFL_per_pos_per_opp(conn)
-    update_rel_player_avg_ttfl_v_opp(conn)
-    update_absent_teammate_rel_impact(conn)
-    updates_games_missed_by_players(conn)
-    update_opp_pos_avg_per_game(conn)
+    print('ha done')
     update_back_to_back_rel_TTFL(conn)
+    print('btb done')
+
+    if not historical:
+        add_missing_pos_to_rosters(conn)
+        update_avg_TTFL_per_pos(conn)
+        update_avg_TTFL_per_pos_per_opp(conn)
+        update_rel_player_avg_ttfl_v_opp(conn)
+        update_absent_teammate_rel_impact(conn)
+        updates_games_missed_by_players(conn)
+        update_opp_pos_avg_per_game(conn)
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
@@ -315,7 +322,9 @@ def update_back_to_back_rel_TTFL(conn):
     FROM boxscores curr
     JOIN boxscores prev
     ON curr.playerName = prev.playerName
-    AND prev.gameDate_ymd = date(curr.gameDate_ymd, '-1 day')
+    --AND prev.gameDate_ymd = date(curr.gameDate_ymd, '-1 day')
+    AND curr.gameDate_ymd = date(prev.gameDate_ymd, '+1 day')
+    AND prev.season = curr.season
     GROUP BY curr.playerName
     )
 
@@ -582,10 +591,14 @@ def update_opp_pos_avg_per_game(conn):
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_opp_pos_avg_per_game_team_game ON opp_pos_avg_per_game(gameId, teamTricode);")
 
-def topTTFL_query(conn, game_date_ymd):
+def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     import pandas as pd
 
-    query = """
+    params_seasons = ", ".join([f":val{i}" for i in range(len(seasons_list))])
+    params = {'date' : game_date_ymd}
+    params.update({f"val{i}": v for i, v in enumerate(seasons_list)})
+
+    query = f"""
 
     WITH
 
@@ -598,6 +611,7 @@ def topTTFL_query(conn, game_date_ymd):
     SELECT homeTeam, homeTeam_wins, homeTeam_losses, awayTeam, awayTeam_wins, awayTeam_losses
     FROM schedule
     WHERE gameDate_ymd = :date
+    --AND season IN ({params_seasons})
     ),
 
     position_expansion AS (
@@ -625,8 +639,8 @@ def topTTFL_query(conn, game_date_ymd):
         ON r.teamTricode = sa.homeTeam
     JOIN position_expansion pe
         ON r.playerName = pe.playerName
-    
     ),
+
     away_players AS (
     SELECT r.playerName, r.teamTricode AS team,
             sa.awayTeam_wins AS teamWins, sa.awayTeam_losses AS teamLosses,
@@ -940,7 +954,7 @@ def topTTFL_query(conn, game_date_ymd):
     ORDER BY pat.avg_TTFL DESC
         """
 
-    df = pd.read_sql_query(query, conn, params={'date' : game_date_ymd})
+    df = pd.read_sql_query(query, conn, params=params)
 
     return df
 
@@ -961,8 +975,8 @@ def run_sql_query(
     verbose: bool = False,
     group_agg: Optional[Dict[str, Union[str, Dict[str, Any], None]]] = None,
     dtypes: Optional[Dict[str, str]] = None,
+    params: Optional[Dict[str, Any]] = None
     ):
-    import pandas as pd
 
     """
     Parameters
@@ -1031,6 +1045,7 @@ def run_sql_query(
         Returns a DataFrame if `return_df=True` and `output_table` is not set.
         Returns None if data is written to a table or query fails.
     """
+    import pandas as pd
 
     def ensure_list(x):
         if x is None:
@@ -1042,6 +1057,25 @@ def run_sql_query(
     group_by = ensure_list(group_by)
     having = ensure_list(having)
     order_by = ensure_list(order_by)
+
+    sql_params = []
+    final_filters = []
+
+    for f in filters:
+        import re
+        named_params = re.findall(r":(\w+)", f)
+        for p in named_params:
+            if p not in params:
+                raise ValueError(f"Filter uses :{p}, but params does not provide it.")
+            value = params[p]
+            if isinstance(value, (list, tuple)):
+                placeholders = ','.join('?' for _ in value)
+                f = f.replace(f":{p}", f"({placeholders})")
+                sql_params.extend(value)  # flatten values into positional args
+            else:
+                f = f.replace(f":{p}", "?")
+                sql_params.append(value)
+        final_filters.append(f)
 
     # Build SELECT clause
     group_concat_cols = []  # holds the *aliases* created by GROUP_CONCAT so we can clean them afterwards
@@ -1088,8 +1122,8 @@ def run_sql_query(
             query += f" {join_type} JOIN {join_table} ON {join_condition}"
 
     # Clauses
-    if filters:
-        query += " WHERE " + " AND ".join(filters)
+    if final_filters:
+        query += " WHERE " + " AND ".join(final_filters)
     if group_agg and group_cols:
         query += " GROUP BY " + ", ".join(group_cols)
     elif group_by:
@@ -1105,7 +1139,7 @@ def run_sql_query(
         tqdm.write(f"\n📘 Executing SQL:\n{query}\n")
 
     try:
-        df = pd.read_sql_query(query, conn, dtype=dtypes)
+        df = pd.read_sql_query(query, conn, dtype=dtypes, params=sql_params)
 
         # Clean up any GROUP_CONCAT columns produced by group_agg (using alias names collected)
         for col in group_concat_cols:

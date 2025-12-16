@@ -132,13 +132,14 @@ else:
             cont_row_button.write('')
         for j, game in enumerate(row_buttons):
             idx = i + j
-            st.session_state.setdefault(f"boxscore_{idx}", False)
+            
             cont_button = cont_row_button.container(width=280)
 
             home = game["homeTeam"]
             away = game["awayTeam"]
             matchup = f'{home}-{away}'
             scores = [game["awayScore"], game["homeScore"]]
+            st.session_state.setdefault(f"boxscore_live_{matchup}", False)
 
             logos = [
                 st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw=True)
@@ -154,12 +155,12 @@ else:
             
             with cont_button.container():
                 with sc(f"custom_button_css_{idx}",  css_styles=custom_button_css(
-                    st.session_state[f"boxscore_{idx}"], button_team=matchup, pick_team=pick_team)
+                    st.session_state[f"boxscore_live_{matchup}"], button_team=matchup, pick_team=pick_team)
                 ):
                     st.button(btn_text,
                         key=f"btn_{idx}",
-                        on_click=lambda k=idx: st.session_state.update(
-                            {f"boxscore_{k}": not st.session_state[f"boxscore_{k}"]}),
+                        on_click=lambda k=matchup: st.session_state.update(
+                            {f"boxscore_live_{k}": not st.session_state[f"boxscore_live_{k}"]}),
                         width=280
                     )
         if st.session_state.mobile_layout:
@@ -195,7 +196,11 @@ else:
         
     else:
         for idx in range(len(live_data['games_info'])):
-            if st.session_state[f"boxscore_{idx}"]:
+            home = live_data['games_info'][idx]["homeTeam"]
+            away = live_data['games_info'][idx]["awayTeam"]
+            matchup = f'{home}-{away}'
+
+            if st.session_state[f"boxscore_live_{matchup}"]:
 
                 live_data['live_games'][idx] = (live_data['live_games'][idx].sort_values(
                     by=['Equipe', 'TTFL'] if st.session_state.live_scores_by_team else 'TTFL', 
