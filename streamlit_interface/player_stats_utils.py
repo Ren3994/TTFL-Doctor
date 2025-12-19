@@ -311,7 +311,8 @@ def get_maximums(alltime):
     return maximums
 
 def alltime_checked():
-    init_hist_db()
+    if st.session_state.get('player_alltime_stats', False):
+        init_hist_db()
     set_filters_default()
     filters_to_zero()
 
