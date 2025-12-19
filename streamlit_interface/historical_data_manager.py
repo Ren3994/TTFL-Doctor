@@ -64,6 +64,7 @@ def init_hist_db():
     
     update_total_boxscores(status, progress)
     status.empty()
+    progress.empty()
     return True
 
 def update_total_boxscores(status, progress):
