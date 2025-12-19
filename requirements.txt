@@ -88,7 +88,6 @@ snowflake-snowpark-python==1.43.0
 sortedcontainers==2.4.0
 soupsieve==2.8
 st-annotated-text==4.0.2
-st-cookies-manager==0.2.2
 st-theme==1.2.3
 storage3==2.25.0
 streamlit==1.52.1
@@ -120,5 +119,7 @@ urllib3==2.6.0
 validators==0.35.0
 watchdog==6.0.0
 websockets==15.0.1
+wfork-streamlit-profiler==1.6.0
 wheel==0.45.1
 yarl==1.22.0
+zstandard==0.25.0
