@@ -52,18 +52,28 @@ if len(st.session_state.compare_players) > 0:
 elif st.session_state.player_stats_matched != '':
     players_to_show = st.session_state.player_stats_matched
 
+# Update tables to account for searched players and filters
+update_player_stats(players_to_show)
+
 # Filters
 filter_exp_str, filter_exp_bool = filter_expander_vars()
 with st.expander(filter_exp_str, expanded=filter_exp_bool):
     cont_exp_filters = st.container(horizontal_alignment='center')
     cont_check = cont_exp_filters.container(horizontal_alignment='center', horizontal=True, gap="large")
+    cont_check_left = cont_check.container(horizontal_alignment='center')
+    cont_check_left.checkbox('Stats historiques', key='player_alltime_stats', on_change=alltime_checked,
+                             help='Toutes les stats de tous les joueurs depuis la saison 1946-47. Certaines données sont manquantes ou erronnées, surtout pour les vieilles saisons (stl, tov, min, ...). Pour avoir un score TTFL approximatif, ils ont été mis à 0.')
+    if st.session_state.player_alltime_stats:
+        cont_check_left.checkbox('Juste joueurs actifs', key='only_active_players')
 
     cont_check.segmented_control('Aggregation', ['Moyennes', 'Totaux', 'Moyennes par 36 min'], 
                                  key = 'player_stats_agg', 
                                  label_visibility='collapsed')
-
-    cont_check.checkbox('Colorer cases', key='color_cells')
-    cont_check.button('Réinitialiser les filtres', on_click=reset_filters)
+    
+    disable_color_chkbox = st.session_state.massive_tables
+    help_str_color = 'Les tableaux sont trop gros' if disable_color_chkbox else None
+    cont_check.checkbox('Colorer cases', key='color_cells', disabled=disable_color_chkbox, help=help_str_color)
+    cont_check.button('Reset filtres', on_click=reset_filters)
     cont_sliders = cont_exp_filters.container(horizontal=True, horizontal_alignment='center')
     cont_sliders.slider('Nombre de matchs', key='slider_gp', min_value=0, step=1,
                         max_value=st.session_state.max_games)
@@ -76,10 +86,7 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     cont_sliders.slider('Lancers francs', key='slider_ft', min_value=0, step=1,
                         max_value=st.session_state.max_ft)
         
-    st.write('NB : colorer les cases sur la table qui contient tous les joueurs va entrainer du lag')
-
-# Update tables to account for searched players and filters
-update_player_stats(players_to_show)
+    st.write('NB : Colorer les cases va faire lagger si les tableaux sont gros')
 
 # Display stats tables
 for table in st.session_state.player_stats:

@@ -1,5 +1,4 @@
 from typing import List, Optional, Union, Dict, Any
-import streamlit as st
 from tqdm import tqdm
 import sqlite3
 import sys
@@ -100,23 +99,6 @@ def update_helper_tables(conn):
         output_table="teammate_played"
     )
 
-    run_sql_query(
-        conn,
-        table="boxscores",
-        select=["playerName", 
-                "ROUND(AVG(TTFL), 1) AS avg_TTFL",
-                "ROUND(" + \
-                    "CASE WHEN COUNT(*) > 0 " + \
-                        "THEN SQRT((SUM(TTFL * TTFL) - SUM(TTFL) * SUM(TTFL) / COUNT(*)) / (COUNT(*))) " + \
-                        "ELSE 0.0 " + \
-                    "END, 1) " + \
-                "AS stddev_TTFL"],
-        filters=["seconds > 0"],
-        group_by="playerName",
-        order_by="avg_TTFL DESC",
-        output_table="player_avg_TTFL"
-    )
-
     run_sql_query(conn, 
                   table="boxscores", 
                   select=[
@@ -143,12 +125,10 @@ def update_helper_tables(conn):
                   output_table='roster_pairs')
 
     cur = conn.cursor()
-    cur.execute("""CREATE INDEX IF NOT EXISTS idx_player_avg_TTFL_player ON player_avg_TTFL(playerName);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_team_games_team ON team_games(teamTricode);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_played_player_game ON played(playerA, gameId);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_teammate_played_game ON teammate_played(teammate, gameId);""")
     cur.execute("""CREATE INDEX IF NOT EXISTS idx_rp_team ON roster_pairs(teamTricode);""")
-
     conn.commit()
 
 def remove_duplicates_from_boxscores(conn):
@@ -228,16 +208,9 @@ def update_tables(conn, historical=False):
 
     conn.execute("PRAGMA journal_mode = WAL;")
 
-    update_helper_tables(conn)
-    print('helper done')
-    calc_median_TTFL(conn)
-    print('median done')
-    update_home_away_rel_TTFL(conn)
-    print('ha done')
-    update_back_to_back_rel_TTFL(conn)
-    print('btb done')
-
+    calc_TTFL_stats(conn)
     if not historical:
+        update_helper_tables(conn)
         add_missing_pos_to_rosters(conn)
         update_avg_TTFL_per_pos(conn)
         update_avg_TTFL_per_pos_per_opp(conn)
@@ -249,98 +222,120 @@ def update_tables(conn, historical=False):
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
 
-def calc_median_TTFL(conn):
+def calc_TTFL_stats(conn):
     import pandas as pd
-
     query = """
-    WITH ordered AS (
-    SELECT
-        playerName,
-        TTFL,
-        ROW_NUMBER() OVER (
-        PARTITION BY playerName
-        ORDER BY TTFL
-        ) AS rn,
-        COUNT(*) OVER (
-        PARTITION BY playerName
-        ) AS cnt
+    SELECT playerName, TTFL, season, isHome, gameDate_ymd, prev_gameDate_ymd
     FROM boxscores
     WHERE seconds > 0
-    )
-    SELECT
-    playerName,
-    AVG(TTFL) AS median_TTFL
-    FROM ordered
-    WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
-    GROUP BY playerName
     """
-    df = pd.read_sql_query(query, conn)
-    save_to_db(conn, df, "median_TTFL", if_exists="replace")
+    df = pd.read_sql_query(query, conn, dtype_backend='pyarrow')
 
-def update_home_away_rel_TTFL(conn):
-    import pandas as pd
+    df['playerName'] = df['playerName'].astype('category')
+    df['season'] = df['season'].astype('category')
 
-    query = """
-    WITH home_away_TTFL AS (
-    SELECT
-        playerName,
-        AVG(CASE WHEN isHome = 1 AND seconds > 0 THEN TTFL END) AS home_avg_TTFL,
-        AVG(CASE WHEN isHome = 0 AND seconds > 0 THEN TTFL END) AS away_avg_TTFL,
-        AVG(CASE WHEN seconds > 0 THEN TTFL END) AS overall_avg_TTFL,
-        COUNT(CASE WHEN isHome = 1 AND seconds > 0 THEN 1 END) AS n_home_games,
-        COUNT(CASE WHEN isHome = 0 AND seconds > 0 THEN 1 END) AS n_away_games
-        
-    FROM boxscores
-    GROUP BY playerName
+    dfavg = df[['playerName', 'TTFL', 'season']]
+    overall_avg = (dfavg.groupby(['playerName'], observed=True)['TTFL']
+               .agg(['median', 'mean', 'std'])
+               .rename(columns={'median' : 'median_TTFL', 
+                                'mean' : 'avg_TTFL',
+                                'std' : 'stddev_TTFL'}))
+    
+    per_season_avg = (dfavg.groupby(['playerName', 'season'], observed=True)['TTFL']
+                  .agg(['median', 'mean', 'std'])
+                  .rename(columns={'median' : 'median_TTFL_season', 
+                                   'mean' : 'avg_TTFL_season',
+                                   'std' : 'stddev_TTFL_season'}))
+    
+    avgs = (per_season_avg.reset_index().merge(
+                 overall_avg.reset_index(), on='playerName', how='left')).round(2)
+    
+    avgs.to_sql('player_avg_TTFL', conn, if_exists='replace', index=False)
+
+    # Home away stats
+
+    df_ha = df[['playerName', 'TTFL', 'isHome', 'season']]
+    home = df_ha[df_ha['isHome'] == 1].groupby('playerName', observed=True)['TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'home_avg_TTFL', 'size': 'n_home_games'})
+    away = df_ha[df_ha['isHome'] == 0].groupby('playerName', observed=True)['TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'away_avg_TTFL', 'size': 'n_away_games'})
+    overall_ha = pd.concat([home, away], axis=1)
+
+    overall_ha['overall_avg_TTFL'] = df_ha.groupby('playerName', observed=True)['TTFL'].mean()
+
+    overall_ha['home_rel_TTFL'] = ((overall_ha['home_avg_TTFL'] - overall_ha['overall_avg_TTFL']) * 100.0 /
+                                overall_ha['overall_avg_TTFL']).where(overall_ha['overall_avg_TTFL'] != 0, None)
+    overall_ha['away_rel_TTFL'] = ((overall_ha['away_avg_TTFL'] - overall_ha['overall_avg_TTFL']) * 100.0 /
+                                overall_ha['overall_avg_TTFL']).where(overall_ha['overall_avg_TTFL'] != 0, None)
+
+    # Seasonal stats
+    home_season = df_ha[df_ha['isHome'] == 1].groupby(['playerName', 'season'], observed=True)['TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'home_avg_TTFL_season', 'size': 'n_home_games_season'})
+    away_season = df_ha[df_ha['isHome'] == 0].groupby(['playerName', 'season'], observed=True)['TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'away_avg_TTFL_season', 'size': 'n_away_games_season'})
+    per_season_ha = pd.concat([home_season, away_season], axis=1)
+
+    per_season_ha['overall_avg_TTFL_season'] = df_ha.groupby(['playerName', 'season'], observed=True)['TTFL'].mean()
+    per_season_ha['home_rel_TTFL_season'] = ((per_season_ha['home_avg_TTFL_season'] - per_season_ha['overall_avg_TTFL_season']) * 100.0 /
+                                        per_season_ha['overall_avg_TTFL_season']).where(per_season_ha['overall_avg_TTFL_season'] != 0, None)
+    per_season_ha['away_rel_TTFL_season'] = ((per_season_ha['away_avg_TTFL_season'] - per_season_ha['overall_avg_TTFL_season']) * 100.0 /
+                                        per_season_ha['overall_avg_TTFL_season']).where(per_season_ha['overall_avg_TTFL_season'] != 0, None)
+
+    # Merge results
+    ha = per_season_ha.reset_index().merge(overall_ha.reset_index(), on='playerName', how='left').round(2)
+
+    ha = ha[
+        [
+            'playerName', 'season',
+            'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 'away_rel_TTFL',
+            'n_home_games', 'n_away_games',
+            'home_avg_TTFL_season', 'away_avg_TTFL_season',
+            'home_rel_TTFL_season', 'away_rel_TTFL_season',
+            'n_home_games_season', 'n_away_games_season'
+        ]
+    ]
+
+    ha.to_sql('home_away_rel_TTFL', conn, if_exists='replace', index=False)
+
+    df_btb = (df[['playerName', 'season', 'TTFL', 'gameDate_ymd', 'prev_gameDate_ymd']]
+              .sort_values(['playerName', 'gameDate_ymd']))
+
+    # Identify back-to-back games
+    btb = df_btb.merge(
+        df_btb,
+        left_on=['playerName', 'season', 'prev_gameDate_ymd'],
+        right_on=['playerName', 'season', 'gameDate_ymd'],
+        how='inner',
+        suffixes=('', '_prev'),
+        sort=True
+    )[['playerName', 'season', 'TTFL']].rename(columns={'TTFL': 'btb_TTFL'})
+
+    # Calculate aggregates
+    btb_overall = btb.groupby('playerName', observed=True)['btb_TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'btbTTFL', 'size': 'n_btb'})
+    btb_season = btb.groupby(['playerName', 'season'], observed=True)['btb_TTFL'].agg(['mean', 'size']).rename(columns={'mean': 'btbTTFL_season', 'size': 'n_btb_season'}).reset_index()
+
+    # Merge with player averages
+    btb_result = (
+        btb_season
+        .merge(btb_overall.reset_index(), on='playerName', how='left')
+        .merge(avgs, on=['playerName', 'season'], how='left')
     )
 
-    SELECT 
-        playerName,
-        home_avg_TTFL,
-        away_avg_TTFL,
-        CASE
-            WHEN overall_avg_TTFL IS NULL OR overall_avg_TTFL = 0 THEN NULL
-            ELSE (home_avg_TTFL - overall_avg_TTFL) * 100.0 / overall_avg_TTFL
-        END AS home_rel_TTFL,
-        CASE
-            WHEN overall_avg_TTFL IS NULL OR overall_avg_TTFL = 0 THEN NULL
-            ELSE (away_avg_TTFL - overall_avg_TTFL) * 100.0 / overall_avg_TTFL
-        END AS away_rel_TTFL,
-        n_home_games,
-        n_away_games
-    FROM home_away_TTFL
-    """
-    df = pd.read_sql_query(query, conn)
-    save_to_db(conn, df, "home_away_rel_TTFL", if_exists="replace")
+    # Calculate relative differences
+    btb_result['rel_btb_TTFL'] = (100 * (btb_result['btbTTFL'] - btb_result['avg_TTFL']) / btb_result['avg_TTFL']).where(btb_result['avg_TTFL'] != 0, None)
+    btb_result['rel_btb_TTFL_season'] = (100 * (btb_result['btbTTFL_season'] - btb_result['avg_TTFL_season']) / btb_result['avg_TTFL_season']).where(btb_result['avg_TTFL_season'] != 0, None)
 
-def update_back_to_back_rel_TTFL(conn):
-    import pandas as pd
+    # Select columns
+    btb_result = btb_result[
+        [
+            'playerName', 'season',
+            'btbTTFL', 'n_btb',
+            'rel_btb_TTFL',
+            'btbTTFL_season', 'n_btb_season',
+            'rel_btb_TTFL_season'
+        ]
+    ].round(2)
 
-    query = """
-    WITH back_to_back AS (
-    SELECT curr.playerName AS playerName, AVG(curr.TTFL) as btbTTFL, COUNT(*) AS n_btb
-    FROM boxscores curr
-    JOIN boxscores prev
-    ON curr.playerName = prev.playerName
-    --AND prev.gameDate_ymd = date(curr.gameDate_ymd, '-1 day')
-    AND curr.gameDate_ymd = date(prev.gameDate_ymd, '+1 day')
-    AND prev.season = curr.season
-    GROUP BY curr.playerName
-    )
+    btb_result.to_sql('rel_btb_TTFL', conn, if_exists='replace', index=False)
 
-    SELECT pat.playerName, btb.btbTTFL, btb.n_btb,
-        CASE 
-            WHEN pat.avg_TTFL IS NULL OR pat.avg_TTFL = 0 THEN NULL
-            ELSE 100 * (btb.btbTTFL - pat.avg_TTFL) / pat.avg_TTFL
-        END AS rel_btb_TTFL
-
-    FROM player_avg_TTFL pat
-    LEFT JOIN back_to_back btb
-    ON btb.playerName = pat.playerName
-    """
-
-    df = pd.read_sql_query(query, conn)
-    df.to_sql('rel_btb_TTFL', conn, if_exists='replace', index=False)
+    conn.execute("""CREATE INDEX IF NOT EXISTS idx_player_avg_TTFL_player ON player_avg_TTFL(playerName);""")
+    conn.commit()
 
 def update_avg_TTFL_per_pos(conn):
     import pandas as pd
@@ -727,10 +722,8 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     -- Giannis Antetokounmpo  |    59.7    |     11.6
     --     Nikola Jokic       |    54.7    |     14.6
 
-    SELECT p.playerName, p.avg_TTFL, p.stddev_TTFL, m.median_TTFL
-    FROM player_avg_TTFL p
-    JOIN median_TTFL m
-    ON p.playerName = m.playerName
+    SELECT playerName, avg_TTFL, stddev_TTFL, median_TTFL
+    FROM player_avg_TTFL 
     ),
 
     games_missed AS (
@@ -975,7 +968,8 @@ def run_sql_query(
     verbose: bool = False,
     group_agg: Optional[Dict[str, Union[str, Dict[str, Any], None]]] = None,
     dtypes: Optional[Dict[str, str]] = None,
-    params: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None,
+    ctes: Optional[List[dict]] = None,
     ):
 
     """
@@ -1039,6 +1033,12 @@ def run_sql_query(
     dtypes : dict, optional
         Column data types to pass to `pandas.read_sql_query`.
 
+    ctes : list[dict], optional
+        List of CTE specifications, each dict containing:
+        - "name" (str): Name of the CTE.
+        - "table" (str): Table to query for this CTE.
+        - All other keys are the same as the main function (select, joins, filters, etc.).
+
     Returns
     -------
     pandas.DataFrame | None
@@ -1046,6 +1046,7 @@ def run_sql_query(
         Returns None if data is written to a table or query fails.
     """
     import pandas as pd
+    import re
 
     def ensure_list(x):
         if x is None:
@@ -1057,12 +1058,12 @@ def run_sql_query(
     group_by = ensure_list(group_by)
     having = ensure_list(having)
     order_by = ensure_list(order_by)
+    ctes = ensure_list(ctes) if ctes else []
 
     sql_params = []
     final_filters = []
 
     for f in filters:
-        import re
         named_params = re.findall(r":(\w+)", f)
         for p in named_params:
             if p not in params:
@@ -1076,6 +1077,97 @@ def run_sql_query(
                 f = f.replace(f":{p}", "?")
                 sql_params.append(value)
         final_filters.append(f)
+
+    # Build CTEs
+    cte_sqls = []
+    cte_params = []
+    for cte in ctes:
+        cte_name = cte["name"]
+        cte_table = cte["table"]
+        cte_select = ensure_list(cte.get("select", "*"))
+        cte_joins = cte.get("joins", [])
+        cte_filters = ensure_list(cte.get("filters", []))
+        cte_group_by = ensure_list(cte.get("group_by", []))
+        cte_having = ensure_list(cte.get("having", []))
+        cte_order_by = ensure_list(cte.get("order_by", []))
+        cte_limit = cte.get("limit")
+        cte_distinct = cte.get("distinct", False)
+        cte_group_agg = cte.get("group_agg")
+        cte_params_local = []
+
+        # Process CTE filters
+        cte_final_filters = []
+        for f in cte_filters:
+            named_params = re.findall(r":(\w+)", f)
+            for p in named_params:
+                if p not in params:
+                    raise ValueError(f"CTE filter uses :{p}, but params does not provide it.")
+                value = params[p]
+                if isinstance(value, (list, tuple)):
+                    placeholders = ','.join('?' for _ in value)
+                    f = f.replace(f":{p}", f"({placeholders})")
+                    cte_params_local.extend(value)
+                else:
+                    f = f.replace(f":{p}", "?")
+                    cte_params_local.append(value)
+            cte_final_filters.append(f)
+
+        # Build CTE SELECT clause
+        group_concat_cols = []
+        if cte_group_agg:
+            agg_parts = []
+            group_cols = []
+            for alias, spec in cte_group_agg.items():
+                if spec is None:
+                    group_cols.append(alias)
+                    agg_parts.append(alias)
+                elif isinstance(spec, str):
+                    out_alias = alias
+                    agg_sql = f"GROUP_CONCAT(DISTINCT {spec}) AS {out_alias}"
+                    agg_parts.append(agg_sql)
+                    group_concat_cols.append(out_alias)
+                elif isinstance(spec, dict):
+                    agg_func = spec.get("agg", "").upper()
+                    col = spec.get("col", alias)
+                    distinct = "DISTINCT " if spec.get("distinct", False) else ""
+                    out_alias = alias
+                    if agg_func:
+                        agg_parts.append(f"{agg_func}({distinct}{col}) AS {out_alias}")
+                        if agg_func == "GROUP_CONCAT":
+                            group_concat_cols.append(out_alias)
+                    else:
+                        group_cols.append(alias)
+                        agg_parts.append(alias)
+            cte_select_clause = "SELECT " + ", ".join(agg_parts)
+            cte_query = f"{cte_select_clause} FROM {cte_table}"
+        else:
+            cte_select_clause = "SELECT DISTINCT " if cte_distinct else "SELECT "
+            cte_select_clause += ", ".join(cte_select) if cte_select else "*"
+            cte_query = f"{cte_select_clause} FROM {cte_table}"
+
+        # Add CTE JOINs
+        for j in cte_joins:
+            join_type = j.get("type", "INNER").upper()
+            join_table = j["table"]
+            join_condition = j["on"]
+            cte_query += f" {join_type} JOIN {join_table} ON {join_condition}"
+
+        # CTE clauses
+        if cte_final_filters:
+            cte_query += " WHERE " + " AND ".join(cte_final_filters)
+        if cte_group_agg and group_cols:
+            cte_query += " GROUP BY " + ", ".join(group_cols)
+        elif cte_group_by:
+            cte_query += " GROUP BY " + ", ".join(cte_group_by)
+        if cte_having:
+            cte_query += " HAVING " + " AND ".join(cte_having)
+        if cte_order_by:
+            cte_query += " ORDER BY " + ", ".join(cte_order_by)
+        if cte_limit is not None:
+            cte_query += f" LIMIT {cte_limit}"
+
+        cte_sqls.append(f"{cte_name} AS (\n{cte_query}\n)")
+        cte_params.extend(cte_params_local)
 
     # Build SELECT clause
     group_concat_cols = []  # holds the *aliases* created by GROUP_CONCAT so we can clean them afterwards
@@ -1135,11 +1227,17 @@ def run_sql_query(
     if limit is not None:
         query += f" LIMIT {limit}"
 
+    # Combine CTEs and main query
+    if cte_sqls:
+        cte_part = ",\n".join(cte_sqls)
+        query = f"WITH {cte_part}\n{query}"
+
+    all_params = cte_params + sql_params
     if verbose:
-        tqdm.write(f"\n📘 Executing SQL:\n{query}\n")
+        tqdm.write(f"\n📘 Executing SQL:\n{query}\nWith params : {all_params}")
 
     try:
-        df = pd.read_sql_query(query, conn, dtype=dtypes, params=sql_params)
+        df = pd.read_sql_query(query, conn, dtype=dtypes, params=all_params)
 
         # Clean up any GROUP_CONCAT columns produced by group_agg (using alias names collected)
         for col in group_concat_cols:
@@ -1235,7 +1333,170 @@ def get_games_for_date(conn, game_date_str):
 
     return df_unique
 
+def query_player_stats(conn, alltime=False, only_active_players=False):
+    import pandas as pd
+    
+    if alltime:
+        try:
+            conn.execute('SELECT * FROM player_avg_TTFL')
+        except:
+            update_tables(conn, historical=True)
+
+    boxscore_cols = """
+        playerName, seconds, points, assists, steals, blocks, turnovers, plusMinusPoints, TTFL, 
+        reboundsTotal, reboundsOffensive, reboundsDefensive, fieldGoalsMade, fieldGoalsAttempted, 
+        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted"""
+    
+    agg_cols = """
+        playerName, COUNT(*) AS GP, ROUND(AVG(seconds), 1) AS SECONDS, SUM(seconds) AS TOT_SECONDS, 
+        AVG(points) AS Pts, SUM(points) AS TOT_Pts, AVG(assists) AS Ast, SUM(assists) AS TOT_Ast, 
+        AVG(steals) AS Stl, SUM(steals) AS TOT_Stl, AVG(blocks) AS Blk, SUM(blocks) AS TOT_Blk, 
+        (AVG(steals) + AVG(blocks)) AS Stk, (SUM(steals) + SUM(blocks)) AS TOT_Stk, 
+        AVG(reboundsTotal) AS Reb, SUM(reboundsTotal) AS TOT_Reb, 
+        AVG(reboundsOffensive) AS Oreb, SUM(reboundsOffensive) AS TOT_Oreb, 
+        AVG(reboundsDefensive) AS Dreb, SUM(reboundsDefensive) AS TOT_Dreb, 
+        AVG(turnovers) AS Tov, SUM(turnovers) AS TOT_Tov, 
+        AVG(fieldGoalsMade) AS FGM, SUM(fieldGoalsMade) AS TOT_FGM, 
+        AVG(fieldGoalsAttempted) AS FGA, SUM(fieldGoalsAttempted) AS TOT_FGA, 
+        AVG(threePointersMade) AS FG3M, SUM(threePointersMade) AS TOT_FG3M, 
+        AVG(threePointersAttempted) AS FG3A, SUM(threePointersAttempted) AS TOT_FG3A, 
+        AVG(freeThrowsMade) AS FTM, SUM(freeThrowsMade) AS TOT_FTM, 
+        AVG(freeThrowsAttempted) AS FTA, SUM(freeThrowsAttempted) AS TOT_FTA, 
+        AVG(plusMinusPoints) AS PM, SUM(plusMinusPoints) AS TOT_PM, 
+        SUM(TTFL) AS TOT_TTFL, 
+        (SUM(fieldGoalsMade) * 1.0 / SUM(fieldGoalsAttempted)) AS FG_PCT,
+        (SUM(threePointersMade) * 1.0 / SUM(threePointersAttempted)) AS FG3_PCT, 
+        (SUM(freeThrowsMade) * 1.0 / SUM(freeThrowsAttempted)) AS FT_PCT, 
+        ((SUM(fieldGoalsMade) + 0.5 * SUM(threePointersMade)) / SUM(fieldGoalsAttempted)) AS EFG, 
+        (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))) AS TS, 
+        (SUM(assists) * 1.0 / NULLIF(SUM(turnovers), 0)) AS ast_to_tov, 
+        SUM(TTFL) * 1.0 / (SUM(seconds) / 60) AS ttfl_per_min, 
+        MAX(TTFL) AS max_ttfl, MIN(TTFL) AS min_ttfl
+        """
+    
+    add_teamTricode = ', teamTricode' if not alltime else ''
+    active_players = ('active_players AS (SELECT DISTINCT playerName FROM current_boxscores),'
+                      if only_active_players else '')
+    join_active_players = ('JOIN active_players ap ON ap.playerName = se.playerName' 
+                           if only_active_players else '')
+    
+    query = f"""
+    WITH selector AS (
+        SELECT 
+            {boxscore_cols}{add_teamTricode} FROM boxscores
+    ),
+
+    {active_players}
+
+    aggregator AS (
+        SELECT se.{agg_cols}{add_teamTricode}
+        FROM selector se
+        {join_active_players}
+        WHERE seconds > 0 
+        GROUP BY se.playerName
+    ),
+    
+    avg AS (
+        SELECT playerName, avg_TTFL AS TTFL, stddev_TTFL, median_TTFL
+        FROM player_avg_TTFL 
+        GROUP BY playerName
+    ),
+
+    home_away AS (
+        SELECT playerName, home_rel_TTFL, away_rel_TTFL, home_avg_TTFL, away_avg_TTFL 
+        FROM home_away_rel_TTFL 
+        GROUP BY playerName
+    ),
+
+    back_to_back AS (
+        SELECT playerName, btbTTFL, rel_btb_TTFL, n_btb 
+        FROM rel_btb_TTFL 
+        GROUP BY playerName
+    )
+
+    SELECT 
+        agg.playerName{add_teamTricode}, TTFL, GP, SECONDS, TOT_SECONDS, Pts, TOT_Pts, Ast, TOT_Ast, Stl, TOT_Stl, Blk, TOT_Blk, 
+        Stk, TOT_Stk, Reb, TOT_Reb, Oreb, TOT_Oreb, Dreb, TOT_Dreb, Tov, TOT_Tov, FGM, TOT_FGM, FGA, TOT_FGA, 
+        FG3M, TOT_FG3M, FG3A, TOT_FG3A, FTM, TOT_FTM, FTA, TOT_FTA, PM, TOT_PM, TOT_TTFL, FG_PCT, FG3_PCT, FT_PCT, 
+        EFG, TS, ast_to_tov, ttfl_per_min, max_ttfl, min_ttfl, pat.median_TTFL, pat.stddev_TTFL, ha.home_rel_TTFL, 
+        ha.away_rel_TTFL, ha.home_avg_TTFL, ha.away_avg_TTFL, btb.btbTTFL, btb.rel_btb_TTFL, btb.n_btb
+
+    FROM aggregator agg
+    LEFT JOIN home_away ha 
+        ON ha.playerName = agg.playerName 
+    LEFT JOIN back_to_back btb 
+        ON btb.playerName = agg.playerName 
+    LEFT JOIN avg pat 
+        ON pat.playerName = agg.playerName
+    """
+    df = pd.read_sql_query(query, conn)
+    return df
+
+def query_player_v_team(conn, player, alltime):
+    import pandas as pd
+
+    if alltime:
+        try:
+            conn.execute('SELECT * FROM player_avg_TTFL')
+        except:
+            update_tables(conn, historical=True)
+
+    boxscore_cols = '''
+        playerName, opponent, TTFL, points, assists, reboundsTotal, reboundsOffensive, reboundsDefensive, 
+        steals, blocks, turnovers, fieldGoalsMade, fieldGoalsAttempted, threePointersMade, 
+        threePointersAttempted, freeThrowsMade, freeThrowsAttempted, plusMinusPoints, seconds
+    '''
+    agg_cols = '''
+        opponent, COUNT(*) AS GP, AVG(TTFL) AS TTFL, AVG(points) AS Pts, 
+        AVG(assists) AS Ast, AVG(reboundsTotal) AS Reb, AVG(steals) AS Stl, 
+        AVG(blocks) AS Blk, AVG(turnovers) AS Tov,
+        AVG(fieldGoalsMade) AS FGM, AVG(fieldGoalsAttempted) AS FGA,
+        AVG(threePointersMade) AS FG3M, AVG(threePointersAttempted) AS FG3A,
+        AVG(freeThrowsMade) AS FTM, AVG(freeThrowsAttempted) AS FTA,
+        AVG(plusMinusPoints) AS PM, AVG(seconds) AS seconds,
+        AVG(reboundsOffensive) AS Oreb, AVG(reboundsDefensive) AS Dreb,
+        (AVG(fieldGoalsMade) / AVG(fieldGoalsAttempted)) AS FG_PCT,
+        (AVG(threePointersMade) / AVG(threePointersAttempted)) AS FG3_PCT,
+        (AVG(freeThrowsMade) / AVG(freeThrowsAttempted)) AS FT_PCT,
+        ROUND((100 * (AVG(fieldGoalsMade) + 0.5 * AVG(threePointersMade)) / AVG(fieldGoalsAttempted)), 1) AS EFG,
+        ROUND(100 * (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))), 1) AS TS,
+        ROUND((AVG(assists) / NULLIF(AVG(turnovers), 0)), 1) AS ast_to_tov'''
+
+    query = f"""
+    WITH selector AS (
+        SELECT 
+            {boxscore_cols} FROM boxscores
+    )
+    SELECT {agg_cols}
+    FROM selector
+    WHERE seconds > 0
+        AND playerName = '{player}'
+    GROUP BY opponent
+    """
+    df = pd.read_sql_query(query, conn)
+    return df
+
+def query_historique_des_perfs(conn, player, alltime):
+    import pandas as pd
+
+    if alltime:
+        try:
+            conn.execute('SELECT * FROM player_avg_TTFL')
+        except:
+            update_tables(conn, historical=True)
+            
+    query = f"""
+    SELECT * 
+    FROM boxscores
+    WHERE seconds > 0
+        AND playerName = '{player}'
+    """
+    df = pd.read_sql_query(query, conn)
+    return df
+
 if __name__ == '__main__':
-    from misc.misc import DB_PATH
-    with sqlite3.connect(DB_PATH) as conn:
-        check_table_exists(conn, 'player_positions')
+    from misc.misc import DB_PATH, DB_PATH_HISTORICAL
+    with sqlite3.connect(DB_PATH_HISTORICAL) as conn:
+        print(query_player_stats(conn, alltime=True, only_active_players=True)['FG_PCT'])
+        # print(query_player_v_team(conn, 'Larry Bird', alltime=True))
+        # print(query_historique_des_perfs(conn, 'Larry Bird', True))

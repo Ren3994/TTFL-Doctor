@@ -125,7 +125,7 @@ def clean_boxscores(df):
         'freeThrowsMade', 'freeThrowsAttempted', 'plusMinusPoints', 'TTFL',
         'teamPoints', 'opponentPoints', 'win', 'teamTTFL', 'opponentTTFL',
         'homeTeam', 'visitorTeam', 'seconds', 'gameDate', 'gameDate_ymd',
-        'reboundsOffensive', 'reboundsDefensive', 'position', 'season'
+        'reboundsOffensive', 'reboundsDefensive', 'position', 'season', 'prev_gameDate_ymd'
     ]    
     cols_to_remap = ['opponent', 'homeTeam', 'visitorTeam']
     

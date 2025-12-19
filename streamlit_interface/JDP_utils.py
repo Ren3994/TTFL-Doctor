@@ -7,7 +7,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.resource_manager import conn_db, conn_supabase, fetch_supabase_users
+from streamlit_interface.resource_manager import conn_db, conn_hist_db, conn_supabase, fetch_supabase_users
 from data.sql_functions import run_sql_query
 from misc.misc import NICKNAMES
 
@@ -43,6 +43,17 @@ def get_cached_player_list():
                                 table='boxscores', 
                                 select='DISTINCT playerName')
     return player_list['playerName'].tolist()
+
+@st.cache_data(show_spinner=False)
+def get_cached_alltime_player_list():
+    current_player_list = get_cached_player_list()
+    old_player_list = (run_sql_query(conn=conn_hist_db(), 
+                                table='boxscores', 
+                                select='DISTINCT playerName')
+                                ['playerName'].tolist())
+    
+    player_list = list(set(current_player_list + old_player_list))
+    return player_list
 
 @st.cache_data(show_spinner=False)
 def get_cached_pat():
@@ -257,9 +268,13 @@ def clean_player_names(df, colname, names_list=None):
 def match_player(input_name, names_list=None, multi=False):
 
     matched_name = None
+    fetch_alltime_players = st.session_state.get('player_alltime_stats', False)
 
     if names_list is None:
-        names_list = get_cached_player_list()
+        if not fetch_alltime_players:
+            names_list = get_cached_player_list()
+        else:
+            names_list = get_cached_alltime_player_list()
 
     if input_name in names_list:
         return [input_name] if multi else input_name

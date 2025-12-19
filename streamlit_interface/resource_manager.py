@@ -61,7 +61,7 @@ def conn_db():
 
 @st.cache_resource(show_spinner=False)
 def conn_hist_db():
-    conn = sqlite3.connect(DB_PATH_HISTORICAL, timeout=30, check_same_thread=False) 
+    conn = sqlite3.connect(DB_PATH_HISTORICAL, timeout=30, check_same_thread=False)
     return conn
 
 # @st.cache_resource(show_spinner=False)

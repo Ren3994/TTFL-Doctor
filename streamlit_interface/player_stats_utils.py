@@ -4,107 +4,30 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from data.sql_functions import run_sql_query, query_player_stats, query_player_v_team, query_historique_des_perfs
 from streamlit_interface.resource_manager import conn_db, conn_hist_db
+from streamlit_interface.historical_data_manager import init_hist_db
 from streamlit_interface.streamlit_utils import uspace, french_flag
 from streamlit_interface.classement_TTFL_utils import df_to_html
 from streamlit_interface.JDP_utils import match_player
-from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def query_player_stats(historical_data=False):
-    if not historical_data:
-        conn = conn_db()
-    else:
-        conn = conn_hist_db()
-    player_stats = run_sql_query(conn, table='boxscores b', filters='seconds > 0',
-                   select=['b.playerName', 'teamTricode',
-                           'ROUND(AVG(seconds), 1) AS SECONDS',
-                           'SUM(seconds) AS TOT_SECONDS',
-                           'COUNT(*) AS GP',
-                           'AVG(points) AS Pts',
-                           'SUM(points) AS TOT_Pts',
-                           'AVG(assists) AS Ast',
-                           'SUM(assists) AS TOT_Ast',
-                           'AVG(steals) AS Stl',
-                           'SUM(steals) AS TOT_Stl',
-                           'AVG(blocks) AS Blk',
-                           'SUM(blocks) AS TOT_Blk',
-                           '(AVG(steals) + AVG(blocks)) AS Stk',
-                           '(SUM(steals) + SUM(blocks)) AS TOT_Stk',
-                           'AVG(reboundsTotal) AS Reb',
-                           'SUM(reboundsTotal) AS TOT_Reb',
-                           'AVG(reboundsOffensive) AS Oreb',
-                           'SUM(reboundsOffensive) AS TOT_Oreb',
-                           'AVG(reboundsDefensive) AS Dreb',
-                           'SUM(reboundsDefensive) AS TOT_Dreb',
-                           'AVG(turnovers) AS Tov',
-                           'SUM(turnovers) AS TOT_Tov',
-                           'AVG(fieldGoalsMade) AS FGM',
-                           'SUM(fieldGoalsMade) AS TOT_FGM',
-                           'AVG(fieldGoalsAttempted) AS FGA',
-                           'SUM(fieldGoalsAttempted) AS TOT_FGA',
-                           'AVG(threePointersMade) AS FG3M',
-                           'SUM(threePointersMade) AS TOT_FG3M',
-                           'AVG(threePointersAttempted) AS FG3A',
-                           'SUM(threePointersAttempted) AS TOT_FG3A',
-                           'AVG(freeThrowsMade) AS FTM',
-                           'SUM(freeThrowsMade) AS TOT_FTM',
-                           'AVG(freeThrowsAttempted) AS FTA',
-                           'SUM(freeThrowsAttempted) AS TOT_FTA',
-                           '(AVG(fieldGoalsMade) / AVG(fieldGoalsAttempted)) AS FG_PCT',
-                           '(AVG(threePointersMade) / AVG(threePointersAttempted)) AS FG3_PCT',
-                           '(AVG(freeThrowsMade) / AVG(freeThrowsAttempted)) AS FT_PCT',
-                           'AVG(plusMinusPoints) AS PM',
-                           'SUM(plusMinusPoints) AS TOT_PM',
-                           '((AVG(fieldGoalsMade) + 0.5 * AVG(threePointersMade)) / AVG(fieldGoalsAttempted)) AS EFG',
-                           '(SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))) AS TS',
-                           '(AVG(assists) / NULLIF(AVG(turnovers), 0)) AS ast_to_tov',
-                           'AVG(TTFL) AS TTFL',
-                           'SUM(TTFL) AS TOT_TTFL',
-                           'AVG(TTFL) / (AVG(seconds) / 60) AS ttfl_per_min',
-                           'med.median_TTFL',
-                           'ha.home_rel_TTFL',
-                           'ha.away_rel_TTFL',
-                           'ha.home_avg_TTFL',
-                           'ha.away_avg_TTFL',
-                           'btb.btbTTFL',
-                           'btb.rel_btb_TTFL',
-                           'btb.n_btb',
-                           'pat.stddev_TTFL',
-                           'MAX(TTFL) AS max_ttfl',
-                           'MIN(TTFL) AS min_ttfl'],
-                           joins=[{
-                               'table' : 'median_TTFL med',
-                               'on' : 'med.playerName = b.playerName',
-                               'type' : 'left'
-                                  },
-                                  {
-                                      'table' : 'home_away_rel_TTFL ha',
-                                      'on' : 'ha.playerName = b.playerName',
-                                      'type' : 'left'
-                                  },
-                                  {
-                                      'table' : 'rel_btb_TTFL btb',
-                                      'on' : 'btb.playerName = b.playerName',
-                                      'type' : 'left'
-                                  },
-                                  {
-                                      'table' : 'player_avg_TTFL pat',
-                                      'on' : 'pat.playerName = b.playerName',
-                                      'type' : 'left'
-                                  }],
-                           group_by=['b.playerName', 'teamTricode'])
+def cached_player_stats(alltime, only_active):
+    conn = conn_db() if not alltime else conn_hist_db()
+    player_stats = query_player_stats(conn, alltime, only_active)
     return player_stats
 
 def get_all_player_stats(matched=[]): 
+    
+    alltime = st.session_state.get('player_alltime_stats', False)
+    only_active = st.session_state.get('only_active_players', False)
+    player_stats = cached_player_stats(alltime, only_active)
 
-    player_stats = query_player_stats()
-
-    min_games = st.session_state.get('slider_gp', 5) 
-    min_min_per_game = st.session_state.get('slider_min', 0) 
-    fg_min = st.session_state.get('slider_fg', 0) 
-    fg3_min = st.session_state.get('slider_fg3', 0) 
-    ft_min = st.session_state.get('slider_ft', 0) 
+    min_games = st.session_state.get('slider_gp', 5)
+    min_min_per_game = st.session_state.get('slider_min', 0)
+    fg_min = st.session_state.get('slider_fg', 0)
+    fg3_min = st.session_state.get('slider_fg3', 0)
+    ft_min = st.session_state.get('slider_ft', 0)
     agg = st.session_state.get('player_stats_agg', 'Moyennes')
     
     if len(matched) != 1:
@@ -127,6 +50,9 @@ def get_all_player_stats(matched=[]):
     player_stats['TS'] = (player_stats['TS'] * 100).fillna(0)
 
     player_stats['ast_to_tov'] = player_stats['ast_to_tov'].fillna(0)
+    player_stats['Oreb'] = player_stats['Oreb'].fillna(0)
+    player_stats['Dreb'] = player_stats['Dreb'].fillna(0)
+    player_stats['PM'] = player_stats['PM'].fillna(0)
 
     player_stats['FG_PCT'] = (player_stats['FG_PCT'] * 100).fillna(0)
     player_stats['FG3_PCT'] = (player_stats['FG3_PCT'] * 100).fillna(0)
@@ -151,7 +77,11 @@ def get_all_player_stats(matched=[]):
     player_stats['playerName'] = player_stats['playerName'].apply(french_flag)
     
     if agg == 'Moyennes':
-        reg_cols = ['playerName', 'teamTricode', 'GP', 'MINUTES', 'TTFL', 'ttfl_per_min',
+        if alltime:
+            reg_cols = ['playerName', 'GP', 'MINUTES', 'TTFL', 'ttfl_per_min',
+                                   'Pts', 'Ast', 'Reb', 'Oreb', 'Dreb', 'Stl', 'Blk', 'Stk', 'Tov', 'PM']
+        else:
+             reg_cols = ['playerName', 'teamTricode', 'GP', 'MINUTES', 'TTFL', 'ttfl_per_min',
                                    'Pts', 'Ast', 'Reb', 'Oreb', 'Dreb', 'Stl', 'Blk', 'Stk', 'Tov', 'PM']
         reg_sort_col = 'TTFL'
 
@@ -161,7 +91,12 @@ def get_all_player_stats(matched=[]):
         shoot_sort_col = 'FGM'
 
     elif agg == 'Totaux':
-        reg_cols = ['playerName', 'teamTricode', 'GP', 'TOT_MINUTES', 'TOT_TTFL',
+        if alltime:
+            reg_cols = ['playerName', 'GP', 'TOT_MINUTES', 'TOT_TTFL',
+                                   'TOT_Pts', 'TOT_Ast', 'TOT_Reb', 'TOT_Oreb', 'TOT_Dreb', 'TOT_Stl', 
+                                   'TOT_Blk', 'TOT_Stk', 'TOT_Tov', 'TOT_PM']
+        else:
+            reg_cols = ['playerName', 'teamTricode', 'GP', 'TOT_MINUTES', 'TOT_TTFL',
                                    'TOT_Pts', 'TOT_Ast', 'TOT_Reb', 'TOT_Oreb', 'TOT_Dreb', 'TOT_Stl', 
                                    'TOT_Blk', 'TOT_Stk', 'TOT_Tov', 'TOT_PM']
         reg_sort_col = 'TOT_TTFL'
@@ -178,7 +113,11 @@ def get_all_player_stats(matched=[]):
         for col in per36cols:
             player_stats[col] = (player_stats[col] * 2160) / player_stats['SECONDS']
         
-        reg_cols = ['playerName', 'teamTricode', 'GP', 'MINUTES', 'TTFL',
+        if alltime:
+            reg_cols = ['playerName', 'GP', 'MINUTES', 'TTFL',
+                                   'Pts', 'Ast', 'Reb', 'Oreb', 'Dreb', 'Stl', 'Blk', 'Stk', 'Tov', 'PM']
+        else:
+            reg_cols = ['playerName', 'teamTricode', 'GP', 'MINUTES', 'TTFL',
                                    'Pts', 'Ast', 'Reb', 'Oreb', 'Dreb', 'Stl', 'Blk', 'Stk', 'Tov', 'PM']
         reg_sort_col = 'TTFL'
 
@@ -204,43 +143,19 @@ def get_all_player_stats(matched=[]):
     return all_stats
 
 @st.cache_data(show_spinner=False)
-def get_maximums():
-    conn = conn_db()
-    df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
-                                                        'SUM(fieldGoalsMade) AS FG',
-                                                        'SUM(threePointersMade) AS FG3',
-                                                        'SUM(freeThrowsMade) AS FT',
-                                                        'AVG(SECONDS) / 60 AS MIN'
-                                                        ], group_by='playerName')
-    maximums = {'GP' : df['GP'].max(),
-                'FG' : df['FG'].max(),
-                'FG3' : df['FG3'].max(),
-                'FT' : df['FT'].max(),
-                'MIN' : int(df['MIN'].max())}
-    
-    return maximums
+def cached_player_v_team(player, alltime):
+    conn = conn_db() if not alltime else conn_hist_db()
+    df = query_player_v_team(conn, player, alltime)
+    return df
 
-@st.cache_data(show_spinner=False)
 def player_v_team(player_list):
     import pandas as pd
-    conn=conn_db()
+
     if len(player_list) != 1:
         return pd.DataFrame()
-    df = run_sql_query(conn, table='boxscores', filters=['seconds > 0', f"playerName = '{player_list[0]}'"], group_by='opponent',
-                       select=['opponent', 'COUNT(*) AS GP', 'AVG(TTFL) AS TTFL', 'AVG(points) AS Pts', 
-                               'AVG(assists) AS Ast', 'AVG(reboundsTotal) AS Reb', 'AVG(steals) AS Stl', 
-                               'AVG(blocks) AS Blk', 'AVG(turnovers) AS Tov',
-                               'AVG(fieldGoalsMade) AS FGM', 'AVG(fieldGoalsAttempted) AS FGA', 
-                               'AVG(threePointersMade) AS FG3M', 'AVG(threePointersAttempted) AS FG3A', 
-                               'AVG(freeThrowsMade) AS FTM', 'AVG(freeThrowsAttempted) AS FTA',
-                               'AVG(plusMinusPoints) AS PM', 'AVG(seconds) AS seconds', 
-                               'AVG(reboundsOffensive) AS Oreb', 'AVG(reboundsDefensive) AS Dreb',
-                               '(AVG(fieldGoalsMade) / AVG(fieldGoalsAttempted)) AS FG_PCT',
-                               '(AVG(threePointersMade) / AVG(threePointersAttempted)) AS FG3_PCT',
-                               '(AVG(freeThrowsMade) / AVG(freeThrowsAttempted)) AS FT_PCT',
-                               'ROUND((100 * (AVG(fieldGoalsMade) + 0.5 * AVG(threePointersMade)) / AVG(fieldGoalsAttempted)), 1) AS EFG',
-                               'ROUND(100 * (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))), 1) AS TS',
-                               'ROUND((AVG(assists) / NULLIF(AVG(turnovers), 0)), 1) AS ast_to_tov'])
+    
+    alltime = st.session_state.get('player_alltime_stats', False)
+    df = cached_player_v_team(player_list[0], alltime)
     
     df['MINUTES'] = (df['seconds'].apply(
                                lambda s: f"{s // 60:02.0f}:{s % 60:02.0f}"))
@@ -249,10 +164,17 @@ def player_v_team(player_list):
     df['FG3_PCT'] = pd.to_numeric(df['FG3_PCT'], errors='coerce').mul(100).fillna(0).round(1)
     df['FT_PCT'] = pd.to_numeric(df['FT_PCT'], errors='coerce').mul(100).fillna(0).round(1)
 
+    df['PM'] = pd.to_numeric(df['PM'], errors='coerce')
+    df['Oreb'] = pd.to_numeric(df['Oreb'], errors='coerce')
+    df['Dreb'] = pd.to_numeric(df['Dreb'], errors='coerce')
+
+    df['Oreb'] = df['Oreb'].fillna(0)
+    df['Dreb'] = df['Dreb'].fillna(0)
+    df['PM'] = df['PM'].fillna(0)
+
     df['FG2M'] = df['FGM'] - df['FG3M']
     df['FG2A'] = df['FGA'] - df['FG3A']
-    df['FG2_PCT'] = (100 * df['FG2M'] / df['FG2A']).round(1).fillna(0)
-
+    df['FG2_PCT'] = (100 * df['FG2M'] / df['FG2A']).fillna(0).round(1)
 
     df = df[['opponent', 'GP', 'MINUTES', 'TTFL', 'Pts', 'Ast', 'Reb', 'Oreb', 'Dreb', 'Stl', 'Blk', 'Tov',
        'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'PM']]
@@ -260,12 +182,17 @@ def player_v_team(player_list):
     return df
 
 @st.cache_data(show_spinner=False)
-def historique_des_perfs(joueur):
+def cached_historique_des_perfs(player, alltime):
+    conn = conn_db() if not alltime else conn_hist_db()
+    df = query_historique_des_perfs(conn, player, alltime)
+    return df
+
+def historique_des_perfs(player):
     import pandas as pd
     import numpy as np
 
-    conn = conn_db()
-    df = run_sql_query(conn, table='boxscores', filters=['seconds > 0', f"playerName ='{joueur}'"])
+    alltime = st.session_state.get('player_alltime_stats', False)
+    df = cached_historique_des_perfs(player, alltime)
 
     df.rename(columns={
         'playerName' : 'Joueur',
@@ -287,15 +214,20 @@ def historique_des_perfs(joueur):
         'plusMinusPoints' : 'Pm',
         'gameDate' : 'Date'
     }, inplace=True)
+
+    french_months = ["jan", "fév", "mar", "avr", "mai", "juin",
+                 "juil", "aoû", "sep", "oct", "nov", "déc"]
     
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     df = df.sort_values(by='Date', ascending=False).reset_index(drop=True)
-    df['Date'] = df['Date'].dt.strftime('%d %b.')
+    df['Date'] = np.where(alltime,
+                 df['Date'].apply(lambda x: f"{x.day:02d} {french_months[x.month - 1]}. {x.year:04d}"),
+                 df['Date'].apply(lambda x: f" {x.day:02d} {french_months[x.month - 1]}."))
 
     df['FG'] = df['FGM'].astype(str) + '/' + df['FGA'].astype(str)
     df['FG3'] = df['FG3M'].astype(str) + '/' + df['FG3A'].astype(str)
     df['FT'] = df['FTM'].astype(str) + '/' + df['FTA'].astype(str)
-    df['rebSplit'] = 'Off : ' + df['Oreb'].astype(str) + ' - Def : ' + df['Dreb'].astype(str)
+    df['rebSplit'] = np.select([df['Oreb'].isna()], [''], 'Off : ' + df['Oreb'].astype(str) + ' - Def : ' + df['Dreb'].astype(str))
 
     df['FGpct'] = np.select([df['FGA'] == 0, df['FGA'] == df['FGM']], 
                             ['', '100%'], 
@@ -309,6 +241,9 @@ def historique_des_perfs(joueur):
     
     df['win'] = np.where(df['win'] == 1, 'W', 'L')
     df['isHome'] = np.where(df['isHome'] == 1, 'Dom.', 'Ext.')
+    
+    df['Pm'] = pd.to_numeric(df['Pm'], errors='coerce')
+    df['Pm'] = df['Pm'].fillna(0)
     df['Pm'] = np.select([df['Pm'] < 0], [df['Pm'].astype(int)],
                         '+' + df['Pm'].astype(int).astype(str))
 
@@ -357,12 +292,37 @@ def on_search_player_stats():
         if len(matched_players) == 1:
             st.session_state.search_player_indiv_stats = matched_players[0]
 
+@st.cache_data(show_spinner=False)
+def get_maximums(alltime):
+    conn = conn_hist_db() if alltime else conn_db()
+    df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
+                                                        'SUM(fieldGoalsMade) AS FG',
+                                                        'SUM(threePointersMade) AS FG3',
+                                                        'SUM(freeThrowsMade) AS FT',
+                                                        'AVG(seconds) / 60 AS MIN'
+                                                        ], group_by='playerName')
+    
+    maximums = {'GP' : df['GP'].max(),
+                'FG' : df['FG'].max(),
+                'FG3' : df['FG3'].max(),
+                'FT' : df['FT'].max(),
+                'MIN' : int(df['MIN'].max())}
+    
+    return maximums
+
+def alltime_checked():
+    init_hist_db()
+    set_filters_default()
+    filters_to_zero()
+
 def set_filters_default():
     def set_filt(val, nearest, pct):
         filt_val = val / pct
         return round(filt_val / nearest) * nearest
     
-    maximums = get_maximums()
+    alltime = st.session_state.get('player_alltime_stats', False)
+    
+    maximums = get_maximums(alltime)
     st.session_state.max_games = maximums['GP']
     st.session_state.max_fg = maximums['FG']
     st.session_state.max_fg3 = maximums['FG3']
@@ -376,6 +336,8 @@ def set_filters_default():
     st.session_state.slider_min_default = 10
     st.session_state.player_stats_agg_default = 'Moyennes'
     st.session_state.color_cells_default = False
+    st.session_state.player_alltime_stats_default = False
+    st.session_state.only_active_players_default = False
 
 def reset_filters():
     st.session_state.slider_gp = st.session_state.slider_gp_default
@@ -385,17 +347,23 @@ def reset_filters():
     st.session_state.slider_min = st.session_state.slider_min_default
     st.session_state.player_stats_agg = st.session_state.player_stats_agg_default
     st.session_state.color_cells = st.session_state.color_cells_default
+    st.session_state.player_alltime_stats = st.session_state.player_alltime_stats_default
+    st.session_state.only_active_players = st.session_state.only_active_players_default
 
 def filters_to_zero():
-    st.session_state.slider_gp = 0
+    st.session_state.slider_gp = 10 if st.session_state.player_alltime_stats else 0
     st.session_state.slider_min = 0
     st.session_state.slider_fg = 0
     st.session_state.slider_fg3 = 0
     st.session_state.slider_ft = 0
+    if not st.session_state.player_alltime_stats:
+        st.session_state.only_active_players = False
 
 def filter_expander_vars():
-    n = 3
+    n = 2
+    alltime_str = 'Stats historiques' if st.session_state.player_alltime_stats else 'Saison actuelle'
     label = ('Filtrer les résultats' + 
+    (f' {uspace(n)} ● {uspace(n)} {alltime_str}') + 
     (f' {uspace(n)} ● {uspace(n)} {st.session_state.player_stats_agg}') + 
     (f' {uspace(n)} ● {uspace(n)} GP {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_gp}') + 
     (f' {uspace(n)} ● {uspace(n)} min {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_min}') + 
@@ -420,6 +388,7 @@ def filter_expander_vars():
 
 def update_player_stats(players_to_show):
     st.session_state.player_stats = get_all_player_stats(matched=players_to_show)
+    st.session_state.massive_tables = len(st.session_state.player_stats['Statistiques basiques']) > 550
 
 if __name__ == '__main__':
-    get_all_player_stats(0, 0)
+    df = query_player_stats(season_list=[])

@@ -3,6 +3,7 @@ import time
 
 def fetch_boxscores(game_date, game_id, visitor_team, home_team):
     from nba_api.stats.endpoints import BoxScoreTraditionalV3
+    from datetime import timedelta
     import pandas as pd
     
     boxscore_df = pd.DataFrame()
@@ -26,6 +27,8 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
             boxscore_df['visitorTeam'] = visitor_team
             boxscore_df['gameDate'] = game_date.strftime('%d/%m/%Y')
             boxscore_df['gameDate_ymd'] = game_date.strftime('%Y-%m-%d')
+            prev_date = game_date - timedelta(days=1)
+            boxscore_df['prev_gameDate_ymd'] = prev_date.strftime('%Y-%m-%d')
             return boxscore_df
 
         except ValueError:
