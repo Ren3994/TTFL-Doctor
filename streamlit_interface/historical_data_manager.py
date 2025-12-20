@@ -39,9 +39,9 @@ def init_hist_db():
     
     os.makedirs(os.path.dirname(DB_PATH_HISTORICAL_ZST), exist_ok=True)
     progress = st.progress(0)
+    status = st.empty()
 
     if not os.path.exists(DB_PATH_HISTORICAL_ZST): # Télécharger si manquant
-        status = st.empty()
         download_hist_db(status, progress)
 
     new_file_hash = checksum() # Vérifier la validité du fichier
@@ -64,9 +64,8 @@ def init_hist_db():
         os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL)
     
     update_total_boxscores(progress)
-    if status:
-        status.empty()
-        progress.empty()
+    status.empty()
+    progress.empty()
     return True
 
 def update_total_boxscores(progress):
