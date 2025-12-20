@@ -41,6 +41,72 @@ def format_to_table(df) :
     prettydf['n_btb'] = df['n_btb']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
 
+    # -------------------------------------------- Nemesis stuff -------------------------------------------------
+    
+    df['rel_TTFL_v_team_nemesis'] = pd.to_numeric(df['rel_TTFL_v_team_nemesis'], errors='coerce')
+    df['games_v_team_nemesis'] = pd.to_numeric(df['games_v_team_nemesis'], errors='coerce')
+    prettydf['team_nemesis'] = np.select([df['team_nemesis'].isna(), df['rel_TTFL_v_team_nemesis'] >= 0], 
+                            [       '', '<br> - ' + df['team_nemesis'] + ' : +' + df['rel_TTFL_v_team_nemesis'].round(1).astype(str) + '%' + ' (' + df['games_v_team_nemesis'].astype('Int64').astype(str) + ' matchs)'],
+                            '<br> - ' + df['team_nemesis'] + ' : ' + df['rel_TTFL_v_team_nemesis'].round(1).astype(str) + '%' + ' (' + df['games_v_team_nemesis'].astype('Int64').astype(str) + ' matchs)')
+    
+    df['player_nem_split'] = df['player_nemesis'].str.split(",")
+    df['player_rel_nem_split'] = df['rel_TTFL_v_player_nemesis'].str.split(",")
+    df['player_gc_split'] = df['games_v_player_nemesis'].str.split(",")
+
+    df_player_nem = df.explode(['player_nem_split', 'player_rel_nem_split', 'player_gc_split'])
+
+    df_player_nem = df_player_nem.drop_duplicates(
+            subset=[
+                "playerName",
+                "pos",
+                "player_nem_split",
+                "player_rel_nem_split",
+                "player_gc_split"
+            ]
+        )
+
+    df_player_nem["player_rel_nem_split"] = pd.to_numeric(
+            df_player_nem["player_rel_nem_split"], errors="coerce"
+        )
+    df_player_nem["player_gc_split"] = pd.to_numeric(
+        df_player_nem["player_gc_split"], errors="coerce"
+    )
+
+    df_player_nem = df_player_nem.sort_values(
+            by="player_rel_nem_split", ascending=False
+        )
+    
+    df_player_nem["player_rel_nem_split"] = np.select([
+                df_player_nem["player_rel_nem_split"].isna(),
+                df_player_nem["player_rel_nem_split"] >= 0,
+            ],
+            [
+                "",
+                "+" + df_player_nem["player_rel_nem_split"].round(1).astype(str),
+            ],
+            default=df_player_nem["player_rel_nem_split"].round(1).astype(str),
+        )
+    
+    df_player_nem["player_nemesis"] = np.select(
+            [
+                df_player_nem["player_nem_split"].isna()
+            ],
+            [
+                ''
+            ],
+            default = ' - ' + df_player_nem['player_nem_split'] + ' : ' + \
+                      df_player_nem['player_rel_nem_split'] + \
+                      '% (' + df_player_nem['player_gc_split'].astype('Int64').astype(str) + ' matchs)'
+        )
+
+    prettydf['player_nemesis'] = df_player_nem.groupby(level=0)['player_nemesis'].agg(lambda x: '<br>'.join(v for v in x if v != ''))
+    
+    prettydf['nemesis'] = np.select([
+        (prettydf['team_nemesis'] == '') & (prettydf['player_nemesis'] == '')], [''],
+        default = '<br><br>' + prettydf['Joueur'] + ' all time vs. :<hr style="margin:0px 0;">' + \
+            prettydf['player_nemesis'] + prettydf['team_nemesis']
+        )
+        
     # -------------------------------------------- Graph stuff -------------------------------------------------
 
     prettydf['graph_dates'] = df['graph_dates']
@@ -300,7 +366,8 @@ def format_to_table(df) :
                           prettydf['rel_btb_TTFL_with_br'] +
                           'Médiane/Ecart-type : ' + 
                           prettydf['median_TTFL'].astype(str) + '/' +
-                          prettydf['stdTTFL'].astype(str))
+                          prettydf['stdTTFL'].astype(str) + 
+                          prettydf['nemesis'].astype(str))
     
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)

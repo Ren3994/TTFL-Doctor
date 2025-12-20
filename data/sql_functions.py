@@ -7,10 +7,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fetchers.player_position_fetcher import fetch_player_positions
+from streamlit_interface.resource_manager import conn_hist_db
 from fetchers.team_stats_fetcher import get_team_stats
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
-from misc.misc import SEASON
+from misc.misc import SEASON, DB_PATH_HISTORICAL
 
 def init_db(conn):
     try :
@@ -209,6 +210,7 @@ def update_tables(conn, historical=False):
     conn.execute("PRAGMA journal_mode = WAL;")
 
     calc_TTFL_stats(conn)
+
     if not historical:
         update_helper_tables(conn)
         add_missing_pos_to_rosters(conn)
@@ -218,6 +220,7 @@ def update_tables(conn, historical=False):
         update_absent_teammate_rel_impact(conn)
         updates_games_missed_by_players(conn)
         update_opp_pos_avg_per_game(conn)
+        calc_nemesis(conn)
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
@@ -335,6 +338,113 @@ def calc_TTFL_stats(conn):
     btb_result.to_sql('rel_btb_TTFL', conn, if_exists='replace', index=False)
 
     conn.execute("""CREATE INDEX IF NOT EXISTS idx_player_avg_TTFL_player ON player_avg_TTFL(playerName);""")
+    conn.commit()
+
+def calc_nemesis(conn):
+    import pandas as pd
+    from streamlit_interface.historical_data_manager import init_hist_db
+
+    if not os.path.exists(DB_PATH_HISTORICAL):
+        init_hist_db()
+
+    hist_conn = conn_hist_db()
+
+    query = """
+    WITH selector AS (
+        SELECT gameId, teamTricode, opponent, playerName, TTFL
+        FROM boxscores
+        WHERE seconds > 600
+            AND gameId LIKE '002%'
+    ),
+    current_players AS (
+        SELECT DISTINCT playerName
+        FROM current_boxscores
+    )
+    SELECT s.playerName, teamTricode, opponent, gameId, TTFL
+    FROM selector s
+    JOIN current_players cp
+        ON cp.playerName = s.playerName
+    """
+
+    query_avg = """SELECT DISTINCT playerName, avg_TTFL
+                FROM player_avg_TTFL"""
+
+    query_curr_team = """SELECT DISTINCT playerName, teamTricode
+                        FROM rosters"""
+
+    df = pd.read_sql_query(query, hist_conn, dtype_backend='pyarrow')
+    avg = pd.read_sql_query(query_avg, hist_conn, dtype_backend='pyarrow')
+    curr_team = pd.read_sql_query(query_curr_team, conn, dtype_backend='pyarrow')
+
+    ### Player nemesis calculations
+
+    gid = df.merge(df, on='gameId', suffixes=('_player', '_opponent'))
+    gid = gid[gid['playerName_player'] != gid['playerName_opponent']]
+    gid = gid[gid['teamTricode_player'] != gid['teamTricode_opponent']]
+
+    pairs = (gid.groupby(["playerName_player", "playerName_opponent"],as_index=False)
+                .agg(
+                    avg_ttfl_against=("TTFL_player", "mean"),
+                    games_played=("gameId", "nunique")
+                    )
+                .rename(columns={'playerName_player' : 'player',
+                                'playerName_opponent' : 'opp'})
+            )
+
+    pairs["z"] = (pairs.groupby("player")["avg_ttfl_against"]
+                    .transform(lambda x: (x - x.mean()) / x.std(ddof=0)))
+
+    player_nemesis = pairs[(pairs["games_played"] >= 5) & (pairs["z"].abs() >= 2)]
+
+    player_nemesis = (player_nemesis.merge(avg, left_on='player', right_on='playerName')
+                                    .drop(columns='playerName'))
+
+    player_nemesis = player_nemesis[player_nemesis['avg_TTFL'] > 20]
+
+    player_nemesis['rel'] = (
+        ((player_nemesis['avg_ttfl_against'] - player_nemesis['avg_TTFL']) * 100.0 / player_nemesis['avg_TTFL'])
+        .where(player_nemesis['avg_TTFL'] != 0, None))
+
+    player_nemesis = player_nemesis.merge(curr_team, left_on='opp', right_on='playerName')
+
+    player_nemesis = (player_nemesis[['player', 'opp', 'teamTricode', 'rel', 'games_played']]
+                    .rename(columns={'opp' : 'opp_player',
+                                    'teamTricode' : 'opp_curr_team',
+                                    'games_played' : 'games_v_player',
+                                    'rel' : 'rel_v_player'})
+                    .reset_index(drop=True)
+                    .round(2))
+    
+    player_nemesis.to_sql('player_nemesis', conn, if_exists='replace', index=False)
+
+    ### Team nemesis calculation
+
+    team_nemesis = (df[['playerName', 'opponent', 'TTFL']]
+                    .groupby(['playerName', 'opponent'], as_index=False)
+                    .agg(
+                        avg_ttfl_v_team=("TTFL", "mean"),
+                        games_played=("TTFL", "size"))
+                    .merge(avg, on='playerName', how='left')
+                )
+
+    team_nemesis["z"] = (team_nemesis.groupby("playerName")["avg_ttfl_v_team"]
+                                    .transform(lambda x: (x - x.mean()) / x.std(ddof=0)))
+
+    team_nemesis = team_nemesis[(team_nemesis["games_played"] >= 5) & (team_nemesis["z"].abs() >= 2)]
+
+    team_nemesis['rel'] = (
+        ((team_nemesis['avg_ttfl_v_team'] - team_nemesis['avg_TTFL']) * 100.0 / team_nemesis['avg_TTFL'])
+        .where(team_nemesis['avg_TTFL'] != 0, None))
+
+    team_nemesis = (team_nemesis[['playerName', 'opponent', 'rel', 'games_played']]
+                    .rename(columns={'playerName' : 'player',
+                                    'opponent' : 'opp_team',
+                                    'games_played' : 'games_v_team',
+                                    'rel' : 'rel_v_team'})
+                    .reset_index(drop=True)
+                    .round(2))
+    
+    team_nemesis.to_sql('team_nemesis', conn, if_exists='replace', index=False)
     conn.commit()
 
 def update_avg_TTFL_per_pos(conn):
@@ -898,6 +1008,15 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     raot.rel_opp_avg_TTFL,
     btb.rel_btb_TTFL, btb.n_btb, ibtb.is_b2b,
 
+    -- Team and player nemesis
+    tn.opp_team AS team_nemesis,
+    tn.rel_v_team AS rel_TTFL_v_team_nemesis,
+    tn.games_v_team AS games_v_team_nemesis,
+
+    GROUP_CONCAT(pn.opp_player) AS player_nemesis,
+    GROUP_CONCAT(pn.rel_v_player) AS rel_TTFL_v_player_nemesis,
+    GROUP_CONCAT(pn.games_v_player) AS games_v_player_nemesis,
+    
     -- Concatenated injured teammates info
     GROUP_CONCAT(itri.injured_player) AS injured_teammates,
     GROUP_CONCAT(itri.simp_status) AS simp_statuses,
@@ -943,6 +1062,12 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
         ON btb.playerName = ap.playerName
     JOIN is_back_to_back ibtb
         ON ibtb.playerName = ap.playerName
+    LEFT JOIN team_nemesis tn
+        ON tn.player = ap.playerName
+        AND tn.opp_team = ap.opponent
+    LEFT JOIN player_nemesis pn
+        ON pn.player = ap.playerName
+        AND pn.opp_curr_team = ap.opponent
     GROUP BY ap.playerName, ap.team, ap.pos
     ORDER BY pat.avg_TTFL DESC
         """
@@ -1496,7 +1621,8 @@ def query_historique_des_perfs(conn, player, alltime):
 
 if __name__ == '__main__':
     from misc.misc import DB_PATH, DB_PATH_HISTORICAL
-    with sqlite3.connect(DB_PATH_HISTORICAL) as conn:
-        print(query_player_stats(conn, alltime=True, only_active_players=True)['FG_PCT'])
+    with sqlite3.connect(DB_PATH) as conn:
+        # print(query_player_stats(conn, alltime=True, only_active_players=True)['FG_PCT'])
         # print(query_player_v_team(conn, 'Larry Bird', alltime=True))
         # print(query_historique_des_perfs(conn, 'Larry Bird', True))
+        calc_nemesis(conn)

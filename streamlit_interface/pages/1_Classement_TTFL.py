@@ -167,7 +167,10 @@ else:
             topTTFL_html = df_to_html(st.session_state.topTTFL_df)#, translate_cols=translate_col)
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
-            for i in range(st.session_state.plot_calc_start, st.session_state.plot_calc_stop):
+            start = st.session_state.plot_calc_start
+            stop = min(len(st.session_state.topTTFL_df) - 1, st.session_state.plot_calc_stop)
+            
+            for i in range(start, stop):
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(
                                                         st.session_state.topTTFL_df.iloc[i],
                                                         st.session_state.date_text)
