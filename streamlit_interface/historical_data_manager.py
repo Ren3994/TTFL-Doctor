@@ -38,7 +38,8 @@ def download_hist_db(status, progress):
 def init_hist_db():
     
     os.makedirs(os.path.dirname(DB_PATH_HISTORICAL_ZST), exist_ok=True)
-    
+    progress = None
+
     if not os.path.exists(DB_PATH_HISTORICAL_ZST): # Télécharger si manquant
         status = st.empty()
         progress = st.progress(0)
