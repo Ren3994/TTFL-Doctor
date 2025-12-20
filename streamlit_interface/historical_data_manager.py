@@ -33,7 +33,7 @@ def download_hist_db(status, progress):
                     downloaded += len(chunk)
                     if total:
                         progress.progress(min((downloaded / total) / 10, 0.1))
-                        status.text(f"Téléchargement... {downloaded / total:.0%}")
+                        status.text(f"Téléchargement...")
 
 def init_hist_db():
     
@@ -63,13 +63,13 @@ def init_hist_db():
 
         os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL)
     
-    update_total_boxscores(status, progress)
+    update_total_boxscores(progress)
     if status:
         status.empty()
         progress.empty()
     return True
 
-def update_total_boxscores(status, progress):
+def update_total_boxscores(progress):
     
     conn = conn_db()
     hist_conn = conn_hist_db()
