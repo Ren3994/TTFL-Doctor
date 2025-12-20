@@ -93,7 +93,7 @@ for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]
     if df.empty:
         if table == 'Statistiques basiques':
-            st.write('Aucun joueur trouvé')
+            st.write("Aucun joueur trouvé. Essayez de cocher 'Stats historiques' ou bien de modifier les filtres")
     else:
         table_str = table
         if table == 'Statistiques du joueur par adversaire':

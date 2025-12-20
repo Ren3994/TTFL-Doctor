@@ -70,8 +70,6 @@ def init_hist_db():
     return True
 
 def update_total_boxscores(status, progress):
-
-    status.text('Mise à jour avec les dernières données...')
     
     conn = conn_db()
     hist_conn = conn_hist_db()
@@ -83,12 +81,6 @@ def update_total_boxscores(status, progress):
         seconds, reboundsOffensive, position_boxscores, reboundsDefensive, gameDate, gameDate_ymd, prev_gameDate_ymd, 
         teamPoints, opponentPoints, teamTTFL, opponentTTFL
         '''
-    
-    current_boxscores = run_sql_query(conn, 'boxscores')
-    progress.progress(0.2)
-
-    save_to_db(hist_conn, current_boxscores, 'current_boxscores', if_exists='replace')
-
 
     table_exists = hist_conn.execute("""SELECT 1
                                         FROM sqlite_master
@@ -100,23 +92,37 @@ def update_total_boxscores(status, progress):
         hist_conn.execute(f'''CREATE TABLE boxscores AS
                               SELECT {boxscore_cols}
                               FROM historical_boxscores''')
+        
         progress.progress(0.5)
-        
         hist_conn.execute("CREATE UNIQUE INDEX idx_unique ON boxscores(playerName, gameId)")
+        progress.progress(0.6)
         hist_conn.execute("CREATE INDEX idx_seconds ON boxscores(seconds)")
-        progress.progress(0.9)
-        
-    hist_conn.execute(f'''INSERT OR IGNORE INTO boxscores ({boxscore_cols})
-                          SELECT {boxscore_cols}
-                          FROM current_boxscores''')
-    progress.progress(1)
+        progress.progress(0.65)
+        hist_conn.execute("CREATE INDEX idx_gameDate_ymd ON boxscores(gameDate_ymd)")
+        progress.progress(0.7)
+    
+    query_last_gameDate = """SELECT gameDate_ymd FROM boxscores ORDER BY gameDate_ymd DESC LIMIT 1"""
+    last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
+    last_gameDate_total_boxscores = hist_conn.execute(query_last_gameDate).fetchone()[0]
 
-    hist_conn.commit()
+    up_to_date = last_gameDate_current_boxscores == last_gameDate_total_boxscores
+    if not up_to_date:
+
+        current_boxscores = run_sql_query(conn, 'boxscores')
+        save_to_db(hist_conn, current_boxscores, 'current_boxscores', if_exists='replace')
+        progress.progress(0.8)
+        hist_conn.execute(f'''INSERT OR IGNORE INTO boxscores ({boxscore_cols})
+                            SELECT {boxscore_cols}
+                            FROM current_boxscores''')
+        progress.progress(0.9)
+
+        hist_conn.commit()
+        progress.progress(1)
     
 if __name__ == '__main__':
     # init_historical_stats()
     # t0 = time.time()
-    update_total_boxscores()
+    update_total_boxscores(0, 0)
     # print(time.time() - t0)
     # hist_conn = conn_hist_db()
     # update_tables(hist_conn, historical=True)
