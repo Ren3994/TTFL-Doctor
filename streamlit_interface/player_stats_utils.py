@@ -315,6 +315,7 @@ def alltime_checked():
         init_hist_db()
     set_filters_default()
     filters_to_zero()
+    st.session_state.color_cells = False
 
 def set_filters_default():
     def set_filt(val, nearest, pct):
