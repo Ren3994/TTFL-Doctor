@@ -480,11 +480,17 @@ def calc_min_resriction(conn):
     ) a
         ON a.playerName = r.playerName
     LEFT JOIN (
-        SELECT 
-            playerName,
-            GROUP_CONCAT(seconds / 60, ' - ' ORDER BY rn DESC) AS last_5
-        FROM ranked
-        WHERE rn IN (1, 2, 3, 4, 5)
+    SELECT
+        playerName,
+        GROUP_CONCAT(minutes, ' - ') AS last_5
+        FROM (
+            SELECT
+                playerName,
+                seconds / 60 AS minutes
+            FROM ranked
+            WHERE rn IN (1, 2, 3, 4, 5)
+            ORDER BY playerName, rn DESC
+        )
         GROUP BY playerName
     ) l5
         ON r.playerName = l5.playerName
