@@ -24,7 +24,6 @@ conn = conn_db()
 sc = get_sc()
 
 # ---------- UI ----------
-st.write('test')
 st.markdown(custom_CSS, unsafe_allow_html=True)
 st.markdown('<div class="date-title">Classement TTFL du jour</div>', unsafe_allow_html=True)
 
