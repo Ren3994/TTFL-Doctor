@@ -26,10 +26,10 @@ def on_username_change():
     clear_after_JDP_update()
 
 def sidebar(page):
+    
+    st.markdown(custom_CSS, unsafe_allow_html=True)
 
     init_session_state('sidebar')
-
-    st.markdown(custom_CSS, unsafe_allow_html=True)
 
     if page != 'main':
         

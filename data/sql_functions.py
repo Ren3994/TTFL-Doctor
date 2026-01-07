@@ -777,10 +777,10 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     ap.playerName,
     EXISTS (
         SELECT 1
-        FROM boxscores b
-        WHERE b.playerName = ap.playerName
-          AND b.seconds > 0
-          AND b.gameDate_ymd = date(:date, '-1 day')
+        FROM schedule s
+        WHERE (s.awayTeam = ap.team 
+           OR s.homeTeam = ap.team)
+          AND s.gameDate_ymd = date(:date, '-1 day')
     ) AS is_b2b
     FROM all_players ap
     ),

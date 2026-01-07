@@ -75,7 +75,7 @@ elif st.session_state.top_nuit == 'hier':
         cont_see_live_games = st.container(horizontal_alignment='center')
         
         if cont_see_live_games.button('Voir les scores en direct'):
-            st.session_state.global_boxscores = True
+            # st.session_state.global_boxscores = True
             st.switch_page('pages/4_Scores_TTFL_en_direct.py')
     else:
         st.subheader(f"Pas encore de données pour les matchs du {st.session_state.date_text_nuit}")

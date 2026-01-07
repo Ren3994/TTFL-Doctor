@@ -197,6 +197,7 @@ class JoueursDejaPick():
                          (df_completed['TTFL'].isna()) & 
                          (df_completed['avg_TTFL'].notna()), ['TTFL']] = 0
         df_completed['TTFL'] = df_completed['TTFL'].apply(lambda x: int(x) if pd.notna(x) else '')
+        df_completed['avg_TTFL'] = df_completed['avg_TTFL'].round(1)
 
         df_completed[['TTFL', 'avg_TTFL']] = df_completed[['TTFL', 'avg_TTFL']].astype('string')
         df_completed.loc[df_completed['joueur'] == '', ['TTFL', 'avg_TTFL']] = ''

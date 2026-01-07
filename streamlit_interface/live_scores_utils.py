@@ -211,9 +211,15 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
     
+    try:
+        sorted_games_info = sort_games_info(games_info)
+    except:
+        sorted_games_info = games_info
+        print('Error while sorting games info')
+    
     all_live_data = {'global' : all_boxscores_df,
                      'upcoming_games' : upcoming_games,
-                     'games_info' : games_info,
+                     'games_info' : sorted_games_info,
                      'live_games' : live_games,
                      'pending_games' : pending_games,
                      'finished_games' : finished_games,
@@ -221,6 +227,34 @@ def get_live_games():
                      'timestamp' : time.time()}
 
     return all_live_data
+
+def sort_games_info(games_info):
+    def game_sort_key(game):
+        t = game['time']
+        if t.startswith('Q'):
+            quarter, clock = t.split(' ')
+            q = int(quarter[1:])
+            m, s = map(int, clock.split(':'))
+            remaining = m * 60 + s
+            return (0, q, -remaining)
+        
+        elif t == 'Half':
+            return (0, 2.5, 0)
+        
+        elif t.startswith('OT'):
+            overtime, clock = t.split(' ')
+            ot = int(overtime[2:])
+            m, s = map(int, clock.split(':'))
+            remaining = m * 60 + s
+            return (0, 4 + ot, -remaining)
+        
+        elif t == 'Final':
+            return (1, 0, 0)
+        
+        return (2, 0, 0)
+        
+    games_info_sorted = sorted(games_info, key=game_sort_key)
+    return games_info_sorted
 
 if __name__ == "__main__":
     live_data = get_live_games()
