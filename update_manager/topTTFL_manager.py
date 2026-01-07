@@ -39,7 +39,6 @@ def format_to_table(df) :
     prettydf['opp'] = df['opponent']
     prettydf['is_b2b'] = df['is_b2b']
     prettydf['n_btb'] = df['n_btb']
-    prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
 
     # -------------------------------------------- Nemesis stuff -------------------------------------------------
     
@@ -373,6 +372,7 @@ def format_to_table(df) :
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
     prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A')
+    prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
     prettydf = prettydf.reset_index(drop=True)
 
     return prettydf

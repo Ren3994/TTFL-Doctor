@@ -141,12 +141,12 @@ class JoueursDejaPick():
 
         df_db = df.copy()
         df_db = df_db[['joueur', 'datePick']]
+        df_db = df_db[df_db['joueur'] != '']
         
         if save:
             if st.session_state.local_instance:
                 df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
             else:
-                df_db = df_db[df_db['joueur'] != '']
                 picks = dict(zip(df_db['datePick'], df_db['joueur']))
                 if st.session_state.get('username', '') != '':
                     username_clean = re.sub(r'\W+', '', st.session_state.username)

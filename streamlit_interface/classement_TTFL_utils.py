@@ -379,6 +379,8 @@ def df_to_html(
 
             elif tooltips and col in tooltips:
                 tooltip_value = getattr(row, tooltips[col])
+                if 'all time' in tooltip_value:
+                        cell_value = str(cell_value) + '*'
                 html += (
                     '<td><div class="tooltip">'
                     f"{cell_value}"

@@ -43,7 +43,7 @@ def init_hist_db():
         print('Wrong hash')
         return False
     
-    with st.spinner('Updating tables...'):
+    with st.spinner('Mise à jour des tables de données...'):
         if not os.path.exists(DB_PATH_HISTORICAL): # Décompression de l'archive
             with open(DB_PATH_HISTORICAL_ZST, "rb") as f:
                 dctx = zstd.ZstdDecompressor()
