@@ -34,12 +34,27 @@ def format_to_table(df) :
     prettydf['TTFL'] = df['avg_TTFL'].round(1).fillna('N/A')
     prettydf['stdTTFL'] = df['stddev_TTFL'].round(1).fillna('N/A')
     prettydf['median_TTFL'] = df['median_TTFL'].astype(int).fillna('N/A')
-    prettydf['Statut'] = df['injury_status'].fillna('')
-    prettydf['details'] = df['details'].fillna('')
     prettydf['opp'] = df['opponent']
     prettydf['is_b2b'] = df['is_b2b']
     prettydf['n_btb'] = df['n_btb']
 
+    # ------------------------------ Injury status and minute resitrictions stuff -------------------------------
+
+    df['injury_status'] = df['injury_status'].fillna('')
+    df['details'] = df['details'].fillna('')
+    df['min_restr'] = df['min_restr'].fillna('')
+
+    prettydf['Statut'] = np.select(
+        [df['injury_status'] != '', df['min_restr'] != ''],
+        [df['injury_status'], 'Restriction de minutes possible'], 
+        ''
+    )
+    prettydf['details'] = np.select(
+        [df['details'] != '', df['min_restr'] != ''],
+        [df['details'], df['min_restr']], 
+        ''
+    )
+    
     # -------------------------------------------- Nemesis stuff -------------------------------------------------
     
     df['rel_TTFL_v_team_nemesis'] = pd.to_numeric(df['rel_TTFL_v_team_nemesis'], errors='coerce')

@@ -221,6 +221,7 @@ def update_tables(conn, historical=False):
         updates_games_missed_by_players(conn)
         update_opp_pos_avg_per_game(conn)
         calc_nemesis(conn)
+        calc_min_resriction(conn)
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
@@ -394,7 +395,7 @@ def calc_nemesis(conn):
     pairs["z"] = (pairs.groupby("player")["avg_ttfl_against"]
                     .transform(lambda x: (x - x.mean()) / x.std(ddof=0)))
 
-    player_nemesis = pairs[(pairs["games_played"] >= 5) & (pairs["z"].abs() >= 2)]
+    player_nemesis = pairs[(pairs["games_played"] >= 5) & (pairs["z"].abs() >= 1.5)]
 
     player_nemesis = (player_nemesis.merge(avg, left_on='player', right_on='playerName')
                                     .drop(columns='playerName'))
@@ -430,7 +431,7 @@ def calc_nemesis(conn):
     team_nemesis["z"] = (team_nemesis.groupby("playerName")["avg_ttfl_v_team"]
                                     .transform(lambda x: (x - x.mean()) / x.std(ddof=0)))
 
-    team_nemesis = team_nemesis[(team_nemesis["games_played"] >= 5) & (team_nemesis["z"].abs() >= 2)]
+    team_nemesis = team_nemesis[(team_nemesis["games_played"] >= 5) & (team_nemesis["z"].abs() >= 1.5)]
 
     team_nemesis['rel'] = (
         ((team_nemesis['avg_ttfl_v_team'] - team_nemesis['avg_TTFL']) * 100.0 / team_nemesis['avg_TTFL'])
@@ -445,7 +446,56 @@ def calc_nemesis(conn):
                     .round(2))
     
     team_nemesis.to_sql('team_nemesis', conn, if_exists='replace', index=False)
-    conn.commit()
+
+def calc_min_resriction(conn):
+    import pandas as pd
+    query = """
+    WITH ranked AS (
+        SELECT
+            playerName,
+            seconds,
+            ROW_NUMBER() OVER (
+                PARTITION BY playerName
+                ORDER BY gameDate_ymd DESC
+            ) AS rn
+        FROM boxscores
+        WHERE seconds > 0
+    )
+    SELECT
+        r.playerName,
+        a.avg_sec / 60 AS avg_min,
+        CASE
+            WHEN a.avg_sec = 0 THEN 0
+            ELSE (100.0 * (r.seconds - a.avg_sec)) / a.avg_sec
+        END AS rel_last,
+        l5.last_5
+    FROM ranked r
+    JOIN (
+        SELECT
+            playerName,
+            AVG(seconds) AS avg_sec
+        FROM boxscores
+        WHERE seconds > 0
+        GROUP BY playerName
+    ) a
+        ON a.playerName = r.playerName
+    LEFT JOIN (
+        SELECT 
+            playerName,
+            GROUP_CONCAT(seconds / 60, ' - ' ORDER BY rn DESC) AS last_5
+        FROM ranked
+        WHERE rn IN (1, 2, 3, 4, 5)
+        GROUP BY playerName
+    ) l5
+        ON r.playerName = l5.playerName
+    WHERE r.rn = 1
+    AND a.avg_sec > 60 * 15
+    """
+
+    df = pd.read_sql_query(query, conn)
+    df = df[df['rel_last'] < -15].reset_index(drop=True)
+    df['min_restr'] = 'Moyenne : ' + df['avg_min'].astype(int).astype(str) + ' min, récents : ' + df['last_5']
+    df.to_sql('min_restrictions', conn, if_exists='replace', index=False)
 
 def update_avg_TTFL_per_pos(conn):
     import pandas as pd
@@ -996,7 +1046,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     pat.avg_TTFL, pat.stddev_TTFL, pat.median_TTFL,
 
     -- Player injury status
-    ir.injury_status, ir.details,
+    ir.injury_status, ir.details, mr.min_restr,
 
     -- Relative info (player position vs opp team, player vs opp team, player home/away, all teams vs that opp)
     prtvt.pos_rel_TTFL_v_team,
@@ -1068,6 +1118,8 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     LEFT JOIN player_nemesis pn
         ON pn.player = ap.playerName
         AND pn.opp_curr_team = ap.opponent
+    LEFT JOIN min_restrictions mr
+        ON mr.playerName = ap.playerName
     GROUP BY ap.playerName, ap.team, ap.pos
     ORDER BY pat.avg_TTFL DESC
         """
