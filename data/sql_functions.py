@@ -1457,12 +1457,6 @@ def save_to_db(conn, df, table_name, if_exists, index=False):
         return
 
 def get_missing_gameids(conn):
-    """
-    Return a DataFrame of missing games:
-    - games that are completed in 'schedule'
-    - games from the regular season (id starts with 002)
-    - but not yet present in 'boxscores'
-    """
     import pandas as pd
 
     cursor = conn.cursor()
@@ -1472,7 +1466,10 @@ def get_missing_gameids(conn):
         LEFT JOIN (
             SELECT DISTINCT gameId FROM boxscores
         ) b ON s.gameId = b.gameId
-        WHERE s.gameStatus = 3 AND s.gameId LIKE '002%' AND b.gameId IS NULL
+        WHERE s.gameStatus = 3 
+          AND s.gameId LIKE '002%'
+          AND s.postponed = 0
+          AND b.gameId IS NULL
         ORDER BY gameDate ASC
     """
 
@@ -1493,7 +1490,7 @@ def get_missing_gameids(conn):
             query = """
             SELECT gameId, gameDate, hometeam, awayTeam
             FROM schedule
-            WHERE gameStatus = 3 AND gameId LIKE '002%'
+            WHERE gameStatus = 3 AND gameId LIKE '002%' AND postponed = 0
             ORDER BY gameDate ASC
             """
 

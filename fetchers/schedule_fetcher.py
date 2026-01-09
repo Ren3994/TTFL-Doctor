@@ -10,6 +10,7 @@ from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 def get_schedule(season=SEASON):
     from nba_api.stats.endpoints import ScheduleLeagueV2
     import pandas as pd
+    import numpy as np
 
     schedule = None
     for attempt in range(5):
@@ -31,7 +32,8 @@ def get_schedule(season=SEASON):
                 "awayTeam_losses",
                 "homeTeam_wins",
                 "homeTeam_losses",
-                "gameDateTimeUTC"
+                "gameDateTimeUTC",
+                "postponedStatus"
             ]
 
             schedule = schedule_df[columns_needed].copy()
@@ -46,12 +48,16 @@ def get_schedule(season=SEASON):
 
             schedule.rename(columns={
                 "homeTeam_teamName": "homeTeam",
-                "awayTeam_teamName": "awayTeam"
+                "awayTeam_teamName": "awayTeam",
+                "postponedStatus" : "postponed"
             }, inplace=True)
             
             schedule['homeTeam'] = schedule['homeTeam'].apply(replace_team_name)
             schedule['awayTeam'] = schedule['awayTeam'].apply(replace_team_name)
             schedule['season'] = season
+            
+            schedule['postponed'] = np.select([schedule['postponed'] == 'Y', schedule['postponed'] == 'N'],
+                                              [1, 0], 0)
 
             # schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('006')].copy()
 
@@ -76,7 +82,7 @@ def replace_team_name(team):
 # Game IDs : starting with 001 : preseason, 002 : regular season, 003 : all-star game, 004 : playoffs, 005 : play-in tournament, 006 : IST finals
 
 if __name__ == '__main__':
-    df = get_schedule(season='2024-25')
+    df = get_schedule()#season='2024-25')
     # for i, row in df.iterrows():
     #     print(row['homeTeam'], row['awayTeam'], row['gameDate'], type(row['gameTime']))
         # print(row['gameDate'] == row['dateEST'], row['gameDate'] == row['dateUTC'])

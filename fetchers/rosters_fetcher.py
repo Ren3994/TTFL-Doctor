@@ -22,7 +22,7 @@ def get_rosters():
             allPlayers['playerName'] = allPlayers['DISPLAY_FIRST_LAST']
             allPlayers['playerName'] = allPlayers['playerName'].apply(normalize_name)
 
-            rosters_df = allPlayers[['playerName', 'teamTricode']]
+            rosters_df = allPlayers[['playerName', 'teamTricode']].copy()
             rosters_df['season'] = SEASON
             break
 

@@ -19,7 +19,8 @@ def get_cached_upcoming_games():
                        table='schedule', 
                        select='gameDateTimeUTC', 
                        filters=['gameStatus != 3', 
-                                "gameId LIKE '002%'"])
+                                "gameId LIKE '002%'",
+                                "postponed = 0"])
     return upcoming_games
 
 def need_to_fetch_new_boxscores():
