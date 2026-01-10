@@ -120,6 +120,22 @@ def format_to_table(df) :
         default = '<br><br>' + prettydf['Joueur'] + ' all time vs. :<hr style="margin:0px 0;">' + \
             prettydf['player_nemesis'] + prettydf['team_nemesis']
         )
+    
+    # -------------------------------------------- Recent streak stuff -----------------------------------------
+
+    df['recent_TTFL'] = pd.to_numeric(df['recent_TTFL'], errors='coerce')
+    df['rel_recent'] = pd.to_numeric(df['rel_recent'], errors='coerce')
+
+    prettydf['streak_str'] = np.select(
+        [df['recent_TTFL'] > 10, df['recent_TTFL'] < -10],
+        [df['playerName'] + ' récemment : +' + df['rel_recent'].astype(str) + '%<br>',
+        df['playerName'] + ' récemment : ' + df['rel_recent'].astype(str) + '%<br>'],
+        '')
+
+    prettydf['streak_indicator'] = np.select(
+        [df['rel_recent'] > 20, df['rel_recent'] > 10, df['rel_recent'] < -10, df['rel_recent'] < -20],
+        [' 🔥🔥🔥', ' 🔥', ' ❄️', ' ❄️❄️❄️'],
+        '')
         
     # -------------------------------------------- Graph stuff -------------------------------------------------
 
@@ -373,7 +389,8 @@ def format_to_table(df) :
     # ------------------------------------------------- Final cleanup ---------------------------------------
 
     prettydf['pos_v_team'] = prettydf.apply(lambda r:"Postes contre " + r['opp'] + ' : ' + " - ".join([f"{a} : {b}" for a, b in zip(r['Poste'], r['pos_rel_TTFL_v_team'])]), axis=1)
-    prettydf['allrel'] = (prettydf['rel_opp_avg_TTFL'] + '<br>' + 
+    prettydf['allrel'] = (prettydf['streak_str'] + 
+                          prettydf['rel_opp_avg_TTFL'] + '<br>' + 
                           prettydf['rel_TTFL_v_opp'] + '<br>' + 
                           prettydf['ha_rel_TTFL'] + '<br>' + 
                           prettydf['pos_v_team'] + '<br>' + 
@@ -386,7 +403,7 @@ def format_to_table(df) :
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
-    prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A')
+    prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + prettydf['streak_indicator']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
     prettydf = prettydf.reset_index(drop=True)
 

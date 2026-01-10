@@ -51,6 +51,7 @@ def cached_generate_plot_row(requested_date,
     alldates.append(requested_date)
     njours = (alldates[-1] - alldates[0]).days
     opps = graph_opps.split(',')
+    avgTTFL = float(avgTTFL[:4])
     TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
     wins = [int(win) for win in graph_wins.split(',')]
 

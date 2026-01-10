@@ -222,6 +222,7 @@ def update_tables(conn, historical=False):
         update_opp_pos_avg_per_game(conn)
         calc_nemesis(conn)
         calc_min_resriction(conn)
+        calc_streak(conn)
     
     # conn.execute("ANALYZE;")
     # conn.execute("PRAGMA optimize;")
@@ -502,6 +503,49 @@ def calc_min_resriction(conn):
     df = df[df['rel_last'] < -15].reset_index(drop=True)
     df['min_restr'] = 'Moyenne : ' + df['avg_min'].astype(int).astype(str) + ' min, récents : ' + df['last_5']
     df.to_sql('min_restrictions', conn, if_exists='replace', index=False)
+
+def calc_streak(conn):
+    import pandas as pd
+    query = """
+    WITH ranked AS (
+        SELECT
+            b.playerName,
+            b.TTFL,
+            pat.avg_TTFL,
+            ROW_NUMBER() OVER (
+                PARTITION BY b.playerName
+                ORDER BY b.gameDate_ymd DESC
+            ) AS rn
+        FROM boxscores b
+        JOIN player_avg_TTFL pat
+            ON b.playerName = pat.playerName
+        WHERE b.seconds > 0
+    ),
+    recent AS (
+    SELECT 
+        playerName,
+        AVG(TTFL) AS recent_TTFL
+    FROM ranked
+    WHERE rn IN (1, 2, 3, 4, 5)
+    GROUP BY playerName
+    )
+    SELECT
+        DISTINCT r.playerName,
+        r.avg_TTFL,
+        re.recent_TTFL,
+        CASE WHEN r.avg_TTFL = 0 THEN 0
+            ELSE (100.0 * (re.recent_TTFL - r.avg_TTFL)) / r.avg_TTFL
+        END AS rel_recent
+    FROM ranked r
+    JOIN recent re
+        ON r.playerName = re.playerName
+    WHERE avg_TTFL > 15
+    ORDER BY rel_recent DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    df = df.round(1)
+
+    df.to_sql('recent_streaks', conn, if_exists='replace', index=False)
 
 def update_avg_TTFL_per_pos(conn):
     import pandas as pd
@@ -1063,6 +1107,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     END AS ha_rel_TTFL,
     raot.rel_opp_avg_TTFL,
     btb.rel_btb_TTFL, btb.n_btb, ibtb.is_b2b,
+    rs.recent_TTFL, rs.rel_recent,
 
     -- Team and player nemesis
     tn.opp_team AS team_nemesis,
@@ -1114,7 +1159,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
       ON ap.playerName = gd.playerName
     JOIN rel_avg_opp_TTFL2 raot
         ON ap.opponent = raot.teamTricode
-    JOIN rel_btb_TTFL btb
+    LEFT JOIN rel_btb_TTFL btb
         ON btb.playerName = ap.playerName
     JOIN is_back_to_back ibtb
         ON ibtb.playerName = ap.playerName
@@ -1126,6 +1171,8 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
         AND pn.opp_curr_team = ap.opponent
     LEFT JOIN min_restrictions mr
         ON mr.playerName = ap.playerName
+    LEFT JOIN recent_streaks rs
+        ON rs.playerName = ap.playerName
     GROUP BY ap.playerName, ap.team, ap.pos
     ORDER BY pat.avg_TTFL DESC
         """
