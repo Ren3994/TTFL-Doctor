@@ -211,16 +211,12 @@ def get_live_games():
                     raise e
                 time.sleep(5 * attempt)
     
-    try:
-        sorted_games_info = sort_games_info(games_info)
-    except:
-        sorted_games_info = games_info
-        print('Error while sorting games info')
+    sorted_games_info, sorted_live_games = sort_games_info(games_info, live_games)
     
     all_live_data = {'global' : all_boxscores_df,
                      'upcoming_games' : upcoming_games,
                      'games_info' : sorted_games_info,
-                     'live_games' : live_games,
+                     'live_games' : sorted_live_games,
                      'pending_games' : pending_games,
                      'finished_games' : finished_games,
                      'gameDate' : date_la_str,
@@ -228,33 +224,52 @@ def get_live_games():
 
     return all_live_data
 
-def sort_games_info(games_info):
+def sort_games_info(games_info, live_games):
     def game_sort_key(game):
         t = game['time']
-        if t.startswith('Q'):
-            quarter, clock = t.split(' ')
-            q = int(quarter[1:])
-            m, s = map(int, clock.split(':'))
-            remaining = m * 60 + s
-            return (0, q, -remaining)
+        try:
+            if t.startswith('Q'):
+                quarter, clock = t.split(' ')
+                q = int(quarter[1:])
+                m, s = clock.split(':')
+                minutes = int(m) if m else 0
+                seconds = float(s) if s else 0
+                remaining = minutes * 60 + seconds
+                return (0, q, -remaining)
+            
+            elif t.startswith('END Q'):
+                quarter = int(t[5:])
+                return (0, quarter, 0)
+            
+            elif t == 'Half':
+                return (0, 2.5, 0)
+            
+            elif t.startswith('OT'):
+                overtime, clock = t.split(' ')
+                ot = int(overtime[2:])
+                m, s = clock.split(':')
+                minutes = int(m) if m else 0
+                seconds = float(s) if s else 0
+                remaining = minutes * 60 + seconds
+                return (0, 4 + ot, -remaining)
+            
+            elif t == 'Final':
+                return (1, 0, 0)
+        except:
+            print(f'Error parsing game with time : {t}')
+            return (2, 0, 0)
+    
+    try:
+        sorted_indices = sorted(range(len(games_info)), key=lambda i: game_sort_key(games_info[i]))
+
+        games_info_sorted = [games_info[i] for i in sorted_indices]
+        live_games_sorted = [live_games[i] for i in sorted_indices]
+    except:
+        print('error sorting games')
+        games_info_sorted = games_info
+        live_games_sorted = live_games
         
-        elif t == 'Half':
-            return (0, 2.5, 0)
-        
-        elif t.startswith('OT'):
-            overtime, clock = t.split(' ')
-            ot = int(overtime[2:])
-            m, s = map(int, clock.split(':'))
-            remaining = m * 60 + s
-            return (0, 4 + ot, -remaining)
-        
-        elif t == 'Final':
-            return (1, 0, 0)
-        
-        return (2, 0, 0)
-        
-    games_info_sorted = sorted(games_info, key=game_sort_key)
-    return games_info_sorted
+    return games_info_sorted, live_games_sorted
 
 if __name__ == "__main__":
     live_data = get_live_games()
