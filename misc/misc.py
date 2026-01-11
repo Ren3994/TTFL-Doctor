@@ -166,7 +166,9 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'HALI' : 'Tyrese Haliburton',
              'AR15' : 'Austin Reaves',
              'AR-15' : 'Austin Reaves',
-             'FVV' : 'Fred VanVleet'
+             'FVV' : 'Fred VanVleet',
+             'ZU' : 'Ivica Zubac',
+             'VUC' : 'Nikola Vucevic'
              }
 
 TEAM_STATS_COLUMN_DEF = {
