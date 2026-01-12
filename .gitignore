@@ -3,9 +3,12 @@ __pycache__/
 *.pyo
 
 db_visualizer.py
+historical_data_getter.py
+bdl_hist_boxscores.py
 
 data/team_logos/
 data/cache
+data/sounds
 *.db
 *.db-shm
 *.db-wal

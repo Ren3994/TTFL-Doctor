@@ -131,6 +131,20 @@ def cached_generate_plot_row(requested_date,
 
     return f"data:image/png;base64,{img_base64}"
 
+def interactive_plot(player, dates, data, show_lines, avgs):
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    fig.update(layout_title_text=player)
+    mode = 'lines+markers' if show_lines else 'markers'
+
+    for stat in data:
+        fig.add_trace(go.Scatter(x=dates, y=data[stat], name=stat, mode=mode))
+        if stat in avgs:
+            fig.add_trace(go.Scatter(x=dates, y=avgs[stat], name=f'Moyenne de {stat}', mode='lines'))
+
+    return fig
+
 if __name__ == '__main__':
     import pandas as pd
     data = {

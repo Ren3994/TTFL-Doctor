@@ -135,6 +135,28 @@ for table in st.session_state.player_stats:
 
 # Display individual stats tables
 onlyone = len(players_to_show) == 1
+
+with st.expander('Graphiques des performances', expanded=onlyone):
+    cont = st.container(horizontal_alignment='center', horizontal=True)
+    cont.segmented_control('Stats à montrer', ['TTFL', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
+                         key='stats_to_plot', 
+                         default='TTFL',
+                         selection_mode='multi',
+                         label_visibility='collapsed')
+    cont_chk = cont.container(horizontal_alignment='center')
+    cont_chk.checkbox('Relier les points', key='show_lines', value=True)
+    cont_chk.checkbox('Moyennes', key='show_avg', value=True)
+
+    if len(players_to_show) == 1:
+        if not st.session_state.stats_to_plot:
+            cont.write('Sélectionnez une ou plusieurs stats à afficher')
+        else:
+            player = players_to_show[0]
+            fig = get_plot(player, st.session_state.stats_to_plot, 
+                                   st.session_state.show_lines,
+                                   st.session_state.show_avg)
+            st.plotly_chart(fig)
+
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match et par adversaire' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):
     if len(players_to_show) == 1:

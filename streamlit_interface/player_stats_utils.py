@@ -9,6 +9,7 @@ from streamlit_interface.resource_manager import conn_db, conn_hist_db
 from streamlit_interface.historical_data_manager import init_hist_db
 from streamlit_interface.streamlit_utils import uspace, french_flag
 from streamlit_interface.classement_TTFL_utils import df_to_html
+from streamlit_interface.plotting_utils import interactive_plot
 from streamlit_interface.JDP_utils import match_player
 
 @st.cache_data(show_spinner=False)
@@ -267,6 +268,48 @@ def historique_des_perfs(player):
                              )
     
     return html_df
+
+def get_plot(player, stats, show_lines, show_avg):
+    import pandas as pd
+    
+    alltime = st.session_state.get('player_alltime_stats', False)
+    df = cached_historique_des_perfs(player, alltime)
+    if isinstance(stats, str):
+        stats = [stats]
+
+    df['gameDate'] = pd.to_datetime(df['gameDate'], dayfirst=True)
+    df = df.sort_values(by='gameDate', ascending=True).reset_index(drop=True)
+    dates = df['gameDate'].tolist()
+
+    stats_dict = {
+        'TTFL' : 'TTFL',
+        'Pts' : 'points',
+        'Reb' : 'reboundsTotal',
+        'Ast' : 'assists',
+        'Stl' : 'steals',
+        'Blk' : 'blocks',
+        'Tov' : 'turnovers',
+        'FG' : 'fieldGoalsMade',
+        'FGA' : 'fieldGoalsAttempted',
+        'FG3' : 'threePointersMade',
+        'FG3A' : 'threePointersAttempted',
+        'FT' : 'freeThrowsMade',
+        'FTA' : 'freeThrowsAttempted',
+        '±' : 'plusMinusPoints'
+    }
+
+    stats_to_plot = {}
+    avgs_to_plot = {}
+
+    for stat in stats:
+        stats_to_plot[stat] = df[stats_dict[stat]].tolist()
+        if show_avg:
+            avgs_to_plot[stat] = [df[stats_dict[stat]].mean()] * len(df)
+
+    fig = interactive_plot(player, dates, stats_to_plot, show_lines, avgs_to_plot)
+    
+    return fig
+
 
 def clear_search():
     st.session_state.player_stats_matched = ''

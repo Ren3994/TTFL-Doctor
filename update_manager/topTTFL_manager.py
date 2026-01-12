@@ -127,7 +127,7 @@ def format_to_table(df) :
     df['rel_recent'] = pd.to_numeric(df['rel_recent'], errors='coerce')
 
     prettydf['streak_str'] = np.select(
-        [df['recent_TTFL'] > 10, df['recent_TTFL'] < -10],
+        [df['rel_recent'] > 10, df['rel_recent'] < -10],
         [df['playerName'] + ' récemment : +' + df['rel_recent'].astype(str) + '%<br>',
         df['playerName'] + ' récemment : ' + df['rel_recent'].astype(str) + '%<br>'],
         '')
