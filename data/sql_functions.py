@@ -1289,17 +1289,25 @@ def run_sql_query(
     having = ensure_list(having)
     order_by = ensure_list(order_by)
     ctes = ensure_list(ctes) if ctes else []
+    params = ensure_list(params)
 
     sql_params = []
     final_filters = []
+    empty_params = []
+
+    for param in params:
+        if params[param] == []:
+            empty_params.append(param)
 
     for f in filters:
         named_params = re.findall(r":(\w+)", f)
+        if any(np in empty_params for np in named_params):
+            continue
         for p in named_params:
             if p not in params:
                 raise ValueError(f"Filter uses :{p}, but params does not provide it.")
             value = params[p]
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, (list, tuple, set)):
                 placeholders = ','.join('?' for _ in value)
                 f = f.replace(f":{p}", f"({placeholders})")
                 sql_params.extend(value)  # flatten values into positional args
@@ -1560,7 +1568,7 @@ def get_games_for_date(conn, game_date_str):
 
     return df_unique
 
-def query_player_stats(conn, alltime=False, only_active_players=False):
+def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[]):
     import pandas as pd
     
     if alltime:
@@ -1572,7 +1580,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False):
     boxscore_cols = """
         playerName, seconds, points, assists, steals, blocks, turnovers, plusMinusPoints, TTFL, 
         reboundsTotal, reboundsOffensive, reboundsDefensive, fieldGoalsMade, fieldGoalsAttempted, 
-        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted"""
+        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted, season"""
     
     agg_cols = """
         playerName, COUNT(*) AS GP, ROUND(AVG(seconds), 1) AS SECONDS, SUM(seconds) AS TOT_SECONDS, 
@@ -1607,10 +1615,13 @@ def query_player_stats(conn, alltime=False, only_active_players=False):
     join_active_players = ('JOIN active_players ap ON ap.playerName = se.playerName' 
                            if only_active_players else '')
     
+    add_seasons = f"""WHERE season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    
     query = f"""
     WITH selector AS (
         SELECT 
             {boxscore_cols}{add_teamTricode} FROM boxscores
+        {add_seasons}
     ),
 
     {active_players}
@@ -1656,10 +1667,10 @@ def query_player_stats(conn, alltime=False, only_active_players=False):
     LEFT JOIN avg pat 
         ON pat.playerName = agg.playerName
     """
-    df = pd.read_sql_query(query, conn)
+    df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_player_v_team(conn, player, alltime):
+def query_player_v_team(conn, player, alltime, seasons):
     import pandas as pd
 
     if alltime:
@@ -1671,7 +1682,7 @@ def query_player_v_team(conn, player, alltime):
     boxscore_cols = '''
         playerName, opponent, TTFL, points, assists, reboundsTotal, reboundsOffensive, reboundsDefensive, 
         steals, blocks, turnovers, fieldGoalsMade, fieldGoalsAttempted, threePointersMade, 
-        threePointersAttempted, freeThrowsMade, freeThrowsAttempted, plusMinusPoints, seconds
+        threePointersAttempted, freeThrowsMade, freeThrowsAttempted, plusMinusPoints, seconds, season
     '''
     agg_cols = '''
         opponent, COUNT(*) AS GP, AVG(TTFL) AS TTFL, AVG(points) AS Pts, 
@@ -1688,6 +1699,8 @@ def query_player_v_team(conn, player, alltime):
         ROUND((100 * (AVG(fieldGoalsMade) + 0.5 * AVG(threePointersMade)) / AVG(fieldGoalsAttempted)), 1) AS EFG,
         ROUND(100 * (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))), 1) AS TS,
         ROUND((AVG(assists) / NULLIF(AVG(turnovers), 0)), 1) AS ast_to_tov'''
+    
+    add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
 
     query = f"""
     WITH selector AS (
@@ -1698,12 +1711,13 @@ def query_player_v_team(conn, player, alltime):
     FROM selector
     WHERE seconds > 0
         AND playerName = '{player}'
+        {add_seasons}
     GROUP BY opponent
     """
-    df = pd.read_sql_query(query, conn)
+    df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_historique_des_perfs(conn, player, alltime):
+def query_historique_des_perfs(conn, player, alltime, seasons):
     import pandas as pd
 
     if alltime:
@@ -1711,14 +1725,17 @@ def query_historique_des_perfs(conn, player, alltime):
             conn.execute('SELECT * FROM player_avg_TTFL')
         except:
             update_tables(conn, historical=True)
+
+    add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
             
     query = f"""
     SELECT * 
     FROM boxscores
     WHERE seconds > 0
         AND playerName = '{player}'
+        {add_seasons}
     """
-    df = pd.read_sql_query(query, conn)
+    df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
 if __name__ == '__main__':

@@ -13,19 +13,23 @@ from streamlit_interface.plotting_utils import interactive_plot
 from streamlit_interface.JDP_utils import match_player
 
 @st.cache_data(show_spinner=False)
-def cached_player_stats(alltime, only_active):
+def cached_player_stats(alltime, only_active, seasons):
     conn = conn_db() if not alltime else conn_hist_db()
-    player_stats = query_player_stats(conn, alltime, only_active)
+    player_stats = query_player_stats(conn, alltime, only_active, seasons)
     return player_stats
 
 def get_all_player_stats(matched=[]): 
+    import pandas as pd
     
     alltime = st.session_state.get('player_alltime_stats', False)
     only_active = st.session_state.get('only_active_players', False)
-    player_stats = cached_player_stats(alltime, only_active)
+    seasons = st.session_state.get('selected_seasons', [])
+    
+    player_stats = cached_player_stats(alltime, only_active, seasons)
 
     min_games = st.session_state.get('slider_gp', 5)
     min_min_per_game = st.session_state.get('slider_min', 0)
+    min_points = st.session_state.get('slider_pts', 0)
     fg_min = st.session_state.get('slider_fg', 0)
     fg3_min = st.session_state.get('slider_fg3', 0)
     ft_min = st.session_state.get('slider_ft', 0)
@@ -37,6 +41,7 @@ def get_all_player_stats(matched=[]):
         player_stats = player_stats[player_stats['TOT_FGM'] >= fg_min]
         player_stats = player_stats[player_stats['TOT_FG3M'] >= fg3_min]
         player_stats = player_stats[player_stats['TOT_FTM'] >= ft_min]
+        player_stats = player_stats[player_stats['TOT_Pts'] >= min_points]
 
     if len(matched) > 0:
         player_stats = player_stats[player_stats['playerName'].isin(matched)]
@@ -49,6 +54,12 @@ def get_all_player_stats(matched=[]):
     
     player_stats['EFG'] = (player_stats['EFG'] * 100).fillna(0)
     player_stats['TS'] = (player_stats['TS'] * 100).fillna(0)
+
+    player_stats['ast_to_tov'] = pd.to_numeric(player_stats['ast_to_tov'], errors='coerce')
+    player_stats['Oreb'] = pd.to_numeric(player_stats['Oreb'], errors='coerce')
+    player_stats['Dreb'] = pd.to_numeric(player_stats['Dreb'], errors='coerce')
+    player_stats['PM'] = pd.to_numeric(player_stats['PM'], errors='coerce')
+    player_stats['FG3_PCT'] = pd.to_numeric(player_stats['FG3_PCT'], errors='coerce')
 
     player_stats['ast_to_tov'] = player_stats['ast_to_tov'].fillna(0)
     player_stats['Oreb'] = player_stats['Oreb'].fillna(0)
@@ -144,9 +155,9 @@ def get_all_player_stats(matched=[]):
     return all_stats
 
 @st.cache_data(show_spinner=False)
-def cached_player_v_team(player, alltime):
+def cached_player_v_team(player, alltime, seasons):
     conn = conn_db() if not alltime else conn_hist_db()
-    df = query_player_v_team(conn, player, alltime)
+    df = query_player_v_team(conn, player, alltime, seasons)
     return df
 
 def player_v_team(player_list):
@@ -156,7 +167,8 @@ def player_v_team(player_list):
         return pd.DataFrame()
     
     alltime = st.session_state.get('player_alltime_stats', False)
-    df = cached_player_v_team(player_list[0], alltime)
+    seasons = st.session_state.get('selected_seasons', [])
+    df = cached_player_v_team(player_list[0], alltime, seasons)
     
     df['MINUTES'] = (df['seconds'].apply(
                                lambda s: f"{s // 60:02.0f}:{s % 60:02.0f}"))
@@ -183,9 +195,9 @@ def player_v_team(player_list):
     return df
 
 @st.cache_data(show_spinner=False)
-def cached_historique_des_perfs(player, alltime):
+def cached_historique_des_perfs(player, alltime, seasons):
     conn = conn_db() if not alltime else conn_hist_db()
-    df = query_historique_des_perfs(conn, player, alltime)
+    df = query_historique_des_perfs(conn, player, alltime, seasons)
     return df
 
 def historique_des_perfs(player):
@@ -193,7 +205,8 @@ def historique_des_perfs(player):
     import numpy as np
 
     alltime = st.session_state.get('player_alltime_stats', False)
-    df = cached_historique_des_perfs(player, alltime)
+    seasons = st.session_state.get('selected_seasons', [])
+    df = cached_historique_des_perfs(player, alltime, seasons)
 
     df.rename(columns={
         'playerName' : 'Joueur',
@@ -273,7 +286,8 @@ def get_plot(player, stats, show_lines, show_avg):
     import pandas as pd
     
     alltime = st.session_state.get('player_alltime_stats', False)
-    df = cached_historique_des_perfs(player, alltime)
+    seasons = st.session_state.get('selected_seasons', [])
+    df = cached_historique_des_perfs(player, alltime, seasons)
     if isinstance(stats, str):
         stats = [stats]
 
@@ -310,7 +324,6 @@ def get_plot(player, stats, show_lines, show_avg):
     
     return fig
 
-
 def clear_search():
     st.session_state.player_stats_matched = ''
     st.session_state.search_player_indiv_stats = ''
@@ -330,22 +343,28 @@ def on_search_player_stats():
         clear_search()
     else:
         clear_search()
-        matched_players = match_player(player_name, multi=True)
-        st.session_state.player_stats_matched = matched_players
-        if len(matched_players) == 1:
-            st.session_state.search_player_indiv_stats = matched_players[0]
+        matched_player = match_player(player_name)
+        st.session_state.player_stats_matched = matched_player
 
-@st.cache_data(show_spinner=False)
-def get_maximums(alltime):
+def get_maximums():
+
+    alltime = st.session_state.get('player_alltime_stats', False)
+    seasons = st.session_state.get('selected_seasons', [])
     conn = conn_hist_db() if alltime else conn_db()
+    
     df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
+                                                        'SUM(points) AS Pts',
                                                         'SUM(fieldGoalsMade) AS FG',
                                                         'SUM(threePointersMade) AS FG3',
                                                         'SUM(freeThrowsMade) AS FT',
                                                         'AVG(seconds) / 60 AS MIN'
-                                                        ], group_by='playerName')
+                                                        ],
+                                                        filters='season IN :seasons',
+                                                        params={'seasons' : seasons},
+                                                        group_by='playerName')
     
     maximums = {'GP' : df['GP'].max(),
+                'Pts' : df['Pts'].max(),
                 'FG' : df['FG'].max(),
                 'FG3' : df['FG3'].max(),
                 'FT' : df['FT'].max(),
@@ -359,33 +378,36 @@ def alltime_checked():
     set_filters_default()
     filters_to_zero()
     st.session_state.color_cells = False
-
 def set_filters_default():
     def set_filt(val, nearest, pct):
         filt_val = val / pct
         return round(filt_val / nearest) * nearest
     
-    alltime = st.session_state.get('player_alltime_stats', False)
-    
-    maximums = get_maximums(alltime)
+    st.session_state.player_alltime_stats_default = False
+    st.session_state.only_active_players_default = False
+    st.session_state.selected_seasons = []
+        
+    maximums = get_maximums()
     st.session_state.max_games = maximums['GP']
+    st.session_state.max_points = maximums['Pts']
     st.session_state.max_fg = maximums['FG']
     st.session_state.max_fg3 = maximums['FG3']
     st.session_state.max_ft = maximums['FT']
     st.session_state.max_min = maximums['MIN']
     
     st.session_state.slider_gp_default = set_filt(st.session_state.max_games, 10, 5)
+    st.session_state.slider_pts_default = set_filt(st.session_state.max_points, 10, 10)
     st.session_state.slider_fg_default = set_filt(st.session_state.max_fg, 10, 10)
     st.session_state.slider_fg3_default = set_filt(st.session_state.max_fg3, 10, 10)
     st.session_state.slider_ft_default = set_filt(st.session_state.max_ft, 10, 10)
     st.session_state.slider_min_default = 10
     st.session_state.player_stats_agg_default = 'Moyennes'
     st.session_state.color_cells_default = False
-    st.session_state.player_alltime_stats_default = False
-    st.session_state.only_active_players_default = False
 
 def reset_filters():
+    set_filters_default()
     st.session_state.slider_gp = st.session_state.slider_gp_default
+    st.session_state.slider_pts = st.session_state.slider_pts_default
     st.session_state.slider_fg = st.session_state.slider_fg_default
     st.session_state.slider_fg3 = st.session_state.slider_fg3_default
     st.session_state.slider_ft = st.session_state.slider_ft_default
@@ -397,6 +419,7 @@ def reset_filters():
 
 def filters_to_zero():
     st.session_state.slider_gp = 10 if st.session_state.player_alltime_stats else 0
+    st.session_state.slider_pts = 0
     st.session_state.slider_min = 0
     st.session_state.slider_fg = 0
     st.session_state.slider_fg3 = 0
@@ -405,25 +428,28 @@ def filters_to_zero():
         st.session_state.only_active_players = False
 
 def filter_expander_vars():
-    n = 2
+    n = 1
     alltime_str = 'Stats historiques' if st.session_state.player_alltime_stats else 'Saison actuelle'
-    label = ('Filtrer les résultats' + 
+    label = ('Filtres' + 
     (f' {uspace(n)} ● {uspace(n)} {alltime_str}') + 
     (f' {uspace(n)} ● {uspace(n)} {st.session_state.player_stats_agg}') + 
     (f' {uspace(n)} ● {uspace(n)} GP {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_gp}') + 
     (f' {uspace(n)} ● {uspace(n)} min {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_min}') + 
+    (f' {uspace(n)} ● {uspace(n)} Pts {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_pts}') + 
     (f' {uspace(n)} ● {uspace(n)} FG {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg}') + 
     (f' {uspace(n)} ● {uspace(n)} FG3 {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_fg3}') + 
     (f' {uspace(n)} ● {uspace(n)} FT {uspace(1)} ≥ {uspace(1)} {st.session_state.slider_ft}'))
 
     bool = (any([st.session_state.slider_gp != st.session_state.slider_gp_default,
                         st.session_state.slider_min != st.session_state.slider_min_default,
+                        st.session_state.slider_pts != st.session_state.slider_pts_default,
                         st.session_state.slider_fg != st.session_state.slider_fg_default,
                         st.session_state.slider_fg3 != st.session_state.slider_fg3_default,
                         st.session_state.slider_ft != st.session_state.slider_ft_default,
                         st.session_state.player_stats_agg != st.session_state.player_stats_agg_default]) and not
                     all([st.session_state.slider_gp == 0,
                         st.session_state.slider_min == 0,
+                        st.session_state.slider_pts == 0,
                         st.session_state.slider_fg == 0,
                         st.session_state.slider_fg3 == 0,
                         st.session_state.slider_ft == 0,
@@ -434,6 +460,18 @@ def filter_expander_vars():
 def update_player_stats(players_to_show):
     st.session_state.player_stats = get_all_player_stats(matched=players_to_show)
     st.session_state.massive_tables = len(st.session_state.player_stats['Statistiques basiques']) > 550
+    if len(players_to_show) > 0:
+        alltime = st.session_state.get('player_alltime_stats', False)
+        seasons = run_sql_query(conn_hist_db() if alltime else conn_db(), 
+                                 table='boxscores', 
+                                 select='DISTINCT season',
+                                 filters='playerName IN :players',
+                                 params={'players' : players_to_show},
+                                 order_by='season ASC')
+        st.session_state.available_seasons = seasons['season'].tolist()
+    else:
+        seasons = run_sql_query(conn_hist_db(), table='boxscores', select='DISTINCT season', order_by='season ASC')
+        st.session_state.available_seasons = seasons['season'].tolist()
 
 if __name__ == '__main__':
     df = query_player_stats(season_list=[])

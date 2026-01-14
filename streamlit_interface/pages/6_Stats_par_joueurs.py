@@ -52,6 +52,9 @@ if len(st.session_state.compare_players) > 0:
 elif st.session_state.player_stats_matched != '':
     players_to_show = st.session_state.player_stats_matched
 
+if isinstance(players_to_show, str):
+    players_to_show = [players_to_show]
+
 # Update tables to account for searched players and filters
 update_player_stats(players_to_show)
 
@@ -62,9 +65,7 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     cont_check = cont_exp_filters.container(horizontal_alignment='center', horizontal=True, gap="large")
     cont_check_left = cont_check.container(horizontal_alignment='center')
     cont_check_left.checkbox('Stats historiques', key='player_alltime_stats', on_change=alltime_checked,
-                             help='Toutes les stats de tous les joueurs depuis la saison 1946-47. Certaines données sont manquantes ou erronnées, surtout pour les vieilles saisons (stl, tov, min, ...). Pour avoir un score TTFL approximatif, ils ont été mis à 0.')
-    if st.session_state.player_alltime_stats:
-        cont_check_left.checkbox('Juste joueurs actifs', key='only_active_players')
+                             help='Toutes les stats de tous les joueurs depuis la saison 1946-47. Certaines données sont manquantes ou erronnées, surtout pour les vieilles saisons (stl, tov, min, ...). Pour avoir un score TTFL approximatif, ils ont été mis à 0 ou remplacés manuellement. Certaines données peuvent donc être faussées.')
 
     cont_check.segmented_control('Aggregation', ['Moyennes', 'Totaux', 'Moyennes par 36 min'], 
                                  key = 'player_stats_agg', 
@@ -79,15 +80,34 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
                         max_value=st.session_state.max_games)
     cont_sliders.slider('Minutes par match', key='slider_min', min_value=0, step=1,
                         max_value=st.session_state.max_min)
+    cont_sliders.slider('Points', key='slider_pts', min_value=0, step=1,
+                        max_value=st.session_state.max_points)
     cont_sliders.slider('Tirs', key='slider_fg', min_value=0, step=1,
                         max_value=st.session_state.max_fg)
     cont_sliders.slider('Tirs à 3 points', key='slider_fg3', min_value=0, step=1,
                         max_value=st.session_state.max_fg3)
     cont_sliders.slider('Lancers francs', key='slider_ft', min_value=0, step=1,
                         max_value=st.session_state.max_ft)
-        
-    st.write('NB : Colorer les cases va faire lagger si les tableaux sont gros')
+    
+    if st.session_state.player_alltime_stats:
+        cont_check_left.checkbox('Juste joueurs actifs', key='only_active_players')
+        with st.expander('Sélectionner des saisons', expanded=False):
+            cont_chk = st.container(horizontal=True, horizontal_alignment='center')
 
+            if cont_chk.button('Tout cocher'):
+                st.session_state.selected_seasons = st.session_state.available_seasons
+
+            if cont_chk.button('Tout décocher'):
+                st.session_state.selected_seasons = []
+
+            st.segmented_control('Seasons', st.session_state.available_seasons, key='selected_seasons',
+                                           label_visibility='collapsed', selection_mode='multi',
+                                           default=st.session_state.available_seasons)
+                        
+    else:
+        st.session_state.only_active_players = False
+        st.session_state.selected_seasons = []
+        
 # Display stats tables
 for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]
@@ -135,29 +155,29 @@ for table in st.session_state.player_stats:
 
 # Display individual stats tables
 onlyone = len(players_to_show) == 1
+if onlyone:
+    with st.expander(f'Graphiques des performances de {players_to_show[0]}', expanded=onlyone):
+        cont = st.container(horizontal_alignment='center', horizontal=True)
+        cont.segmented_control('Stats à montrer', ['TTFL', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
+                            key='stats_to_plot', 
+                            default='TTFL',
+                            selection_mode='multi',
+                            label_visibility='collapsed')
+        cont_chk = cont.container(horizontal_alignment='center')
+        cont_chk.checkbox('Relier les points', key='show_lines', value=True)
+        cont_chk.checkbox('Moyennes', key='show_avg', value=False)
 
-with st.expander('Graphiques des performances', expanded=onlyone):
-    cont = st.container(horizontal_alignment='center', horizontal=True)
-    cont.segmented_control('Stats à montrer', ['TTFL', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
-                         key='stats_to_plot', 
-                         default='TTFL',
-                         selection_mode='multi',
-                         label_visibility='collapsed')
-    cont_chk = cont.container(horizontal_alignment='center')
-    cont_chk.checkbox('Relier les points', key='show_lines', value=True)
-    cont_chk.checkbox('Moyennes', key='show_avg', value=True)
+        if len(players_to_show) == 1:
+            if not st.session_state.stats_to_plot:
+                cont.write('Sélectionnez une ou plusieurs stats à afficher')
+            else:
+                player = players_to_show[0]
+                fig = get_plot(player, st.session_state.stats_to_plot, 
+                                    st.session_state.show_lines,
+                                    st.session_state.show_avg)
+                st.plotly_chart(fig)
 
-    if len(players_to_show) == 1:
-        if not st.session_state.stats_to_plot:
-            cont.write('Sélectionnez une ou plusieurs stats à afficher')
-        else:
-            player = players_to_show[0]
-            fig = get_plot(player, st.session_state.stats_to_plot, 
-                                   st.session_state.show_lines,
-                                   st.session_state.show_avg)
-            st.plotly_chart(fig)
-
-expander_hist_title = 'Choisissez un joueur pour voir ses stats par match et par adversaire' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
+expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):
     if len(players_to_show) == 1:
         player = players_to_show[0]
