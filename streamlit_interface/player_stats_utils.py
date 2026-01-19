@@ -351,8 +351,8 @@ def on_search_player_stats():
     if player_name == '':
         clear_search()
     else:
-        clear_search()
         matched_player = match_player(player_name)
+        st.session_state.search_player_indiv_stats = matched_player
         st.session_state.player_stats_matched = matched_player
 
 def get_maximums():

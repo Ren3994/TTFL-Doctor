@@ -134,7 +134,7 @@ for table in st.session_state.player_stats:
             positive_in_df = [col for col in df.columns if col not in negative_cols and col not in excluded_cols]
             negative_in_df = [col for col in df.columns if col in negative_cols and col not in excluded_cols]
 
-            if st.session_state.color_cells:
+            if st.session_state.color_cells and len(df) > 1:
                 show_df = (df.style
                        .background_gradient(
                             subset=positive_in_df,
