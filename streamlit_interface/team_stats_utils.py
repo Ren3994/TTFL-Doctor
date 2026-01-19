@@ -4,6 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from streamlit_interface.plotting_utils import team_standings
 from streamlit_interface.resource_manager import conn_db
 from data.sql_functions import run_sql_query
 
@@ -82,6 +83,18 @@ def get_team_stats(selected_teams=[]):
                  'Statistiques TTFL' : ttfl_stats}
 
     return all_stats
+
+def standings_progress_plot():
+    import pandas as pd
+    df = run_sql_query(conn_db(), table='boxscores', select=['DISTINCT teamTricode', 'gameDate_ymd', 'win'],
+                   order_by='teamTricode, gameDate_ymd ASC', filters='gameDate_ymd IS NOT NULL')
+
+    df['gameDate_ymd'] = pd.to_datetime(df['gameDate_ymd'])
+    df['cum_wins'] = df.groupby('teamTricode')['win'].cumsum()
+
+    fig = team_standings(df)
+    
+    return fig
 
 def clear_team_stats_vars():
     for key in list(st.session_state.keys()):

@@ -93,6 +93,10 @@ for table in team_stats:
                         width = TEAM_STATS_COLUMN_DEF[stat]['width'],
                         help = TEAM_STATS_COLUMN_DEF[stat]['help']))
                         for stat in df})
+        
+with st.expander('Évolution du classement', expanded=False):
+    fig = standings_progress_plot()
+    st.plotly_chart(fig)
 
 vspace(30)
 

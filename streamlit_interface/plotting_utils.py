@@ -145,6 +145,19 @@ def interactive_plot(player, dates, data, show_lines, avgs):
 
     return fig
 
+def team_standings(df):
+    import plotly.graph_objects as go
+    import plotly.express as px
+    fig = go.Figure()
+    colors = px.colors.qualitative.Alphabet
+
+    mode = 'lines'
+    for i, (team, g) in enumerate(df.groupby('teamTricode')):
+        fig.add_trace(go.Scatter(x=g['gameDate_ymd'], y=g['cum_wins'], name=team, mode=mode,
+                                 line=dict(color=colors[i % len(colors)])))
+
+    return fig
+
 if __name__ == '__main__':
     import pandas as pd
     data = {

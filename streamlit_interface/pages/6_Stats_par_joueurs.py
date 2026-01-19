@@ -62,12 +62,13 @@ update_player_stats(players_to_show)
 filter_exp_str, filter_exp_bool = filter_expander_vars()
 with st.expander(filter_exp_str, expanded=filter_exp_bool):
     cont_exp_filters = st.container(horizontal_alignment='center')
-    cont_check = cont_exp_filters.container(horizontal_alignment='center', horizontal=True, gap="large")
-    cont_check_left = cont_check.container(horizontal_alignment='center')
+    cont_check = cont_exp_filters.container(horizontal_alignment='center', horizontal=True)
+    cont_check_left = cont_check.container(horizontal_alignment='center', width=220)
+    cont_seg = cont_check.container(horizontal_alignment='center')
     cont_check_left.checkbox('Stats historiques', key='player_alltime_stats', on_change=alltime_checked,
                              help='Toutes les stats de tous les joueurs depuis la saison 1946-47. Certaines données sont manquantes ou erronnées, surtout pour les vieilles saisons (stl, tov, min, ...). Pour avoir un score TTFL approximatif, ils ont été mis à 0 ou remplacés manuellement. Certaines données peuvent donc être faussées.')
 
-    cont_check.segmented_control('Aggregation', ['Moyennes', 'Totaux', 'Moyennes par 36 min'], 
+    cont_seg.segmented_control('Aggregation', ['Moyennes', 'Totaux', 'Moyennes par 36 min'], 
                                  key = 'player_stats_agg', 
                                  label_visibility='collapsed')
     
@@ -75,6 +76,7 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     help_str_color = 'Les tableaux sont trop gros' if disable_color_chkbox else None
     cont_check.checkbox('Colorer cases', key='color_cells', disabled=disable_color_chkbox, help=help_str_color)
     cont_check.button('Reset filtres', on_click=reset_filters)
+
     cont_sliders = cont_exp_filters.container(horizontal=True, horizontal_alignment='center')
     cont_sliders.slider('Nombre de matchs', key='slider_gp', min_value=0, step=1,
                         max_value=st.session_state.max_games)
@@ -91,6 +93,9 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     
     if st.session_state.player_alltime_stats:
         cont_check_left.checkbox('Juste joueurs actifs', key='only_active_players')
+        cont_seg.segmented_control('Playoffs', ['Saison régulière', 'Playoffs', 'Les deux'],
+                                              label_visibility='collapsed', key='playoffs',
+                                              default='Saison régulière')
         with st.expander('Sélectionner des saisons', expanded=False):
             cont_chk = st.container(horizontal=True, horizontal_alignment='center')
 
@@ -107,6 +112,7 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     else:
         st.session_state.only_active_players = False
         st.session_state.selected_seasons = []
+        st.session_state.playoffs = 'Saison régulière'
         
 # Display stats tables
 for table in st.session_state.player_stats:
@@ -157,13 +163,13 @@ for table in st.session_state.player_stats:
 onlyone = len(players_to_show) == 1
 if onlyone:
     with st.expander(f'Graphiques des performances de {players_to_show[0]}', expanded=onlyone):
-        cont = st.container(horizontal_alignment='center', horizontal=True)
-        cont.segmented_control('Stats à montrer', ['TTFL', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
+        cont = st.container(horizontal_alignment='center')
+        cont.segmented_control('Stats à montrer', ['TTFL', 'Min', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
                             key='stats_to_plot', 
                             default='TTFL',
                             selection_mode='multi',
                             label_visibility='collapsed')
-        cont_chk = cont.container(horizontal_alignment='center')
+        cont_chk = cont.container(horizontal_alignment='center', horizontal=True)
         cont_chk.checkbox('Relier les points', key='show_lines', value=True)
         cont_chk.checkbox('Moyennes', key='show_avg', value=False)
 

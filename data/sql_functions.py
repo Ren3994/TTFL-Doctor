@@ -233,6 +233,7 @@ def calc_TTFL_stats(conn):
     SELECT playerName, TTFL, season, isHome, gameDate_ymd, prev_gameDate_ymd
     FROM boxscores
     WHERE seconds > 0
+      AND gameId LIKE '002%'
     """
     df = pd.read_sql_query(query, conn, dtype_backend='pyarrow')
 
@@ -1568,7 +1569,7 @@ def get_games_for_date(conn, game_date_str):
 
     return df_unique
 
-def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[]):
+def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[], playoffs='Saison régulière'):
     import pandas as pd
     
     if alltime:
@@ -1615,12 +1616,19 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     join_active_players = ('JOIN active_players ap ON ap.playerName = se.playerName' 
                            if only_active_players else '')
     
-    add_seasons = f"""WHERE season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    if playoffs == 'Saison régulière':
+        add_playoffs = "WHERE gameId LIKE '002%'"
+    elif playoffs == 'Playoffs':
+        add_playoffs = "WHERE gameId LIKE '004%'"
+    elif playoffs == 'Les deux':
+        add_playoffs = "WHERE (gameId LIKE '004%' OR gameId LIKE '002%')"
     
     query = f"""
     WITH selector AS (
         SELECT 
             {boxscore_cols}{add_teamTricode} FROM boxscores
+        {add_playoffs}
         {add_seasons}
     ),
 
@@ -1670,7 +1678,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_player_v_team(conn, player, alltime, seasons):
+def query_player_v_team(conn, player, alltime, seasons, playoffs):
     import pandas as pd
 
     if alltime:
@@ -1701,11 +1709,18 @@ def query_player_v_team(conn, player, alltime, seasons):
         ROUND((AVG(assists) / NULLIF(AVG(turnovers), 0)), 1) AS ast_to_tov'''
     
     add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    if playoffs == 'Saison régulière':
+        add_playoffs = "WHERE gameId LIKE '002%'"
+    elif playoffs == 'Playoffs':
+        add_playoffs = "WHERE gameId LIKE '004%'"
+    elif playoffs == 'Les deux':
+        add_playoffs = "WHERE (gameId LIKE '004%' OR gameId LIKE '002%')"
 
     query = f"""
     WITH selector AS (
         SELECT 
             {boxscore_cols} FROM boxscores
+            {add_playoffs}
     )
     SELECT {agg_cols}
     FROM selector
@@ -1717,7 +1732,7 @@ def query_player_v_team(conn, player, alltime, seasons):
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_historique_des_perfs(conn, player, alltime, seasons):
+def query_historique_des_perfs(conn, player, alltime, seasons, playoffs):
     import pandas as pd
 
     if alltime:
@@ -1727,6 +1742,12 @@ def query_historique_des_perfs(conn, player, alltime, seasons):
             update_tables(conn, historical=True)
 
     add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    if playoffs == 'Saison régulière':
+        add_playoffs = "AND gameId LIKE '002%'"
+    elif playoffs == 'Playoffs':
+        add_playoffs = "AND gameId LIKE '004%'"
+    elif playoffs == 'Les deux':
+        add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
             
     query = f"""
     SELECT * 
@@ -1734,6 +1755,7 @@ def query_historique_des_perfs(conn, player, alltime, seasons):
     WHERE seconds > 0
         AND playerName = '{player}'
         {add_seasons}
+        {add_playoffs}
     """
     df = pd.read_sql_query(query, conn, params=seasons)
     return df

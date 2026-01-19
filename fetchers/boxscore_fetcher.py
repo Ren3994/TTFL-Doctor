@@ -18,7 +18,8 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
                 end_period=10,
                 start_range=0,
                 end_range=0,
-                range_type=0
+                range_type=0,
+                timeout=5
                 )
             
             boxscore_df = boxscore.get_data_frames()[0]

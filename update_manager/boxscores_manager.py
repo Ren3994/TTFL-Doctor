@@ -82,13 +82,18 @@ def add_columns(df) :
 
     df['opponent'] = np.where(df['isHome'] == 1, df['visitorTeam'], df['homeTeam'])
 
-    df['seconds'] = (
-    df['minutes'].replace('', '0:00')
-    .str.extract(r'(?:(\d+):(\d+))?', expand=True)
-    .fillna(0).astype(int)
-    .pipe(lambda x: x[0]*60 + x[1])
-    )
+    df['minutes'] = df['minutes'].astype('string')
 
+    s = df['minutes'].fillna('0').replace('', '0')
+
+    mmss = s.str.contains(':')
+    df['seconds'] = (
+        s.where(mmss, s + ':0')
+        .str.split(':', expand=True)
+        .astype(int)
+        .pipe(lambda x: x[0] * 60 + x[1])
+    )
+    
     df['TTFL'] = (
             df['points'] +
             df['assists'] +

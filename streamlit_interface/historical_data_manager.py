@@ -88,6 +88,9 @@ def update_total_boxscores():
         hist_conn.execute("CREATE UNIQUE INDEX idx_unique ON boxscores(playerName, gameId)")
         hist_conn.execute("CREATE INDEX idx_seconds ON boxscores(seconds)")
         hist_conn.execute("CREATE INDEX idx_gameDate_ymd ON boxscores(gameDate_ymd)")
+        hist_conn.execute("CREATE INDEX idx_season ON boxscores(season)")
+        hist_conn.execute("CREATE INDEX idx_reg_season ON boxscores(gameId) WHERE gameId LIKE '002%'")
+        hist_conn.execute("CREATE INDEX idx_playoffs ON boxscores(gameId) WHERE gameId LIKE '004%'")
     
     query_last_gameDate = """SELECT gameDate_ymd FROM boxscores ORDER BY gameDate_ymd DESC LIMIT 1"""
     last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
@@ -106,9 +109,9 @@ def update_total_boxscores():
         update_tables(hist_conn, historical=True)
     
 if __name__ == '__main__':
-    init_hist_db()
+    # init_hist_db()
     # t0 = time.time()
-    # update_total_boxscores(0, 0)
+    # update_total_boxscores()
     # print(time.time() - t0)
     # hist_conn = conn_hist_db()
     # update_tables(hist_conn, historical=True)
@@ -138,6 +141,4 @@ if __name__ == '__main__':
     #     with open(DB_PATH_HISTORICAL, 'wb') as out:
     #         dctx.copy_stream(f, out)
 
-    # checksum()
-
-    
+    print(checksum())

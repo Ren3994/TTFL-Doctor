@@ -13,9 +13,9 @@ from streamlit_interface.plotting_utils import interactive_plot
 from streamlit_interface.JDP_utils import match_player
 
 @st.cache_data(show_spinner=False)
-def cached_player_stats(alltime, only_active, seasons):
+def cached_player_stats(alltime, only_active, seasons, playoffs):
     conn = conn_db() if not alltime else conn_hist_db()
-    player_stats = query_player_stats(conn, alltime, only_active, seasons)
+    player_stats = query_player_stats(conn, alltime, only_active, seasons, playoffs)
     return player_stats
 
 def get_all_player_stats(matched=[]): 
@@ -24,8 +24,9 @@ def get_all_player_stats(matched=[]):
     alltime = st.session_state.get('player_alltime_stats', False)
     only_active = st.session_state.get('only_active_players', False)
     seasons = st.session_state.get('selected_seasons', [])
+    playoffs = st.session_state.get('playoffs', 'Saison régulière')
     
-    player_stats = cached_player_stats(alltime, only_active, seasons)
+    player_stats = cached_player_stats(alltime, only_active, seasons, playoffs)
 
     min_games = st.session_state.get('slider_gp', 5)
     min_min_per_game = st.session_state.get('slider_min', 0)
@@ -155,9 +156,9 @@ def get_all_player_stats(matched=[]):
     return all_stats
 
 @st.cache_data(show_spinner=False)
-def cached_player_v_team(player, alltime, seasons):
+def cached_player_v_team(player, alltime, seasons, playoffs):
     conn = conn_db() if not alltime else conn_hist_db()
-    df = query_player_v_team(conn, player, alltime, seasons)
+    df = query_player_v_team(conn, player, alltime, seasons, playoffs)
     return df
 
 def player_v_team(player_list):
@@ -168,7 +169,9 @@ def player_v_team(player_list):
     
     alltime = st.session_state.get('player_alltime_stats', False)
     seasons = st.session_state.get('selected_seasons', [])
-    df = cached_player_v_team(player_list[0], alltime, seasons)
+    playoffs = st.session_state.get('playoffs', 'Saison régulière')
+
+    df = cached_player_v_team(player_list[0], alltime, seasons, playoffs)
     
     df['MINUTES'] = (df['seconds'].apply(
                                lambda s: f"{s // 60:02.0f}:{s % 60:02.0f}"))
@@ -195,9 +198,9 @@ def player_v_team(player_list):
     return df
 
 @st.cache_data(show_spinner=False)
-def cached_historique_des_perfs(player, alltime, seasons):
+def cached_historique_des_perfs(player, alltime, seasons, playoffs):
     conn = conn_db() if not alltime else conn_hist_db()
-    df = query_historique_des_perfs(conn, player, alltime, seasons)
+    df = query_historique_des_perfs(conn, player, alltime, seasons, playoffs)
     return df
 
 def historique_des_perfs(player):
@@ -206,7 +209,8 @@ def historique_des_perfs(player):
 
     alltime = st.session_state.get('player_alltime_stats', False)
     seasons = st.session_state.get('selected_seasons', [])
-    df = cached_historique_des_perfs(player, alltime, seasons)
+    playoffs = st.session_state.get('playoffs', 'Saison régulière')
+    df = cached_historique_des_perfs(player, alltime, seasons, playoffs)
 
     df.rename(columns={
         'playerName' : 'Joueur',
@@ -287,7 +291,9 @@ def get_plot(player, stats, show_lines, show_avg):
     
     alltime = st.session_state.get('player_alltime_stats', False)
     seasons = st.session_state.get('selected_seasons', [])
-    df = cached_historique_des_perfs(player, alltime, seasons)
+    playoffs = st.session_state.get('playoffs', 'Saison régulière')
+    df = cached_historique_des_perfs(player, alltime, seasons, playoffs)
+    
     if isinstance(stats, str):
         stats = [stats]
 
@@ -297,6 +303,7 @@ def get_plot(player, stats, show_lines, show_avg):
 
     stats_dict = {
         'TTFL' : 'TTFL',
+        'Min' : 'seconds',
         'Pts' : 'points',
         'Reb' : 'reboundsTotal',
         'Ast' : 'assists',
@@ -316,6 +323,8 @@ def get_plot(player, stats, show_lines, show_avg):
     avgs_to_plot = {}
 
     for stat in stats:
+        if stat == 'Min':
+            df['seconds'] = df['seconds'].mul(1/60)
         stats_to_plot[stat] = df[stats_dict[stat]].tolist()
         if show_avg:
             avgs_to_plot[stat] = [df[stats_dict[stat]].mean()] * len(df)
