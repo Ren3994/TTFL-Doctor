@@ -119,7 +119,7 @@ for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]
     if df.empty:
         if table == 'Statistiques basiques':
-            st.write("Aucun joueur trouvé. Essayez de cocher 'Stats historiques' ou bien de modifier les filtres")
+            st.write("Aucun joueur trouvé. Essayez de modifier les filtres")
     else:
         table_str = table
         if table == 'Statistiques du joueur par adversaire':
@@ -159,10 +159,15 @@ for table in st.session_state.player_stats:
                             st.session_state.mobile_layout else False))
                             for stat in df})
 
-# Display individual stats tables
+# Display individual stats tables and graphs
 onlyone = len(players_to_show) == 1
 if onlyone:
-    with st.expander(f'Graphiques des performances de {players_to_show[0]}', expanded=onlyone):
+    hist_perfs = historique_des_perfs(players_to_show[0])
+    titre = f'Graphiques des performances de {players_to_show[0]}'
+    if hist_perfs.empty:
+        titre = 'Aucune stat trouvée'
+        onlyone=False
+    with st.expander(titre, expanded=onlyone):
         cont = st.container(horizontal_alignment='center')
         cont.segmented_control('Stats à montrer', ['TTFL', 'Min', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
                             key='stats_to_plot', 
@@ -186,8 +191,6 @@ if onlyone:
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):
     if len(players_to_show) == 1:
-        player = players_to_show[0]
-        hist_perfs = historique_des_perfs(player)
         st.markdown(hist_perfs, unsafe_allow_html=True)
 
 vspace(30)

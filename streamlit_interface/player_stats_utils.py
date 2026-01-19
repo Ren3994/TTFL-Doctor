@@ -172,6 +172,9 @@ def player_v_team(player_list):
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
 
     df = cached_player_v_team(player_list[0], alltime, seasons, playoffs)
+
+    if df.empty:
+        return pd.DataFrame()
     
     df['MINUTES'] = (df['seconds'].apply(
                                lambda s: f"{s // 60:02.0f}:{s % 60:02.0f}"))
@@ -211,6 +214,9 @@ def historique_des_perfs(player):
     seasons = st.session_state.get('selected_seasons', [])
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
     df = cached_historique_des_perfs(player, alltime, seasons, playoffs)
+
+    if df.empty:
+        return pd.DataFrame()
 
     df.rename(columns={
         'playerName' : 'Joueur',
