@@ -216,7 +216,7 @@ def historique_des_perfs(player):
     df = cached_historique_des_perfs(player, alltime, seasons, playoffs)
 
     if df.empty:
-        return pd.DataFrame()
+        return ''
 
     df.rename(columns={
         'playerName' : 'Joueur',

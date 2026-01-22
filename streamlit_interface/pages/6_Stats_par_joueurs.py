@@ -164,9 +164,9 @@ onlyone = len(players_to_show) == 1
 if onlyone:
     hist_perfs = historique_des_perfs(players_to_show[0])
     titre = f'Graphiques des performances de {players_to_show[0]}'
-    if hist_perfs.empty:
+    if len(hist_perfs) == 0:
         titre = 'Aucune stat trouvée'
-        onlyone=False
+        onlyone = False
     with st.expander(titre, expanded=onlyone):
         cont = st.container(horizontal_alignment='center')
         cont.segmented_control('Stats à montrer', ['TTFL', 'Min', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG3', 'FG3A', 'FT', 'FTA', '±'], 
