@@ -4,9 +4,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from data.sql_functions import run_sql_query, query_opp_team_avgs
 from streamlit_interface.plotting_utils import team_standings
 from streamlit_interface.resource_manager import conn_db
-from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
 def query_team_stats():
@@ -40,9 +40,13 @@ def query_team_stats():
 def get_team_stats(selected_teams=[]):
     
     team_stats = query_team_stats()
+    opp_stats = get_cached_opp_team_stats()
+
+    opp_stats = opp_stats.sort_values(by='wins').drop(columns='wins')
     
     if len(selected_teams) > 0:
         team_stats = team_stats[team_stats['teamTricode'].isin(selected_teams)]
+        opp_stats = opp_stats[opp_stats['teamTricode'].isin(selected_teams)]
         
     team_stats['DREB_PCT'] = (team_stats['DREB_PCT'] * 100)
     team_stats['OREB_PCT'] = (team_stats['OREB_PCT'] * 100)
@@ -80,9 +84,15 @@ def get_team_stats(selected_teams=[]):
     all_stats = {'Statistiques basiques' : reg_stats,
                  'Statistiques de tir' : shooting_stats,
                  'Statistiques avancées' : adv_stats,
-                 'Statistiques TTFL' : ttfl_stats}
+                 'Statistiques TTFL' : ttfl_stats,
+                 'Statistiques des adversaires' : opp_stats}
 
     return all_stats
+
+@st.cache_data(show_spinner=False)
+def get_cached_opp_team_stats():
+    df = query_opp_team_avgs(conn_db())
+    return df
 
 def standings_progress_plot():
     import pandas as pd

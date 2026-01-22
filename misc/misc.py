@@ -228,6 +228,29 @@ TEAM_STATS_COLUMN_DEF = {
     'rel_team_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL%', 'format' : "%+.1f%%", 'width' : 70, 'help' : "Moyenne TTFL de l'équipe par rapport à la moyenne TTFL de toutes les équipes"},
     'rel_opp_avg_TTFL' : {'col' : 'num', 'display' : 'TTFL% adv.', 'format' : "%+.1f%%", 'width' : 85, 'help' : "Moyenne TTFL des adversaires par rapport à la moyenne TTFL de toutes les équipes"},
     'net_rel_TTFL' : {'col' : 'num', 'display' : 'ΔTTFL%', 'format' : '%+.1f', 'width' : 70, 'help' : "Différence entre TTFL% et TTFL% adv."},
+
+    # Opponent stats
+    'pts' : {'col' : 'num', 'display' : 'Pts', 'format' : '%.1f', 'width' : 50, 'help' : 'Moyenne de points marqués par les adversaires'},
+    'ast' : {'col' : 'num', 'display' : 'Ast', 'format' : '%.1f', 'width' : 42, 'help' : 'Moyenne de passes décisives des adversaires'},
+    'reb' : {'col' : 'num', 'display' : 'Reb', 'format' : '%.1f', 'width' : 42, 'help' : 'Moyenne de rebonds pris par les adversaires'},
+    'Oreb' : {'col' : 'num', 'display' : 'Oreb', 'format' : '%.1f', 'width' : 42, 'help' : 'Moyenne de rebonds offensifs pris par les adversaires'},
+    'Dreb' : {'col' : 'num', 'display' : 'Dreb', 'format' : '%.1f', 'width' : 42, 'help' : 'Moyenne de rebonds défensifs pris par les adversaires'},
+    'tov' : {'col' : 'num', 'display' : 'Tov', 'format' : '%.1f', 'width' : 42, 'help' : 'Moyenne de pertes de balles des adversaires'},
+    'stl' : {'col' : 'num', 'display' : 'Stl', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne d\'interceptions des adversaires'},
+    'blk' : {'col' : 'num', 'display' : 'Blk', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs contrés par les adversaires'},
+    
+    'opp_FGM' : {'col' : 'num', 'display' : 'FG', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs marqués par les adversaires'},
+    'opp_FGA' : {'col' : 'num', 'display' : 'FGA', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs tentés par les adversaires'},
+    'opp_FG_PCT' : {'col' : 'num', 'display' : 'FG%', 'format' : "%.1f%%", 'width' : 55, 'help' : 'Pourcentage de tirs réussis par les adversaires'},
+    'opp_FG3M' : {'col' : 'num', 'display' : 'FG3', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de tirs à 3 points marqués par les adversaires'},
+    'opp_FG3A' : {'col' : 'num', 'display' : 'FG3A', 'format' : '%.1f', 'width' : 45, 'help' : 'Moyenne de tirs à 3 points tentés par les adversaires'},
+    'opp_FG3_PCT' : {'col' : 'num', 'display' : 'FG3%', 'format' : "%.1f%%", 'width' : 55, 'help' : 'Pourcentage de tirs à 3 pts réussis par les adversaires'},
+    'opp_FTM' : {'col' : 'num', 'display' : 'FT', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de lancers-francs réussis par les adversaires'},
+    'opp_FTA' : {'col' : 'num', 'display' : 'FTA', 'format' : '%.1f', 'width' : 40, 'help' : 'Moyenne de lancers-francs tentés par les adversaires'},
+    'opp_FT_PCT' : {'col' : 'num', 'display' : 'FT%', 'format' : "%.1f%%", 'width' : 55, 'help' : 'Pourcentage de lancers-francs réussis par les adversaires'},
+
+    'opp_EFG' : {'col' : 'num', 'display' : 'eFG%', 'format' : "%.1f%%", 'width' : 55, 'help' : 'Effective Field Goald % des adversaires'},
+    'opp_TS' : {'col' : 'num', 'display' : 'TS%', 'format' : "%.1f%%", 'width' : 55, 'help' : 'True Shooting % des adversaires'},
 }
 
 PLAYER_STATS_COLUMN_DEF = {

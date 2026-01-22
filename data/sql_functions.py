@@ -1760,6 +1760,40 @@ def query_historique_des_perfs(conn, player, alltime, seasons, playoffs):
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
+def query_opp_team_avgs(conn):
+    import pandas as pd
+    query = """
+    WITH
+    per_gid AS (
+        SELECT opponent, gameId, 
+        SUM(points) AS pts, SUM(assists) AS ast,
+        SUM(reboundsTotal) AS reb, SUM(reboundsOffensive) AS Oreb, SUM(reboundsDefensive) AS Dreb,
+        SUM(turnovers) AS tov, SUM(steals) AS stl, SUM(blocks) AS blk,
+        SUM(fieldGoalsMade) AS FGM, SUM(fieldGoalsAttempted) AS FGA,
+        SUM(threePointersMade) AS FG3M, SUM(threePointersAttempted) AS FG3A,
+        SUM(freeThrowsMade) AS FTM, SUM(freeThrowsAttempted) AS FTA,
+        MIN(win) AS win
+        FROM boxscores 
+        WHERE seconds > 0
+        GROUP BY gameId, opponent
+    )
+    SELECT opponent AS teamTricode, AVG(pts) as pts, AVG(ast) AS ast, AVG(reb) AS reb,
+        AVG(Oreb) AS Oreb, AVG(Dreb) AS Dreb, AVG(tov) AS tov, AVG(stl) AS stl, AVG(blk) AS blk,
+        AVG(FGM) AS opp_FGM, AVG(FGA) AS opp_FGA, 100.0 * AVG(FGM) / AVG(FGA) AS opp_FG_PCT,
+        AVG(FG3M) AS opp_FG3M, AVG(FG3A) AS opp_FG3A, 100.0 * AVG(FG3M) / AVG(FG3A) AS opp_FG3_PCT,
+        AVG(FTM) AS opp_FTM, AVG(FTA) AS opp_FTA, 100.0 * AVG(FTM) / AVG(FTA) AS opp_FT_PCT,
+        (100.0 * (SUM(FGM) + 0.5 * SUM(FG3M)) / SUM(FGA)) AS opp_EFG,
+        100.0 * (SUM(pts) / (2 * (SUM(FGA) + 0.44 * SUM(FTA)))) AS opp_TS,
+        SUM(win) AS wins
+        
+    FROM per_gid
+    GROUP BY opponent
+    ORDER BY pts DESC
+    """
+
+    df = pd.read_sql_query(query, conn)
+    return df
+
 if __name__ == '__main__':
     from misc.misc import DB_PATH, DB_PATH_HISTORICAL
     with sqlite3.connect(DB_PATH) as conn:

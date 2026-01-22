@@ -67,7 +67,10 @@ for table in team_stats:
     df = team_stats[table]
     with st.expander(table, expanded=any(true_vars)):
         show_df = df
-        negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL']
+        negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL',
+                         'pts', 'ast', 'reb', 'Oreb', 'Dreb', 'stl', 'blk', 'opp_FGM', 'opp_FGA', 
+                         'opp_FG3M', 'opp_FG3A', 'opp_FTM', 'opp_FTA', 'opp_FT_PCT', 'opp_FG_PCT',
+                         'opp_FG3_PCT', 'opp_EFG', 'opp_TS']
         positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode']]
         negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode']]
         
