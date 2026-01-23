@@ -57,11 +57,13 @@ def fetch_supabase_users(_supabase):
 @st.cache_resource(show_spinner=False)
 def conn_db():
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) 
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 @st.cache_resource(show_spinner=False)
 def conn_hist_db():
     conn = sqlite3.connect(DB_PATH_HISTORICAL, timeout=30, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 # @st.cache_resource(show_spinner=False)
