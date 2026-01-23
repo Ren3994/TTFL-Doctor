@@ -207,8 +207,6 @@ def add_missing_pos_to_rosters(conn):
 
 def update_tables(conn, historical=False):
 
-    conn.execute("PRAGMA journal_mode = WAL;")
-
     calc_TTFL_stats(conn)
 
     if not historical:
@@ -223,9 +221,6 @@ def update_tables(conn, historical=False):
         calc_nemesis(conn)
         calc_min_resriction(conn)
         calc_streak(conn)
-    
-    # conn.execute("ANALYZE;")
-    # conn.execute("PRAGMA optimize;")
 
 def calc_TTFL_stats(conn):
     import pandas as pd
@@ -345,10 +340,17 @@ def calc_TTFL_stats(conn):
 
 def calc_nemesis(conn):
     import pandas as pd
+    import sqlite3
+    import time
     from streamlit_interface.historical_data_manager import init_hist_db
 
-    if not os.path.exists(DB_PATH_HISTORICAL):
-        init_hist_db()
+    for _ in range(3):
+        try:
+            if not os.path.exists(DB_PATH_HISTORICAL):
+                init_hist_db()
+        except sqlite3.OperationalError as e:
+            if "locked" not in str(e): raise
+            time.sleep(0.5)
 
     hist_conn = conn_hist_db()
 
