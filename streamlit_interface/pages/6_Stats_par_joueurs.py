@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import sys
 import os
 
@@ -129,18 +130,24 @@ for table in st.session_state.player_stats:
             table_str +=  f' {uspace(2)} ● {uspace(2)} {st.session_state.player_stats_agg}'
         with st.expander(table_str, expanded=len(players_to_show) >= 1):
             show_df = df
-            excluded_cols = ['playerName', 'teamTricode', 'MINUTES', 'GP', 'TOT_MINUTES', 'opponent']
+            excluded_cols = ['playerName', 'season', 'teamTricode', 'MINUTES', 'GP', 'TOT_MINUTES', 'opponent']
             negative_cols = ['Tov', 'TOT_Tov', 'stddev_TTFL']
             positive_in_df = [col for col in df.columns if col not in negative_cols and col not in excluded_cols]
             negative_in_df = [col for col in df.columns if col in negative_cols and col not in excluded_cols]
 
             if st.session_state.color_cells and len(df) > 1:
+                idx = pd.IndexSlice
+                if 'season' in df.columns:
+                    rows_to_style = df.index[df["season"] != "Global"]
+                else:
+                    rows_to_style = df.index
+
                 show_df = (df.style
                        .background_gradient(
-                            subset=positive_in_df,
+                            subset=idx[rows_to_style, positive_in_df],
                             cmap="YlGn")
                        .background_gradient(
-                            subset=negative_in_df,
+                            subset=idx[rows_to_style, negative_in_df],
                             cmap="YlGn_r"))
                 
             st.dataframe(show_df, height='content', hide_index=True,

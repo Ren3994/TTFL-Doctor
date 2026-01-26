@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.sql_functions import run_sql_query, query_player_stats, query_player_v_team, query_historique_des_perfs
+from data.sql_functions import run_sql_query, query_player_stats, query_player_v_team, query_historique_des_perfs, query_player_stats_by_season
 from streamlit_interface.resource_manager import conn_db, conn_hist_db
 from streamlit_interface.historical_data_manager import init_hist_db
 from streamlit_interface.streamlit_utils import uspace, french_flag
@@ -18,6 +18,11 @@ def cached_player_stats(alltime, only_active, seasons, playoffs):
     player_stats = query_player_stats(conn, alltime, only_active, seasons, playoffs)
     return player_stats
 
+@st.cache_data(show_spinner=False)
+def cached_player_stats_by_season(player, seasons, playoffs):
+    df = query_player_stats_by_season(conn_hist_db(), player, seasons, playoffs)
+    return df
+
 def get_all_player_stats(matched=[]): 
     import pandas as pd
     
@@ -25,8 +30,13 @@ def get_all_player_stats(matched=[]):
     only_active = st.session_state.get('only_active_players', False)
     seasons = st.session_state.get('selected_seasons', [])
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
-    
-    player_stats = cached_player_stats(alltime, only_active, seasons, playoffs)
+    byseason = False
+
+    if alltime and len(matched) == 1:
+        player_stats = cached_player_stats_by_season(matched[0], seasons, playoffs)
+        byseason = True
+    else:
+        player_stats = cached_player_stats(alltime, only_active, seasons, playoffs)
 
     min_games = st.session_state.get('slider_gp', 5)
     min_min_per_game = st.session_state.get('slider_min', 0)
@@ -138,13 +148,19 @@ def get_all_player_stats(matched=[]):
                                    'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT',
                                    'EFG', 'TS', 'ast_to_tov', 'FG3_ratio']
         shoot_sort_col = 'FGM'
+
+    TTFL_cols = ['playerName', 'TTFL', 'stddev_TTFL', 'median_TTFL', 'max_ttfl', 'min_ttfl', 
+                                'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 
+                                'away_rel_TTFL', 'btbTTFL', 'rel_btb_TTFL', 'n_btb']
+    TTFL_sort_col = 'TTFL'
+
+    if byseason:
+        reg_cols[0], shoot_cols[0], TTFL_cols[0] = 'season', 'season', 'season'
+        reg_sort_col, shoot_sort_col, TTFL_sort_col = 'season', 'season', 'season'
     
     regular_stats = (player_stats[reg_cols].sort_values(by=reg_sort_col, ascending=False))
     shooting_stats = (player_stats[shoot_cols].sort_values(by=shoot_sort_col, ascending=False))
-    ttfl_stats = (player_stats[['playerName', 'TTFL', 'stddev_TTFL', 'median_TTFL', 'max_ttfl', 'min_ttfl', 
-                                'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 
-                                'away_rel_TTFL', 'btbTTFL', 'rel_btb_TTFL', 'n_btb']]
-                  .sort_values(by='TTFL', ascending=False))
+    ttfl_stats = (player_stats[TTFL_cols].sort_values(by=TTFL_sort_col, ascending=False))
     
     player_v_team_df = player_v_team(matched)
     

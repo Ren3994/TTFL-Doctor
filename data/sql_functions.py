@@ -1620,16 +1620,17 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     
     add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
     if playoffs == 'Saison régulière':
-        add_playoffs = "WHERE gameId LIKE '002%'"
+        add_playoffs = "AND gameId LIKE '002%'"
     elif playoffs == 'Playoffs':
-        add_playoffs = "WHERE gameId LIKE '004%'"
+        add_playoffs = "AND gameId LIKE '004%'"
     elif playoffs == 'Les deux':
-        add_playoffs = "WHERE (gameId LIKE '004%' OR gameId LIKE '002%')"
+        add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
     
     query = f"""
     WITH selector AS (
         SELECT 
             {boxscore_cols}{add_teamTricode} FROM boxscores
+        WHERE seconds > 0
         {add_playoffs}
         {add_seasons}
     ),
@@ -1639,8 +1640,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     aggregator AS (
         SELECT se.{agg_cols}{add_teamTricode}
         FROM selector se
-        {join_active_players}
-        WHERE seconds > 0 
+        {join_active_players} 
         GROUP BY se.playerName
     ),
     
@@ -1677,6 +1677,163 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     LEFT JOIN avg pat 
         ON pat.playerName = agg.playerName
     """
+    df = pd.read_sql_query(query, conn, params=seasons)
+    return df
+
+def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison régulière'):
+    import pandas as pd
+
+    boxscore_cols = """
+        playerName, seconds, points, assists, steals, blocks, turnovers, plusMinusPoints, TTFL, 
+        reboundsTotal, reboundsOffensive, reboundsDefensive, fieldGoalsMade, fieldGoalsAttempted, 
+        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted, season"""
+    
+    agg_cols = """
+        playerName, COUNT(*) AS GP, ROUND(AVG(seconds), 1) AS SECONDS, SUM(seconds) AS TOT_SECONDS, 
+        AVG(points) AS Pts, SUM(points) AS TOT_Pts, AVG(assists) AS Ast, SUM(assists) AS TOT_Ast, 
+        AVG(steals) AS Stl, SUM(steals) AS TOT_Stl, AVG(blocks) AS Blk, SUM(blocks) AS TOT_Blk, 
+        (AVG(steals) + AVG(blocks)) AS Stk, (SUM(steals) + SUM(blocks)) AS TOT_Stk, 
+        AVG(reboundsTotal) AS Reb, SUM(reboundsTotal) AS TOT_Reb, 
+        AVG(reboundsOffensive) AS Oreb, SUM(reboundsOffensive) AS TOT_Oreb, 
+        AVG(reboundsDefensive) AS Dreb, SUM(reboundsDefensive) AS TOT_Dreb, 
+        AVG(turnovers) AS Tov, SUM(turnovers) AS TOT_Tov, 
+        AVG(fieldGoalsMade) AS FGM, SUM(fieldGoalsMade) AS TOT_FGM, 
+        AVG(fieldGoalsAttempted) AS FGA, SUM(fieldGoalsAttempted) AS TOT_FGA, 
+        AVG(threePointersMade) AS FG3M, SUM(threePointersMade) AS TOT_FG3M, 
+        AVG(threePointersAttempted) AS FG3A, SUM(threePointersAttempted) AS TOT_FG3A, 
+        AVG(freeThrowsMade) AS FTM, SUM(freeThrowsMade) AS TOT_FTM, 
+        AVG(freeThrowsAttempted) AS FTA, SUM(freeThrowsAttempted) AS TOT_FTA, 
+        AVG(plusMinusPoints) AS PM, SUM(plusMinusPoints) AS TOT_PM, 
+        SUM(TTFL) AS TOT_TTFL, 
+        (SUM(fieldGoalsMade) * 1.0 / SUM(fieldGoalsAttempted)) AS FG_PCT,
+        (SUM(threePointersMade) * 1.0 / SUM(threePointersAttempted)) AS FG3_PCT, 
+        (SUM(freeThrowsMade) * 1.0 / SUM(freeThrowsAttempted)) AS FT_PCT, 
+        ((SUM(fieldGoalsMade) + 0.5 * SUM(threePointersMade)) / SUM(fieldGoalsAttempted)) AS EFG, 
+        (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))) AS TS, 
+        (SUM(assists) * 1.0 / NULLIF(SUM(turnovers), 0)) AS ast_to_tov, 
+        SUM(TTFL) * 1.0 / (SUM(seconds) / 60) AS ttfl_per_min, 
+        MAX(TTFL) AS max_ttfl, MIN(TTFL) AS min_ttfl
+        """
+    
+    add_seasons = f"""AND season IN ({', '.join(['?'] * len(seasons))})""" if len(seasons) > 0 else ''
+    if playoffs == 'Saison régulière':
+        add_playoffs = "AND gameId LIKE '002%'"
+    elif playoffs == 'Playoffs':
+        add_playoffs = "AND gameId LIKE '004%'"
+    elif playoffs == 'Les deux':
+        add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
+    
+    query = f"""
+    WITH selector AS (
+        SELECT 
+            {boxscore_cols} FROM boxscores
+        WHERE playerName = '{player}'
+        AND seconds > 0
+        {add_playoffs}
+        {add_seasons}
+    ),
+
+    avg_season AS (
+        SELECT
+            season,
+            avg_TTFL_season,
+            stddev_TTFL_season,
+            median_TTFL_season
+        FROM player_avg_TTFL 
+        WHERE playerName = '{player}'
+    ),
+
+    home_away_season AS (
+        SELECT 
+            season,
+            home_rel_TTFL_season, 
+            away_rel_TTFL_season, 
+            home_avg_TTFL_season, 
+            away_avg_TTFL_season
+
+        FROM home_away_rel_TTFL 
+        WHERE playerName = '{player}'
+    ),
+
+    back_to_back_season AS (
+        SELECT 
+            season,
+            btbTTFL_season, 
+            rel_btb_TTFL_season, 
+            n_btb_season
+
+        FROM rel_btb_TTFL 
+        WHERE playerName = '{player}'
+    ),
+
+    global AS (
+        SELECT
+            'Global' AS season,
+            se.{agg_cols},
+            a.avg_TTFL AS TTFL, 
+            a.stddev_TTFL, 
+            a.median_TTFL,
+            ha.home_rel_TTFL, 
+            ha.away_rel_TTFL, 
+            ha.home_avg_TTFL, 
+            ha.away_avg_TTFL,
+            btb.btbTTFL, 
+            btb.rel_btb_TTFL, 
+            btb.n_btb
+
+        FROM selector se
+        CROSS JOIN (
+            SELECT avg_TTFL, stddev_TTFL, median_TTFL
+            FROM player_avg_TTFL
+            WHERE playerName = '{player}'
+            LIMIT 1
+        ) a
+        CROSS JOIN (
+            SELECT home_rel_TTFL, away_rel_TTFL, home_avg_TTFL, away_avg_TTFL
+            FROM home_away_rel_TTFL
+            WHERE playerName = '{player}'
+            LIMIT 1
+        ) ha
+        CROSS JOIN (
+            SELECT btbTTFL, rel_btb_TTFL, n_btb
+            FROM rel_btb_TTFL
+            WHERE playerName = '{player}'
+            LIMIT 1
+        ) btb
+        GROUP BY se.playerName
+    ),
+
+    by_season AS (
+        SELECT 
+            a.season,
+            se.{agg_cols},
+            a.avg_TTFL_season AS TTFL,
+            a.stddev_TTFL_season AS stddev_TTFL,
+            a.median_TTFL_season AS median_TTFL,
+            ha.home_rel_TTFL_season AS home_rel_TTFL,
+            ha.away_rel_TTFL_season AS away_rel_TTFL,
+            ha.home_avg_TTFL_season AS home_avg_TTFL,
+            ha.away_avg_TTFL_season AS away_avg_TTFL,
+            btb.btbTTFL_season AS btbTTFL,
+            btb.rel_btb_TTFL_season AS rel_btb_TTFL,
+            btb.n_btb_season AS n_btb_season
+
+        FROM selector se
+        JOIN avg_season a 
+            ON se.season = a.season
+        JOIN home_away_season ha 
+            ON se.season = ha.season
+        JOIN back_to_back_season btb 
+            ON se.season = btb.season
+        GROUP BY se.season
+        ORDER BY se.season DESC
+    )
+
+    SELECT * FROM global
+    UNION ALL
+    SELECT * FROM by_season
+    """
+
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
@@ -1798,8 +1955,9 @@ def query_opp_team_avgs(conn):
 
 if __name__ == '__main__':
     from misc.misc import DB_PATH, DB_PATH_HISTORICAL
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(DB_PATH_HISTORICAL) as conn:
         # print(query_player_stats(conn, alltime=True, only_active_players=True)['FG_PCT'])
         # print(query_player_v_team(conn, 'Larry Bird', alltime=True))
         # print(query_historique_des_perfs(conn, 'Larry Bird', True))
-        calc_nemesis(conn)
+        # calc_nemesis(conn)
+        print(query_player_stats_by_season(conn, 'LeBron James', playoffs='Playoffs'))

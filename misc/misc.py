@@ -9,8 +9,8 @@ DB_PATH = os.path.join(BASE_DIR, "..", "data", f"data_{SEASON}.db")
 DB_PATH_LAST_SEASON = os.path.join(BASE_DIR, "..", "data", f"data_{LAST_SEASON}.db")
 DB_PATH_HISTORICAL = os.path.join(BASE_DIR, "..", "data", f"historical_data.db")
 DB_PATH_HISTORICAL_ZST = os.path.join(BASE_DIR, "..", "data", f"historical_data.db.zst")
-CHECKSUM = '97cbf71cc22034d78a3fb964d70224155a2d6e8923a133cfb34e494cdbb7fa59'
-HIST_DB_URL = 'https://github.com/Ren3994/TTFL-Doctor/releases/download/data_v1.1/historical_data.db.zst'
+CHECKSUM = '4d701c8d69a1bffa1a83c27eeeaef29b93fe7ecf046430c82fcfb10e37f13b58'
+HIST_DB_URL = 'https://github.com/Ren3994/TTFL-Doctor/releases/download/data_v1.2/historical_data.db.zst'
 
 CACHE_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "cache")
 BACKUP_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "backups")
@@ -257,6 +257,7 @@ PLAYER_STATS_COLUMN_DEF = {
     
     # Regular stats
     'playerName' : {'col' : 'text', 'display' : 'Joueur', 'format' : None, 'width' : 150, 'help' : None},
+    'season' : {'col' : 'text', 'display' : 'Saison', 'format' : None, 'width' : 60, 'help' : None},
     'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : 50, 'help' : None},
     'opponent' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : 50, 'help' : None},
     'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : 35, 'help' : 'Nombre de matchs joués'},
