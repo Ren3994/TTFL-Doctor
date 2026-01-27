@@ -12,6 +12,7 @@ from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
+    import pandas as pd
     import numpy as np
 
     conn = conn_db()                        
@@ -42,6 +43,22 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
         
     teams = df['teamTricode'].unique()
     df = df.sort_values(by=['TTFL'], ascending=False).reset_index(drop=True)
+    
+    if byteam:
+        totals = (df.groupby('teamTricode')
+                [['points', 'assists', 'reboundsTotal', 'reboundsOffensive', 'reboundsDefensive', 
+                    'steals', 'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
+                    'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 'freeThrowsAttempted', 
+                    'TTFL', 'win', 'plusMinusPoints', 'avg_TTFL']]
+                    .sum()
+                    .reset_index(drop=False))
+        totals['playerName'] = 'Totaux'
+        totals['minutes'] = ''
+        totals['seconds'] = 48 * 60
+        totals['win'] = np.where(totals['win'] >= 1, 1, 0)
+        
+        df = pd.concat([df, totals], ignore_index=True)
+
     df['FG'] = df['fieldGoalsMade'].astype(str) + '/' + df['fieldGoalsAttempted'].astype(str)
     df['FG3'] = df['threePointersMade'].astype(str) + '/' + df['threePointersAttempted'].astype(str)
     df['FT'] = df['freeThrowsMade'].astype(str) + '/' + df['freeThrowsAttempted'].astype(str)
