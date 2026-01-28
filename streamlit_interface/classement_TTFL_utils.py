@@ -123,7 +123,7 @@ def get_low_game_count(_conn, date) :
                                           'GROUP_CONCAT(homeTeam) AS homes', 
                                           'GROUP_CONCAT(awayTeam) AS aways', 
                                           'COUNT(*) AS n_games'], 
-                                  filters='homeTeam IS NOT NULL', 
+                                  filters=["gameId NOT LIKE '003%'", 'homeTeam IS NOT NULL'], 
                                   group_by='gameDate')
     
     games_per_day['gameDate'] = pd.to_datetime(games_per_day['gameDate'], errors='coerce', dayfirst=True)
