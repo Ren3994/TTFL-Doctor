@@ -31,12 +31,16 @@ def format_to_table(df) :
     prettydf['Lieu'] = df['team'].where(df['isHome'] == 1, df['opponent'])
     prettydf['Équipe'] = df['team'] + ' (' + df['teamWins'].astype(str) + 'W-' + df['teamLosses'].astype(str) + 'L)'
     prettydf['Adversaire'] = df['opponent'] + ' (' + df['oppWins'].astype(str) + 'W-' + df['oppLosses'].astype(str) + 'L)'
+    prettydf['clean_team'] = df['team']
+    prettydf['clean_opp'] = df['opponent']
     prettydf['TTFL'] = df['avg_TTFL'].round(1).fillna('N/A')
     prettydf['stdTTFL'] = df['stddev_TTFL'].round(1).fillna('N/A')
     prettydf['median_TTFL'] = df['median_TTFL'].astype(int).fillna('N/A')
     prettydf['opp'] = df['opponent']
     prettydf['is_b2b'] = df['is_b2b']
     prettydf['n_btb'] = df['n_btb']
+    prettydf['team_last_wins'] = df['team_last_wins']
+    prettydf['opp_last_wins'] = df['opp_last_wins']
 
     # ------------------------------ Injury status and minute resitrictions stuff -------------------------------
 
@@ -400,8 +404,11 @@ def format_to_table(df) :
                           prettydf['stdTTFL'].astype(str) + 
                           prettydf['nemesis'].astype(str))
     
+    prettydf['team_info'] = prettydf['team_injury_status'] + '<br><br>' + '10 derniers matchs : ' + prettydf['team_last_wins']
+    prettydf['opp_info'] = prettydf['opp_inj_status'] + '<br><br>' + '10 derniers matchs : ' + prettydf['opp_last_wins']
+    
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
-    prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL'], axis = 1)
+    prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL', 'team_last_wins', 'opp_last_wins', 'clean_team', 'clean_opp'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
     prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + prettydf['streak_indicator']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')

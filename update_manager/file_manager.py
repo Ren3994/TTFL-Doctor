@@ -15,7 +15,7 @@ def cleanup_db():
                       'home_away_rel_TTFL', 'avg_TTFL_per_pos', 'avg_TTFL_per_pos_per_opp', 
                       'rel_patop', 'absent_teammate_rel_impact', 'games_missed_by_players', 
                       'opp_pos_avg_per_game', 'roster_pairs', 'median_TTFL', 'rel_btb_TTFL',
-                      'min_restrictions']:
+                      'min_restrictions', 'team_recent_wins']:
             drop_table(conn, table)
         for attempt in range(3):
             try:

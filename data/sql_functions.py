@@ -221,6 +221,7 @@ def update_tables(conn, historical=False):
         calc_nemesis(conn)
         calc_min_resriction(conn)
         calc_streak(conn)
+        calc_team_recent_wins(conn)
 
 def calc_TTFL_stats(conn):
     import pandas as pd
@@ -506,6 +507,35 @@ def calc_min_resriction(conn):
     df = df[df['rel_last'] < -15].reset_index(drop=True)
     df['min_restr'] = 'Moyenne : ' + df['avg_min'].astype(int).astype(str) + ' min, récents : ' + df['last_5']
     df.to_sql('min_restrictions', conn, if_exists='replace', index=False)
+
+def calc_team_recent_wins(conn):
+    import pandas as pd
+
+    query = """
+    WITH 
+    ranked AS (
+        SELECT
+            DISTINCT teamTricode, win, gameDate_ymd
+        FROM boxscores
+        ORDER BY teamTricode, gameDate_ymd DESC
+    ),
+    byteam AS (
+       SELECT
+           teamTricode, 
+           CASE WHEN win = 1 THEN 'W' ELSE 'L' END AS win,
+           ROW_NUMBER() OVER (PARTITION BY teamTricode) AS rn
+        FROM ranked
+    )
+    SELECT
+        teamTricode, GROUP_CONCAT(win, '') AS last_wins
+    FROM byteam
+    WHERE rn <= 10
+    GROUP BY teamTricode
+    """
+    df = pd.read_sql_query(query, conn)
+    df['last_wins'] = df['last_wins'].str[::-1]
+
+    df.to_sql('team_recent_wins', conn, if_exists='replace', index=False)
 
 def calc_streak(conn):
     import pandas as pd
@@ -1134,6 +1164,10 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     GROUP_CONCAT(orws.opp_player_TTFL) AS inj_opponents_TTFLs,
     GROUP_CONCAT(orws.avg_rel_TTFL_per_opp_pos) AS pos_rel_TTFL_when_inj_opp,
 
+    -- Team and opp recent wins
+    trw.last_wins AS team_last_wins,
+    orw.last_wins AS opp_last_wins,
+
     -- Graph data
     gd.graph_dates,
     gd.graph_opps,
@@ -1176,6 +1210,10 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
         ON mr.playerName = ap.playerName
     LEFT JOIN recent_streaks rs
         ON rs.playerName = ap.playerName
+    LEFT JOIN team_recent_wins trw
+        ON trw.teamTricode = ap.team
+    LEFT JOIN team_recent_wins orw
+        ON orw.teamTricode = ap.opponent
     GROUP BY ap.playerName, ap.team, ap.pos
     ORDER BY pat.avg_TTFL DESC
         """

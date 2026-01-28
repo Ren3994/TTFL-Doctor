@@ -44,8 +44,32 @@ def accentuate_pct(text: str) -> str:
         value = float(match.group(1))
         color = color_for_value(value)
         return f'<span style="color:{color}">{match.group(0)}</span>'
+    
+    def wl_sequence_replacer(match):
+        prefix = match.group(1)
+        sequence = match.group(2)
 
-    return re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
+        green = palette["bright_green"]
+        red = palette["bright_red"]
+
+        colored = ''.join(
+            f'<span style="color:rgb({green[0]},{green[1]},{green[2]})">W</span>'
+            if c == 'W'
+            else f'<span style="color:rgb({red[0]},{red[1]},{red[2]})">L</span>'
+            for c in sequence
+        )
+
+        return prefix + colored
+    
+    text = re.sub(r'([+-]?\d+(?:\.\d+)?)%', replacer, text)
+    
+    text = re.sub(
+        r'(10 derniers matchs\s*:\s*)([WL]+)',
+        wl_sequence_replacer,
+        text
+    )
+
+    return text
 
 @st.cache_data(show_spinner=False)
 def get_joueurs_pas_dispo(_conn, date) :
@@ -190,8 +214,8 @@ def df_to_html(
     show_cols=['Joueur', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
     tooltips={
             'Statut' : 'details',
-            'Équipe' : 'team_injury_status',
-            'Adversaire' : 'opp_inj_status',
+            'Équipe' : 'team_info',
+            'Adversaire' : 'opp_info',
             'TTFL' : 'allrel'
             },
     col_header_tooltips = {'Joueur' : 'Survoler pour voir le graphe d\'évolution des scores TTFL',
