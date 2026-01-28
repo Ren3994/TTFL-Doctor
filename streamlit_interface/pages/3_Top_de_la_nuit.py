@@ -96,8 +96,9 @@ else:
         cont_lower.button('Mon pick', on_click=show_my_pick, args=(pick, ))
             
     if st.session_state.top_nuit == 'did_not_play':
-        st.subheader(f'Pas de boxscores pour {st.session_state.matched_players_nuit} '
+        st.subheader(f'Pas de boxscores pour {st.session_state.matched_players_nuit[0]} '
                      f'le {st.session_state.date_text_nuit}')
+        vspace(50)
     else:
         if not st.session_state.byteam:
             st.markdown(st.session_state.top_nuit, unsafe_allow_html=True)
