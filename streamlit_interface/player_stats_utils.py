@@ -263,6 +263,9 @@ def historique_des_perfs(player):
     df['Date'] = np.where(alltime,
                  df['Date'].apply(lambda x: f"{x.day:02d} {french_months[x.month - 1]}. {x.year:04d}"),
                  df['Date'].apply(lambda x: f" {x.day:02d} {french_months[x.month - 1]}."))
+    
+    mask_min = df['Min'].str.len() < 5
+    df.loc[mask_min, 'Min'] = df.loc[mask_min, 'Min'] + ':00'
 
     df['FG'] = df['FGM'].astype(str) + '/' + df['FGA'].astype(str)
     df['FG3'] = df['FG3M'].astype(str) + '/' + df['FG3A'].astype(str)
