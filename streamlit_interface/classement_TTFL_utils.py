@@ -415,6 +415,7 @@ def df_to_html(
                 html += f"<td>{cell_value}</td>"
         html += "</tr>"
     html += "</tbody></table>"
+    html = html.replace("\n", "").replace("\r", "")
     return html
 
 @st.cache_data(show_spinner=False)
