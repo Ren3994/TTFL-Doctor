@@ -206,4 +206,6 @@ else:
     temp_table.empty()
     statusholder.empty()
 
+    st.write(display_df_html)
+
 SEO('footer')
