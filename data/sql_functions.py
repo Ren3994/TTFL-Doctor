@@ -46,22 +46,21 @@ def init_db(conn):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_rosters_team ON rosters(teamTricode);")
 
 def check_table_exists(conn, table):
-    cursor=conn.cursor()
-    try:
-        cursor.execute(f"""SELECT * FROM {table};""")
-        table_exists = True
-    except sqlite3.OperationalError as e:
-        if "no such table" in str(e):
-            table_exists = False
-            if table == 'player_positions':
-                tqdm.write(f"La table {table} est manquante. Téléchargement...")
-                player_pos = fetch_player_positions()
-                save_to_db(conn, player_pos, table, if_exists="replace")
+    cursor = conn.cursor()
+    table_exists = cursor.execute(f"""SELECT 1
+                                        FROM sqlite_master
+                                        WHERE type='table'
+                                        AND name='{table}'
+                                     """).fetchone()
+    if not table_exists:
+        if table == 'player_positions':
+            tqdm.write(f"La table {table} est manquante. Téléchargement...")
+            player_pos = fetch_player_positions()
+            save_to_db(conn, player_pos, table, if_exists="replace")
 
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_player_positions_player ON player_positions(playerName);")
-        else:
-            raise
-    return table_exists
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_player_positions_player ON player_positions(playerName);")
+        return False
+    return True
 
 def add_pos_to_rosters(conn):
     df = run_sql_query(
