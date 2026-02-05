@@ -137,8 +137,8 @@ def format_to_table(df) :
         '')
 
     prettydf['streak_indicator'] = np.select(
-        [df['rel_recent'] > 20, df['rel_recent'] > 10, df['rel_recent'] < -10, df['rel_recent'] < -20],
-        [' 🔥🔥🔥', ' 🔥', ' ❄️', ' ❄️❄️❄️'],
+        [df['rel_recent'] > 20, df['rel_recent'] > 10, df['rel_recent'] < -20, df['rel_recent'] < -10],
+        [' 🔥🔥🔥', ' 🔥', ' ❄️❄️❄️', ' ❄️'],
         '')
         
     # -------------------------------------------- Graph stuff -------------------------------------------------
