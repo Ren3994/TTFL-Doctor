@@ -169,7 +169,9 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'AR-15' : 'Austin Reaves',
              'FVV' : 'Fred VanVleet',
              'ZU' : 'Ivica Zubac',
-             'VUC' : 'Nikola Vucevic'
+             'VUC' : 'Nikola Vucevic',
+             'KLAW' : 'Kawhi Leonard',
+             'CLAW' : 'Kawhi Leonard'
              }
 
 TEAM_STATS_COLUMN_DEF = {

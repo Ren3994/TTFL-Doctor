@@ -43,8 +43,9 @@ def cached_generate_plot_row(requested_date,
     from matplotlib.offsetbox import OffsetImage, AnnotationBbox
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
-    import seaborn as sns
+    # import seaborn as sns
 
+    joueur = joueur.split(' (')[0]
     dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
     requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
     alldates = dates.copy()
@@ -56,23 +57,23 @@ def cached_generate_plot_row(requested_date,
     wins = [int(win) for win in graph_wins.split(',')]
 
     linew = 1.5
-    alpha=0.7
+    alpha = 0.7
     ymin = min(0, min(TTFLs) * 1.2)
-    ymax = max(TTFLs) * 1.4
+    ymax = max(TTFLs) * 1.1
 
     plt.rcParams['figure.autolayout'] = False
     plt.style.use("seaborn-v0_8-dark")
-    palette = sns.color_palette("deep")
+    # palette = sns.color_palette("deep")
     fig, ax = plt.subplots(figsize=(6, 4))
-    bkg_color = fig.get_facecolor()
+    # bkg_color = fig.get_facecolor()
 
     ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
     ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
 
-    ypos_list = []
-    colors_list = []
+    # ypos_list = []
+    # colors_list = []
     
-    n = 0
+    # n = 0
     for date, opp, TTFL, win in zip(dates, opps, TTFLs, wins):
         opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
         img = load_logo(opp_sprite_path)
@@ -80,17 +81,17 @@ def cached_generate_plot_row(requested_date,
         imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
         ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
         ax.add_artist(ab)
-        ypos = 0.9 + (-1)**n * 0.04
-        ypos_list.append(ypos)
-        colors_list.append(palette[2] if win else palette[3])
+        # ypos = 0.9 + (-1)**n * 0.04
+        # ypos_list.append(ypos)
+        # colors_list.append(palette[2] if win else palette[3])
 
-        ax.text(date, ypos, 'W' if win else 'L', color = bkg_color, ha='center', va='center', fontweight='bold', zorder=3, transform=ax.get_xaxis_transform())
-        n += 1
+        # ax.text(date, ypos, 'W' if win else 'L', color = bkg_color, ha='center', va='center', fontweight='bold', zorder=3, transform=ax.get_xaxis_transform())
+        # n += 1
         # x_size = timedelta(days=0.7)   imshow instead of AnnotationBbox could be faster with many images ? No diff for ~20 images
         # y_size = (ymax - ymin) * 0.05
         # ax.imshow(img,extent=(date - x_size,date + x_size,TTFL - y_size,TTFL + y_size),aspect='auto',zorder=5)
 
-    ax.scatter(dates, ypos_list, s=350, c=colors_list, edgecolor='k', linewidth=1, zorder=2, transform=ax.get_xaxis_transform())
+    # ax.scatter(dates, ypos_list, s=350, c=colors_list, edgecolor='k', linewidth=1, zorder=2, transform=ax.get_xaxis_transform())
     
     if ymin == 0:
         ymin = -2
