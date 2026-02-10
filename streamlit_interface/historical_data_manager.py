@@ -89,6 +89,7 @@ def update_total_boxscores():
         hist_conn.execute("CREATE INDEX idx_seconds ON boxscores(seconds)")
         hist_conn.execute("CREATE INDEX idx_gameDate_ymd ON boxscores(gameDate_ymd)")
         hist_conn.execute("CREATE INDEX idx_season ON boxscores(season)")
+        hist_conn.execute("CREATE INDEX idx_team ON boxscores(teamTricode)")
         hist_conn.execute("CREATE INDEX idx_reg_season ON boxscores(gameId) WHERE gameId LIKE '002%'")
         hist_conn.execute("CREATE INDEX idx_playoffs ON boxscores(gameId) WHERE gameId LIKE '004%'")
     
@@ -113,7 +114,7 @@ if __name__ == '__main__':
     # t0 = time.time()
     # update_total_boxscores()
     # print(time.time() - t0)
-    # hist_conn = conn_hist_db()
+    hist_conn = conn_hist_db()
     # update_tables(hist_conn, historical=True)
     # print(time.time() - t0)
 

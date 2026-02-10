@@ -132,8 +132,8 @@ def format_to_table(df) :
 
     prettydf['streak_str'] = np.select(
         [df['rel_recent'] > 10, df['rel_recent'] < -10],
-        [df['playerName'] + ' récemment : +' + df['rel_recent'].astype(str) + '%<br>',
-        df['playerName'] + ' récemment : ' + df['rel_recent'].astype(str) + '%<br>'],
+        [df['playerName'] + ' récemment : ' + df['recent_TTFL'].astype(str) + ' (+' + df['rel_recent'].astype(str) + '%)<br>',
+        df['playerName'] + ' récemment : ' + df['recent_TTFL'].astype(str) + ' (' + df['rel_recent'].astype(str) + '%)<br>'],
         '')
 
     prettydf['streak_indicator'] = np.select(

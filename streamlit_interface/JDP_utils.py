@@ -8,8 +8,8 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.resource_manager import conn_db, conn_hist_db, conn_supabase, fetch_supabase_users
+from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, FRANCHISE_FILTERS, TRICODE2FULLNAME
 from data.sql_functions import run_sql_query
-from misc.misc import NICKNAMES
 
 @st.cache_data(show_spinner=False)
 def get_cached_game_dates_completed():
@@ -322,6 +322,18 @@ def match_player(input_name, names_list=None, multi=False):
 
     return matched_name
 
+def match_team(input):
+    tricode_list = [team for team in list(NAME2TRICODE.values())] # Current (WAS, BOS, ...)
+    nicknames = [nick for nick in list(TEAM_NICKNAMES.keys())] # Nicknames and disambiguations
+    
+    if input.upper() in tricode_list:
+        return TRICODE2FULLNAME[input.upper()]
+    
+    elif input.upper() in nicknames:
+        return TEAM_NICKNAMES[input.upper()]
+    
+    return ''
+
 @st.cache_data(show_spinner=False)
 def generate_dicts(names_list):
     abbreviations = {}
@@ -345,3 +357,8 @@ def generate_dicts(names_list):
             abbreviations[initials] = [name]
 
     return abbreviations, splits
+
+if __name__ == '__main__':
+    for a in FRANCHISE_FILTERS.keys():
+        for e in a.split(' '):
+            print(f'{e} : {match_team(e)}')

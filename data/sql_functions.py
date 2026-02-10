@@ -6,12 +6,12 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from misc.misc import SEASON, DB_PATH_HISTORICAL, FRANCHISE_FILTERS
 from fetchers.player_position_fetcher import fetch_player_positions
 from streamlit_interface.resource_manager import conn_hist_db
 from fetchers.team_stats_fetcher import get_team_stats
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
-from misc.misc import SEASON, DB_PATH_HISTORICAL
 
 def init_db(conn):
     try :
@@ -1608,7 +1608,7 @@ def get_games_for_date(conn, game_date_str):
 
     return df_unique
 
-def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[], playoffs='Saison régulière'):
+def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[], playoffs='Saison régulière', team=''):
     import pandas as pd
     
     if alltime:
@@ -1662,6 +1662,8 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
         add_playoffs = "AND gameId LIKE '004%'"
     elif playoffs == 'Les deux':
         add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
+
+    add_team = f"AND ({FRANCHISE_FILTERS[team]})" if team != '' else ''
     
     query = f"""
     WITH selector AS (
@@ -1670,6 +1672,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
         WHERE seconds > 0
         {add_playoffs}
         {add_seasons}
+        {add_team}
     ),
 
     {active_players}
@@ -1717,7 +1720,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison régulière'):
+def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison régulière', team=''):
     import pandas as pd
 
     boxscore_cols = """
@@ -1759,6 +1762,8 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
         add_playoffs = "AND gameId LIKE '004%'"
     elif playoffs == 'Les deux':
         add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
+
+    add_team = f"AND {FRANCHISE_FILTERS[team]}" if team != '' else ''
     
     query = f"""
     WITH selector AS (
@@ -1768,6 +1773,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
         AND seconds > 0
         {add_playoffs}
         {add_seasons}
+        {add_team}
     ),
 
     avg_season AS (
@@ -1874,7 +1880,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_player_v_team(conn, player, alltime, seasons, playoffs):
+def query_player_v_team(conn, player, alltime, seasons, playoffs, team):
     import pandas as pd
 
     if alltime:
@@ -1911,12 +1917,15 @@ def query_player_v_team(conn, player, alltime, seasons, playoffs):
         add_playoffs = "WHERE gameId LIKE '004%'"
     elif playoffs == 'Les deux':
         add_playoffs = "WHERE (gameId LIKE '004%' OR gameId LIKE '002%')"
+    
+    add_team = f"AND {FRANCHISE_FILTERS[team]}" if team != '' else ''
 
     query = f"""
     WITH selector AS (
         SELECT 
             {boxscore_cols} FROM boxscores
             {add_playoffs}
+            {add_team}
     )
     SELECT {agg_cols}
     FROM selector
@@ -1928,7 +1937,7 @@ def query_player_v_team(conn, player, alltime, seasons, playoffs):
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
 
-def query_historique_des_perfs(conn, player, alltime, seasons, playoffs):
+def query_historique_des_perfs(conn, player, alltime, seasons, playoffs, team):
     import pandas as pd
 
     if alltime:
@@ -1944,6 +1953,8 @@ def query_historique_des_perfs(conn, player, alltime, seasons, playoffs):
         add_playoffs = "AND gameId LIKE '004%'"
     elif playoffs == 'Les deux':
         add_playoffs = "AND (gameId LIKE '004%' OR gameId LIKE '002%')"
+
+    add_team = f"AND {FRANCHISE_FILTERS[team]}" if team != '' else ''
             
     query = f"""
     SELECT * 
@@ -1952,6 +1963,7 @@ def query_historique_des_perfs(conn, player, alltime, seasons, playoffs):
         AND playerName = '{player}'
         {add_seasons}
         {add_playoffs}
+        {add_team}
     """
     df = pd.read_sql_query(query, conn, params=seasons)
     return df

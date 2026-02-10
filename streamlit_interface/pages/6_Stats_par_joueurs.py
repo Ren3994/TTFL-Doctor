@@ -33,11 +33,18 @@ vspace()
 
 # Player(s) search box
 cont_search.text_input(label='Rechercher joueur', 
-                          placeholder='Rechercher joueur', 
+                          placeholder='Joueur', 
                           key='search_player_indiv_stats', 
                           on_change=on_search_player_stats,
                           label_visibility="collapsed",
-                          width=200)
+                          width=120)
+
+cont_search.text_input(label='Rechercher equipe', 
+                          placeholder='Équipe', 
+                          key='search_team_indiv_stats', 
+                          on_change=on_search_team_stats,
+                          label_visibility="collapsed",
+                          width=120)
 
 cont_search.button('OK')
 cont_search.button('Clear', on_click=clear_search)
