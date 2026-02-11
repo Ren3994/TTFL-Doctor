@@ -146,6 +146,12 @@ CHAR_MAP = {
     "Đ": "D"
 }
 
+CONFERENCES = {'Ouest' : ['OKC', 'SAS', 'HOU', 'DEN', 'LAL', 'MIN', 'PHX', 'GSW', 
+                          'POR', 'LAC', 'MEM', 'DAL', 'UTA', 'NOP', 'SAC'],
+                'Est' : ['DET', 'BOS', 'NYK', 'CLE', 'TOR', 'PHI', 'ORL', 'MIA', 
+                         'ATL', 'CHA', 'CHI', 'MIL', 'BKN', 'WAS', 'IND']
+                          }
+
 NICKNAMES = {'KD' : 'Kevin Durant',
              'KING' : 'LeBron James',
              'LBJ' : 'LeBron James',
@@ -404,7 +410,8 @@ FRANCHISE_FILTERS = {
 TEAM_STATS_COLUMN_DEF = {
     
     # Regular stats
-    'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : None, 'width' : None, 'help' : None},
+    'teamTricode' : {'col' : 'text', 'display' : 'Équipe', 'format' : 30, 'width' : None, 'help' : None},
+    'rank' : {'col' : 'num', 'display' : 'Rang', 'format' : '%d', 'width' : 20, 'help' : None},
     'GP' : {'col' : 'num', 'display' : 'GP', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs joués'},
     'W' : {'col' : 'num', 'display' : 'W', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs gagnés'},
     'L' : {'col' : 'num', 'display' : 'L', 'format' : None, 'width' : 30, 'help' : 'Nombre de matchs perdus'},

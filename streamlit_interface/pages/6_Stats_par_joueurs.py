@@ -189,8 +189,17 @@ if onlyone:
                             selection_mode='multi',
                             label_visibility='collapsed')
         cont_chk = cont.container(horizontal_alignment='center', horizontal=True)
+        cont_chk.checkbox('Montrer les équipes', key='show_teams')
         cont_chk.checkbox('Relier les points', key='show_lines', value=True)
         cont_chk.checkbox('Moyennes', key='show_avg', value=False)
+        cont_chk_2 = cont.container(horizontal_alignment='center', horizontal=True)
+        cont_chk_2.checkbox('Moyenne glissante', key='rolling_avg')
+        if st.session_state.rolling_avg:
+            cont_chk_2.segmented_control('roll_window_seg', ['jours', 'mois', 'années'], default='jours',
+                                       label_visibility='collapsed', key='rolling_window')
+            num = {'jours' : 30, 'mois' : 12, 'années' : 10}
+            cont_chk_2.slider('test', min_value=1, max_value=num[st.session_state.rolling_window], 
+                                 label_visibility='collapsed', width = 150, key='num_rolling_window')
 
         if len(players_to_show) == 1:
             if not st.session_state.stats_to_plot:
@@ -199,7 +208,11 @@ if onlyone:
                 player = players_to_show[0]
                 fig = get_plot(player, st.session_state.stats_to_plot, 
                                     st.session_state.show_lines,
-                                    st.session_state.show_avg)
+                                    st.session_state.show_avg,
+                                    st.session_state.rolling_avg,
+                                    st.session_state.get('rolling_window', None),
+                                    st.session_state.get('num_rolling_window', None),
+                                    st.session_state.show_teams)
                 st.plotly_chart(fig)
 
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'

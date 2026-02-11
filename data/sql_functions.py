@@ -1769,7 +1769,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
     WITH selector AS (
         SELECT 
             {boxscore_cols} FROM boxscores
-        WHERE playerName = '{player}'
+        WHERE playerName = "{player}"
         AND seconds > 0
         {add_playoffs}
         {add_seasons}
@@ -1783,7 +1783,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
             stddev_TTFL_season,
             median_TTFL_season
         FROM player_avg_TTFL 
-        WHERE playerName = '{player}'
+        WHERE playerName = "{player}"
     ),
 
     home_away_season AS (
@@ -1795,7 +1795,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
             away_avg_TTFL_season
 
         FROM home_away_rel_TTFL 
-        WHERE playerName = '{player}'
+        WHERE playerName = "{player}"
     ),
 
     back_to_back_season AS (
@@ -1806,7 +1806,7 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
             n_btb_season
 
         FROM rel_btb_TTFL 
-        WHERE playerName = '{player}'
+        WHERE playerName = "{player}"
     ),
 
     global AS (
@@ -1828,19 +1828,19 @@ def query_player_stats_by_season(conn, player, seasons=[], playoffs='Saison rég
         CROSS JOIN (
             SELECT avg_TTFL, stddev_TTFL, median_TTFL
             FROM player_avg_TTFL
-            WHERE playerName = '{player}'
+            WHERE playerName = "{player}"
             LIMIT 1
         ) a
         CROSS JOIN (
             SELECT home_rel_TTFL, away_rel_TTFL, home_avg_TTFL, away_avg_TTFL
             FROM home_away_rel_TTFL
-            WHERE playerName = '{player}'
+            WHERE playerName = "{player}"
             LIMIT 1
         ) ha
         CROSS JOIN (
             SELECT btbTTFL, rel_btb_TTFL, n_btb
             FROM rel_btb_TTFL
-            WHERE playerName = '{player}'
+            WHERE playerName = "{player}"
             LIMIT 1
         ) btb
         GROUP BY se.playerName
@@ -1930,7 +1930,7 @@ def query_player_v_team(conn, player, alltime, seasons, playoffs, team):
     SELECT {agg_cols}
     FROM selector
     WHERE seconds > 0
-        AND playerName = '{player}'
+        AND playerName = "{player}"
         {add_seasons}
     GROUP BY opponent
     """
@@ -1960,7 +1960,7 @@ def query_historique_des_perfs(conn, player, alltime, seasons, playoffs, team):
     SELECT * 
     FROM boxscores
     WHERE seconds > 0
-        AND playerName = '{player}'
+        AND playerName = "{player}"
         {add_seasons}
         {add_playoffs}
         {add_team}

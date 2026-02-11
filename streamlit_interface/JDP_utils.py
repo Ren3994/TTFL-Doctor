@@ -56,8 +56,8 @@ def get_cached_alltime_player_list():
     return player_list
 
 @st.cache_data(show_spinner=False)
-def get_cached_pat():
-    pat = run_sql_query(conn=conn_db(), table='player_avg_TTFL')
+def get_cached_pat(alltime):
+    pat = run_sql_query(conn=conn_db() if not alltime else conn_hist_db(), table='player_avg_TTFL')
     return pat
 
 @st.cache_data(show_spinner=False)
@@ -269,10 +269,10 @@ def clean_player_names(df, colname, names_list=None):
 def match_player(input_name, names_list=None, multi=False):
 
     matched_name = None
-    fetch_alltime_players = st.session_state.get('player_alltime_stats', False)
+    alltime = st.session_state.get('player_alltime_stats', False)
 
     if names_list is None:
-        if not fetch_alltime_players:
+        if not alltime:
             names_list = get_cached_player_list()
         else:
             names_list = get_cached_alltime_player_list()
@@ -296,7 +296,7 @@ def match_player(input_name, names_list=None, multi=False):
         if multi:
             matched_name = abbv_map[input_upper]
         else:
-            pat = get_cached_pat()
+            pat = get_cached_pat(alltime)
             filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
             matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     
@@ -304,7 +304,7 @@ def match_player(input_name, names_list=None, multi=False):
         if multi:
             matched_name = splits[input_upper]
         else:
-            pat = get_cached_pat()
+            pat = get_cached_pat(alltime)
             filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
             matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
 

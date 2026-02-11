@@ -324,7 +324,7 @@ def historique_des_perfs(player):
     
     return html_df
 
-def get_plot(player, stats, show_lines, show_avg):
+def get_plot(player, stats, show_lines, show_avg, show_roll_avg, roll_window, n_roll_window, show_teams):
     import pandas as pd
     
     alltime = st.session_state.get('player_alltime_stats', False)
@@ -359,17 +359,39 @@ def get_plot(player, stats, show_lines, show_avg):
         '±' : 'plusMinusPoints'
     }
 
+    windows_dict = {'jours' : 1,
+                    'mois' : 30,
+                    'années' : 365}
+
     stats_to_plot = {}
     avgs_to_plot = {}
+    roll_avgs = {}
+    player_teams = {}
+
+    if show_teams:
+        traded = (df["teamTricode"] != df["teamTricode"].shift()) | (df.index == 0) | (df.index == len(df) - 1)
+        mid_dates = (df.loc[traded, "gameDate"].shift() + 
+                        (df.loc[traded, "gameDate"] - df.loc[traded, "gameDate"].shift()) / 2
+                    ).reset_index()['gameDate'].tolist()
+        
+        mid_dates[0] = df.iloc[0]['gameDate']
+        mid_dates.append(df.iloc[-1]['gameDate'])
+        teams = df.loc[traded, 'teamTricode'].reset_index()['teamTricode'].tolist()[:-1]
+        trade_dates = df.loc[traded, 'gameDate'].reset_index()['gameDate'].tolist()[1:-1]
+        player_teams = {'mid_dates' : mid_dates, 'teams' : teams, 'trade_dates' : trade_dates}
 
     for stat in stats:
         if stat == 'Min':
             df['seconds'] = df['seconds'].mul(1/60)
         stats_to_plot[stat] = df[stats_dict[stat]].tolist()
         if show_avg:
-            avgs_to_plot[stat] = [df[stats_dict[stat]].mean()] * len(df)
+            avgs_to_plot[stat] = [df[stats_dict[stat]].mean().round(1)] * len(df)
+        if show_roll_avg:
+            period = f'{n_roll_window * windows_dict[roll_window]}D'
+            roll_series = pd.Series(df[stats_dict[stat]].tolist(), index=dates)
+            roll_avgs[stat] = roll_series.rolling(period, min_periods=1).mean().round(1).tolist()
 
-    fig = interactive_plot(player, dates, stats_to_plot, show_lines, avgs_to_plot)
+    fig = interactive_plot(player, dates, stats_to_plot, show_lines, avgs_to_plot, roll_avgs, player_teams)
     
     return fig
 

@@ -28,7 +28,8 @@ def format_to_table(df) :
 
     prettydf['Joueur'] = df['playerName']
     prettydf['Poste'] = df['pos']
-    prettydf['Lieu'] = df['team'].where(df['isHome'] == 1, df['opponent'])
+    prettydf['Lieu'] = np.where(df['isHome'] == 1, 'Dom.', 'Ext.')
+    # prettydf['Lieu'] = df['team'].where(df['isHome'] == 1, df['opponent'])
     prettydf['Équipe'] = df['team'] + ' (' + df['teamWins'].astype(str) + 'W-' + df['teamLosses'].astype(str) + 'L)'
     prettydf['Adversaire'] = df['opponent'] + ' (' + df['oppWins'].astype(str) + 'W-' + df['oppLosses'].astype(str) + 'L)'
     prettydf['clean_team'] = df['team']

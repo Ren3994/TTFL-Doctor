@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.sql_functions import run_sql_query, query_opp_team_avgs
 from streamlit_interface.plotting_utils import team_standings
 from streamlit_interface.resource_manager import conn_db
+from misc.misc import CONFERENCES
 
 @st.cache_data(show_spinner=False)
 def query_team_stats():
@@ -66,21 +67,22 @@ def get_team_stats(selected_teams=[]):
 
     team_stats['FG3_ratio'] = (100 * team_stats['FG3A'] / team_stats['FGA']).round(1)
 
-    team_stats = team_stats.sort_values(by=['W', 'W_PCT'], ascending=[False, False])
+    team_stats = team_stats.sort_values(by=['W_PCT', 'W'], ascending=[False, False]).reset_index(drop=True)
+    team_stats['rank'] = team_stats.index + 1
     
-    reg_stats = team_stats[['teamTricode', 'GP', 'W', 'L', 'W_PCT','PTS', 'AST', 'REB', 
+    reg_stats = team_stats[['rank', 'teamTricode', 'GP', 'W', 'L', 'W_PCT','PTS', 'AST', 'REB', 
                             'OREB', 'DREB', 'STL', 'BLK', 'TOV']]
     
-    adv_stats = team_stats[['teamTricode', 'ORtg', 'DRtg', 'NRtg', 'FG3_ratio', 'Pace', 'AST_TO',
+    adv_stats = team_stats[['rank', 'teamTricode', 'ORtg', 'DRtg', 'NRtg', 'FG3_ratio', 'Pace', 'AST_TO',
                              'REB_PCT','OREB_PCT', 'DREB_PCT', 'TM_TOV_PCT',
                             'AST_PCT', 'AST_RATIO', 'BLKA', 'PFD']]
     
-    shooting_stats = team_stats[['teamTricode', 'FGM', 'FGA', 'FG_PCT', 'FG2M', 'FG2A', 'FG2_PCT', 
+    shooting_stats = team_stats[['rank', 'teamTricode', 'FGM', 'FGA', 'FG_PCT', 'FG2M', 'FG2A', 'FG2_PCT', 
                                 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'EFG_PCT', 'TS_PCT']]
     
-    ttfl_stats = team_stats[['teamTricode', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
+    ttfl_stats = team_stats[['rank', 'teamTricode', 'avg_team_TTFL', 'avg_opp_TTFL', 'net_TTFL',
                             'rel_team_avg_TTFL', 'rel_opp_avg_TTFL', 'net_rel_TTFL']]
-    
+        
     all_stats = {'Statistiques basiques' : reg_stats,
                  'Statistiques de tir' : shooting_stats,
                  'Statistiques avancées' : adv_stats,
@@ -112,6 +114,15 @@ def clear_team_stats_vars():
             st.session_state[key] = False
 
     st.session_state.team_stats_color_cells = False
+
+def get_teams_from_conf(df, conf, name):
+    if conf != 'Global':
+        df = df[df['teamTricode'].isin(CONFERENCES[conf.split(' ')[1]])]
+        if name != 'Statistiques des adversaires':
+            df = df.reset_index(drop=True)
+            df['rank'] = df.index + 1
+    
+    return df
 
 if __name__ == '__main__':
     a = get_team_stats()

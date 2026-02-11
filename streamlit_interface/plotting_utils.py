@@ -132,7 +132,7 @@ def cached_generate_plot_row(requested_date,
 
     return f"data:image/png;base64,{img_base64}"
 
-def interactive_plot(player, dates, data, show_lines, avgs):
+def interactive_plot(player, dates, data, show_lines, avgs, roll_avgs, player_teams):
     import plotly.graph_objects as go
 
     fig = go.Figure()
@@ -141,8 +141,37 @@ def interactive_plot(player, dates, data, show_lines, avgs):
 
     for stat in data:
         fig.add_trace(go.Scatter(x=dates, y=data[stat], name=stat, mode=mode))
+
         if stat in avgs:
             fig.add_trace(go.Scatter(x=dates, y=avgs[stat], name=f'Moyenne de {stat}', mode='lines'))
+
+        if stat in roll_avgs:
+            fig.add_trace(go.Scatter(x=dates, y=roll_avgs[stat], name=f'Moyenne glissante de {stat}', mode='lines'))
+
+    if len(player_teams) > 0:
+
+        for date in player_teams['trade_dates']:
+            fig.add_vline(x=date, line_color="red", line_dash="dash")
+        
+        base = player_teams['mid_dates'][0]
+        span = player_teams['mid_dates'][-1] - base
+        date_ratios = [((y - base) / (span)) * 0.95 for y in player_teams['mid_dates'][1:-1]]
+        
+        for date, team in zip(date_ratios, player_teams['teams']):
+            logo_path = os.path.join(RESIZED_LOGOS_PATH, f'{team}.png')
+            plotly_logo = base64.b64encode(open(logo_path, 'rb').read())
+            fig.add_layout_image(dict(
+                source = 'data:image/png;base64,{}'.format(plotly_logo.decode()),
+                x=date,
+                y=1,
+                xref="paper",
+                yref="paper",
+                sizex=0.1,
+                sizey=0.1,
+                xanchor="center",
+                yanchor="middle",
+                layer="above"
+            ))
 
     return fig
 
@@ -160,31 +189,50 @@ def team_standings(df):
     return fig
 
 if __name__ == '__main__':
-    import pandas as pd
-    data = {
-    'Joueur': ['Player A', 'Player B', 'Player C'],
-    'graph_dates': [
-        '10/10/2025,12/10/2025,14/10/2025',
-        '10/10/2025,12/10/2025',
-        '12/10/2025,14/10/2025,18/10/2025,22/10/2025,25/10/2025,27/10/2025,29/10/2025,30/10/2025,01/11/2025,04/11/2025,07/04/2026'
-    ],
-    'graph_opps': [
-        'LAL,BOS,DEN',
-        'NYK,MIA',
-        'SAS,OKC,UTA,POR,SAS,OKC,UTA,POR,SAS,OKC,UTA'
-    ],
-    'graph_TTFLs': [
-        '32,28,40',
-        '15,22',
-        '45,38,50,41,45,38,50,41,45,38,50'
-    ],
-    'graph_wins' : [
-        '1,1,0',
-        '0,0',
-        '0,1,1,1,0,1,1,0,1,1,1'
-    ],
-    'TTFL': ['33±5', '19±3', '43±4']
-    }
-    df = pd.DataFrame(data)
-    # print(df)
-    df = generate_all_plots(df, '25/10/2025')
+    a = ['CAP', 'BLT', 'CHZ', 'CHP', 'CHP', 'CHZ', 'BLT', 'CAP', 'HUS', 'CHS', 'PRO', 'DEF', 'BOM', 'PIT', 'CLR', 'PHW', 'SFW', 'GOS', 'SFW', 'PHW', 'BAL', 'JET', 'FTW', 'FTW', 'MNL', 'MNL', 'ROC', 'CIN', 'KCK', 'ROC', 'CIN', 'KCK', 'TCB', 'MIH', 'STL', 'TCB', 'MIH', 'STL', 'DN', 'INO', 'SHE', 'WAT', 'AND', 'SYR', 'PHL', 'SYR', 'SEA', 'SEA', 'SDR', 'SDR', 'BUF', 'SDC', 'SDC', 'BUF', 'NOJ', 'UTH', 'NOJ', 'SAN', 'NYN', 'NJN', 'NYN', 'NJN', 'NOH', 'NOK', 'NOH', 'NOK', 'VAN', 'VAN', 'CHH']
+    # from matplotlib import pyplot as plt
+    # import matplotlib
+    # matplotlib.use("TkAgg")
+
+    # for team in a:
+
+    #     fig, ax = plt.subplots(figsize=(4, 2))
+
+    #     ax.text(0, 0, team, fontsize=75)
+    #     ax.set_xlim((-0.01, 0.14))
+    #     ax.set_ylim((-0.2, 0.5))
+    #     plt.axis('off')
+
+    #     # plt.show()
+    #     fig.savefig(f'{team}.png')
+    #     plt.close()
+
+
+    # import pandas as pd
+    # data = {
+    # 'Joueur': ['Player A', 'Player B', 'Player C'],
+    # 'graph_dates': [
+    #     '10/10/2025,12/10/2025,14/10/2025',
+    #     '10/10/2025,12/10/2025',
+    #     '12/10/2025,14/10/2025,18/10/2025,22/10/2025,25/10/2025,27/10/2025,29/10/2025,30/10/2025,01/11/2025,04/11/2025,07/04/2026'
+    # ],
+    # 'graph_opps': [
+    #     'LAL,BOS,DEN',
+    #     'NYK,MIA',
+    #     'SAS,OKC,UTA,POR,SAS,OKC,UTA,POR,SAS,OKC,UTA'
+    # ],
+    # 'graph_TTFLs': [
+    #     '32,28,40',
+    #     '15,22',
+    #     '45,38,50,41,45,38,50,41,45,38,50'
+    # ],
+    # 'graph_wins' : [
+    #     '1,1,0',
+    #     '0,0',
+    #     '0,1,1,1,0,1,1,0,1,1,1'
+    # ],
+    # 'TTFL': ['33±5', '19±3', '43±4']
+    # }
+    # df = pd.DataFrame(data)
+    # # print(df)
+    # df = generate_all_plots(df, '25/10/2025')

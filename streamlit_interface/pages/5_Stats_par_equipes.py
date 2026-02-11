@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_button_css, st_image_crisp, custom_CSS
-from misc.misc import TRICODE2NAME, RESIZED_LOGOS_PATH, TEAM_STATS_COLUMN_DEF
+from misc.misc import RESIZED_LOGOS_PATH, TEAM_STATS_COLUMN_DEF, CONFERENCES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.team_stats_utils import *
@@ -25,7 +25,12 @@ st.markdown('<div class="date-title">Statistiques des équipes</div>', unsafe_al
 vspace()
 
 cont_team_buttons = st.container(horizontal_alignment='center')
-team_list = list(TRICODE2NAME.keys())
+conf = st.session_state.get('conf_selector', 'Global')
+if conf != 'Global':
+    team_list = CONFERENCES[conf.split(' ')[1]]
+else:
+    team_list = CONFERENCES['Ouest'] + CONFERENCES['Est']
+
 session_state_vars = []
 
 if st.session_state.mobile_layout:
@@ -53,26 +58,33 @@ for i in range(0, len(team_list), items_per_row):
                                                    {f"team_stats_button_{k}": 
                                                     not st.session_state[f"team_stats_button_{k}"]}))
 vspace()
+
 cont_options = st.container(horizontal_alignment='right', horizontal=True)
+cont_options.write('')
+cont_options.segmented_control('Conference', ['Global', 'Conférence Ouest', 'Conférence Est'], 
+                                      label_visibility='collapsed', default='Global', key='conf_selector')
 if cont_options.button('Clear'):
     clear_team_stats_vars()
     st.rerun()
 color_cells = cont_options.checkbox('Colorer les cases', key='team_stats_color_cells')
+cont_options.write('')
 
 true_vars = [i for i, val in enumerate(session_state_vars) if val]
 selected_teams = [team_list[i] for i in true_vars]
 team_stats = get_team_stats(selected_teams=selected_teams)
 
 for table in team_stats:
-    df = team_stats[table]
+    df = get_teams_from_conf(team_stats[table], st.session_state.conf_selector, table)
+    
     with st.expander(table, expanded=any(true_vars)):
+
         show_df = df
         negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL',
                          'pts', 'ast', 'reb', 'Oreb', 'Dreb', 'stl', 'blk', 'opp_FGM', 'opp_FGA', 
                          'opp_FG3M', 'opp_FG3A', 'opp_FTM', 'opp_FTA', 'opp_FT_PCT', 'opp_FG_PCT',
                          'opp_FG3_PCT', 'opp_EFG', 'opp_TS']
-        positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode']]
-        negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode']]
+        positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode', 'rank']]
+        negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode', 'rank']]
         
         if color_cells:
             show_df = (df.style
