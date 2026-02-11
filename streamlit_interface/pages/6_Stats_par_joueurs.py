@@ -142,7 +142,7 @@ for table in st.session_state.player_stats:
             positive_in_df = [col for col in df.columns if col not in negative_cols and col not in excluded_cols]
             negative_in_df = [col for col in df.columns if col in negative_cols and col not in excluded_cols]
 
-            if st.session_state.color_cells and len(df) > 1:
+            if (st.session_state.color_cells) and (len(df) > 1) and (len(df) < 550):
                 idx = pd.IndexSlice
                 if 'season' in df.columns:
                     rows_to_style = df.index[df["season"] != "Global"]
