@@ -324,8 +324,10 @@ def historique_des_perfs(player):
     
     return html_df
 
-def get_plot(player, stats, show_lines, show_avg, show_roll_avg, roll_window, n_roll_window, show_teams):
+def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lambda_lowess, show_teams):
+    import statsmodels.api as sm
     import pandas as pd
+    import numpy as np
     
     alltime = st.session_state.get('player_alltime_stats', False)
     seasons = st.session_state.get('selected_seasons', [])
@@ -341,6 +343,21 @@ def get_plot(player, stats, show_lines, show_avg, show_roll_avg, roll_window, n_
     df = df.sort_values(by='gameDate', ascending=True).reset_index(drop=True)
     dates = df['gameDate'].tolist()
 
+    df['FGpct'] = np.select([df['fieldGoalsAttempted'] == 0, df['fieldGoalsAttempted'] == df['fieldGoalsMade']], 
+                            [0, 100], 
+                (100 * df['fieldGoalsMade'] / df['fieldGoalsAttempted']).round(0))
+    df['FG3pct'] = np.select([df['threePointersAttempted'] == 0, df['threePointersAttempted'] == df['threePointersMade']], 
+                             [0, 100], 
+                (100 * df['threePointersMade'] / df['threePointersAttempted']).round(0))
+    df['FTpct'] = np.select([df['freeThrowsAttempted'] == 0, df['freeThrowsAttempted'] == df['freeThrowsMade']], 
+                            [0, 100], 
+                (100 * df['freeThrowsMade'] / df['freeThrowsAttempted']).round(0))
+    
+    hover_info = {'pts' : df['points'].tolist(), 'reb' : df['reboundsTotal'].tolist(), 
+                  'ast' : df['assists'].tolist(), 'opp' : df['opponent'].tolist(), 
+                  'date' : df['gameDate'].dt.strftime('%d %b. %y'), 
+                  'min' : df['seconds'].mul(1/60).astype(int).tolist()}
+
     stats_dict = {
         'TTFL' : 'TTFL',
         'Min' : 'seconds',
@@ -352,20 +369,19 @@ def get_plot(player, stats, show_lines, show_avg, show_roll_avg, roll_window, n_
         'Tov' : 'turnovers',
         'FG' : 'fieldGoalsMade',
         'FGA' : 'fieldGoalsAttempted',
+        'FG%' : 'FGpct',
         'FG3' : 'threePointersMade',
         'FG3A' : 'threePointersAttempted',
+        'FG3%' : 'FG3pct',
         'FT' : 'freeThrowsMade',
         'FTA' : 'freeThrowsAttempted',
+        'FT%' : 'FTpct',
         '±' : 'plusMinusPoints'
     }
 
-    windows_dict = {'jours' : 1,
-                    'mois' : 30,
-                    'années' : 365}
-
     stats_to_plot = {}
     avgs_to_plot = {}
-    roll_avgs = {}
+    trends = {}
     player_teams = {}
 
     if show_teams:
@@ -382,16 +398,23 @@ def get_plot(player, stats, show_lines, show_avg, show_roll_avg, roll_window, n_
 
     for stat in stats:
         if stat == 'Min':
-            df['seconds'] = df['seconds'].mul(1/60)
+            df['seconds'] = df['seconds'].mul(1/60).round(1)
         stats_to_plot[stat] = df[stats_dict[stat]].tolist()
         if show_avg:
             avgs_to_plot[stat] = [df[stats_dict[stat]].mean().round(1)] * len(df)
-        if show_roll_avg:
-            period = f'{n_roll_window * windows_dict[roll_window]}D'
-            roll_series = pd.Series(df[stats_dict[stat]].tolist(), index=dates)
-            roll_avgs[stat] = roll_series.rolling(period, min_periods=1).mean().round(1).tolist()
-
-    fig = interactive_plot(player, dates, stats_to_plot, show_lines, avgs_to_plot, roll_avgs, player_teams)
+        if show_lowess:
+            x = df['gameDate'].map(pd.Timestamp.toordinal).values
+            y = df[stats_dict[stat]].values
+            lowess_result = sm.nonparametric.lowess(
+                endog=y,
+                exog=x,
+                frac=lambda_lowess,
+                return_sorted=False
+            ).round(2)
+            trends[stat] = lowess_result
+            
+    fig = interactive_plot(player, dates, stats_to_plot, show_lines, show_scatter, 
+                           avgs_to_plot, trends, player_teams, hover_info)
     
     return fig
 

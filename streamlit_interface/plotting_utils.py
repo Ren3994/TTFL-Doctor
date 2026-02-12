@@ -132,21 +132,36 @@ def cached_generate_plot_row(requested_date,
 
     return f"data:image/png;base64,{img_base64}"
 
-def interactive_plot(player, dates, data, show_lines, avgs, roll_avgs, player_teams):
+def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, player_teams, hover_info):
     import plotly.graph_objects as go
+    import numpy as np
 
     fig = go.Figure()
     fig.update(layout_title_text=player)
     mode = 'lines+markers' if show_lines else 'markers'
 
     for stat in data:
-        fig.add_trace(go.Scatter(x=dates, y=data[stat], name=stat, mode=mode))
+        if show_scatter:
+            fig.add_trace(go.Scatter(x=dates, y=data[stat], name=stat, mode=mode,
+                                 customdata = np.column_stack((
+                                    hover_info['date'], hover_info['opp'], hover_info['pts'],
+                                    hover_info['reb'], hover_info['ast'], hover_info['min'],
+                                    [stat] * len(hover_info['date'])
+                                )),
+                                 hovertemplate = ( "          %{customdata[6]} : %{y}<br>"
+                                                   "%{customdata[0]} vs. %{customdata[1]}<br>"
+                                                   "  %{customdata[2]}-%{customdata[3]}-%{customdata[4]}" 
+                                                   " en %{customdata[5]} min"
+                                                   "<extra></extra>"
+                                 )
+                                )
+                        )
 
         if stat in avgs:
             fig.add_trace(go.Scatter(x=dates, y=avgs[stat], name=f'Moyenne de {stat}', mode='lines'))
 
-        if stat in roll_avgs:
-            fig.add_trace(go.Scatter(x=dates, y=roll_avgs[stat], name=f'Moyenne glissante de {stat}', mode='lines'))
+        if stat in trends:
+            fig.add_trace(go.Scatter(x=dates, y=trends[stat], name=f'Courbe de tendance de {stat}', mode='lines'))
 
     if len(player_teams) > 0:
 
@@ -173,6 +188,11 @@ def interactive_plot(player, dates, data, show_lines, avgs, roll_avgs, player_te
                 layer="above"
             ))
 
+        fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines", name="Transferts",
+                                 line=dict(color="red", dash="dash")))
+
+    fig.update_layout(hoverlabel=dict(align="left"), showlegend=True)
+    
     return fig
 
 def team_standings(df):
