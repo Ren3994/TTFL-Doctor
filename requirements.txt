@@ -54,6 +54,7 @@ nba_api==1.11.3
 numpy==2.3.5
 packaging==25.0
 pandas==2.3.3
+patsy==1.0.2
 pillow==12.0.0
 platformdirs==4.5.1
 plotly==6.5.0
@@ -79,6 +80,7 @@ referencing==0.37.0
 requests==2.32.5
 rpds-py==0.30.0
 s3transfer==0.16.0
+scipy==1.17.0
 seaborn==0.13.2
 setuptools==80.9.0
 six==1.17.0
@@ -89,6 +91,7 @@ sortedcontainers==2.4.0
 soupsieve==2.8
 st-annotated-text==4.0.2
 st-theme==1.2.3
+statsmodels==0.14.6
 storage3==2.25.0
 streamlit==1.52.1
 streamlit-avatar==0.1.3
