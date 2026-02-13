@@ -30,6 +30,7 @@ if st.session_state.mobile_layout:
     cont = st.container(horizontal_alignment='center', gap='medium')
     cont_date_obj = cont.container(horizontal=True, horizontal_alignment='center')
     cont_left = cont.container(horizontal_alignment='center')
+    cont_right = cont.container(horizontal_alignment='center')
     cont_lower = cont.container(horizontal=True, horizontal_alignment='center')
     buttons_per_row = 4
 else:
