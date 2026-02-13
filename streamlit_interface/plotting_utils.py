@@ -132,7 +132,7 @@ def cached_generate_plot_row(requested_date,
 
     return f"data:image/png;base64,{img_base64}"
 
-def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, player_teams, hover_info):
+def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, player_teams, hover_info, hide_legend):
     import plotly.graph_objects as go
     import numpy as np
 
@@ -191,7 +191,7 @@ def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends
         fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines", name="Transferts",
                                  line=dict(color="red", dash="dash")))
 
-    fig.update_layout(hoverlabel=dict(align="left"), showlegend=True)
+    fig.update_layout(hoverlabel=dict(align="left"), showlegend=not hide_legend)
     
     return fig
 
