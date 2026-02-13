@@ -324,7 +324,7 @@ def historique_des_perfs(player):
     
     return html_df
 
-def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lambda_lowess, show_teams):
+def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lambda_lowess, show_teams, hide_legend):
     import statsmodels.api as sm
     import pandas as pd
     import numpy as np
@@ -414,7 +414,7 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
             trends[stat] = lowess_result
             
     fig = interactive_plot(player, dates, stats_to_plot, show_lines, show_scatter, 
-                           avgs_to_plot, trends, player_teams, hover_info)
+                           avgs_to_plot, trends, player_teams, hover_info, hide_legend)
     
     return fig
 
