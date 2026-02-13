@@ -168,9 +168,7 @@ for table in st.session_state.player_stats:
                             st.column_config.TextColumn(
                             PLAYER_STATS_COLUMN_DEF[stat]['display'],
                             width = PLAYER_STATS_COLUMN_DEF[stat]['width'],
-                            help = PLAYER_STATS_COLUMN_DEF[stat]['help'],
-                            pinned = True if stat == 'playerName' and 
-                            st.session_state.mobile_layout else False))
+                            help = PLAYER_STATS_COLUMN_DEF[stat]['help']))
                             for stat in df})
 
 # Display individual stats tables and graphs
