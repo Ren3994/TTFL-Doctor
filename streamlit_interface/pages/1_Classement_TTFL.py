@@ -142,7 +142,7 @@ if st.session_state.topTTFL_df.empty:
         st.subheader(f"Pas de matchs NBA le {st.session_state.date_text}")
     else:
         st.subheader(f"Les équipes de des matchs du {st.session_state.date_text}" 
-                     "n'ont pas encore été déterminées")
+                     " n'ont pas encore été déterminées")
 
 else:
     statusholder = st.empty()
