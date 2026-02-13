@@ -193,6 +193,7 @@ if onlyone:
         cont_chk.checkbox('Afficher les points', key='show_scatter', value=True)
         cont_chk.checkbox('Relier les points', key='show_lines', value=True)
         cont_chk.checkbox('Moyennes', key='show_avg', value=False)
+        cont_chk.checkbox('Masquer légende', key='hide_legend')
         cont_chk_2 = cont.container(horizontal_alignment='center', horizontal=True)
         cont_chk_2.checkbox('Courbe de tendance', key='show_lowess')
         if st.session_state.show_lowess:
@@ -210,7 +211,8 @@ if onlyone:
                                     st.session_state.show_avg,
                                     st.session_state.show_lowess,
                                     st.session_state.get('lambda_lowess', None),
-                                    st.session_state.show_teams)
+                                    st.session_state.show_teams,
+                                    st.session_state.hide_legend)
                 st.plotly_chart(fig)
 
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
