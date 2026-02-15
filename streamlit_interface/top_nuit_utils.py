@@ -10,7 +10,7 @@ from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
-@st.cache_data(show_spinner=False)
+# @st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     import pandas as pd
     import numpy as np

@@ -9,13 +9,13 @@ from streamlit_interface.classement_TTFL_utils import get_low_game_count, get_de
 from streamlit_interface.player_stats_utils import cached_player_stats, cached_player_v_team, cached_historique_des_perfs, cached_player_stats_by_season
 from streamlit_interface.team_stats_utils import query_team_stats, get_cached_opp_team_stats
 from streamlit_interface.plotting_utils import cached_generate_plot_row
-from streamlit_interface.top_nuit_utils import get_top_de_la_nuit
+# from streamlit_interface.top_nuit_utils import get_top_de_la_nuit
 
 def clear_after_db_update():
     get_low_game_count.clear()
     get_deadline.clear()
     cached_generate_plot_row.clear()
-    get_top_de_la_nuit.clear()
+    # get_top_de_la_nuit.clear()
     query_team_stats.clear()
     get_cached_opp_team_stats.clear()
     cached_player_stats.clear()
@@ -38,5 +38,5 @@ def clear_after_injury_update():
 def clear_after_JDP_update():
     apply_df_filters.clear()
     get_joueurs_pas_dispo.clear()
-    get_top_de_la_nuit.clear()
+    # get_top_de_la_nuit.clear()
     cached_get_top_TTFL.clear()
