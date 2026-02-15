@@ -57,16 +57,14 @@ if st.session_state.get("text_parse_error_nuit", False):
 cont_date_obj.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 
 cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
-spoiler = cont_right.toggle('Éviter les spoilers')
+spoiler = cont_right.toggle('Éviter les spoilers', key='top_nuit_spoiler')
 if spoiler:
     cont_right.toggle('Montrer TTFL', key='show_TTFL')
 
 update_top_nuit(st.session_state.date_text_nuit, 
                 st.session_state.get('matched_players_nuit', ''), 
                 st.session_state.get('byteam', False),
-                st.session_state.get('show_my_pick', False),
-                spoiler, 
-                st.session_state.get('show_TTFL', False))
+                st.session_state.get('show_my_pick', False))
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")

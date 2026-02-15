@@ -11,9 +11,12 @@ from streamlit_interface.JDP_utils import match_player
 from data.sql_functions import run_sql_query
 
 @st.cache_data(show_spinner=False)
-def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler, show_TTFL):
+def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     import pandas as pd
     import numpy as np
+
+    spoiler = st.session_state.get('top_nuit_spoiler', False)
+    show_TTFL = st.session_state.get('show_TTFL', False)
 
     conn = conn_db()                        
     df = run_sql_query(conn,
@@ -195,8 +198,8 @@ def next_date_nuit():
                     st.session_state.get('show_my_pick', False))
     clear_boxscore_vars()
 
-def update_top_nuit(date, name, byteam, show_my_pick, spoiler, show_TTFL):
-    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam, show_my_pick, spoiler, show_TTFL)
+def update_top_nuit(date, name, byteam, show_my_pick):
+    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam, show_my_pick)
 
 def show_my_pick(pick):
     st.session_state.search_player_nuit = pick
