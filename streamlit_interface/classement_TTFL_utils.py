@@ -469,12 +469,14 @@ def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, f
         filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \(B2B\)').str[0].isin(joueurs_blesses)]
     
     if len(selected_games) > 0:
+        filtered_topTTFL_df['team'] = filtered_topTTFL_df['Équipe'].str.split(' ').str[0]
         selected_teams = []
         for matchup in selected_games:
             selected_teams.append(matchup.split('-')[0])
             selected_teams.append(matchup.split('-')[1])
 
-        filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['Lieu'].isin(selected_teams)]
+        filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['team'].isin(selected_teams)]
+        filtered_topTTFL_df = filtered_topTTFL_df.drop(columns='team')
     
     filtered_topTTFL_df = filtered_topTTFL_df.reset_index(drop=True)
     return filtered_topTTFL_df
