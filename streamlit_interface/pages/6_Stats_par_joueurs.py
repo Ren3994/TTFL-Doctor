@@ -36,20 +36,17 @@ cont_search.text_input(label='Rechercher joueur',
                           placeholder='Joueur', 
                           key='search_player_indiv_stats', 
                           on_change=on_search_player_stats,
-                          label_visibility="collapsed",
-                          width=120)
+                          label_visibility="collapsed")
 
 cont_search.text_input(label='Rechercher equipe', 
                           placeholder='Équipe', 
                           key='search_team_indiv_stats', 
                           on_change=on_search_team_stats,
-                          label_visibility="collapsed",
-                          width=120)
+                          label_visibility="collapsed")
 
 cont_search.button('OK')
 cont_search.button('Clear', on_click=clear_search)
 cont_search.button('Ajouter au comparateur', on_click=add_compare)
-cont_search.button('Vider le comparateur', on_click=clear_compare)
 if cont_search.button('🇫🇷 Les Frenchies 🇫🇷'):
     st.session_state.player_stats_matched = FRENCHIES
     filters_to_zero()
@@ -121,6 +118,50 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
         st.session_state.only_active_players = False
         st.session_state.selected_seasons = []
         st.session_state.playoffs = 'Saison régulière'
+
+# Display interactive stats graph
+onlyone = len(players_to_show) == 1
+if onlyone:
+    hist_perfs = historique_des_perfs(players_to_show[0])
+    titre = f'Graphiques des performances de {players_to_show[0]}'
+    if len(hist_perfs) == 0:
+        titre = 'Aucune stat trouvée'
+        onlyone = False
+    with st.expander(titre, expanded=onlyone):
+        cont = st.container(horizontal_alignment='center')
+        cont.segmented_control('Stats à montrer', 
+                               ['TTFL', 'Min', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG%',
+                                'FG3', 'FG3A', 'FG3%', 'FT', 'FTA', 'FT%'], 
+                            key='stats_to_plot', 
+                            default='TTFL',
+                            selection_mode='multi',
+                            label_visibility='collapsed')
+        cont_chk = cont.container(horizontal_alignment='center', horizontal=True)
+        cont_chk.checkbox('Montrer les équipes', key='show_teams')
+        cont_chk.checkbox('Afficher les points', key='show_scatter', value=True)
+        cont_chk.checkbox('Relier les points', key='show_lines', value=True)
+        cont_chk.checkbox('Moyennes', key='show_avg', value=False)
+        cont_chk.checkbox('Masquer légende', key='hide_legend')
+        cont_chk_2 = cont.container(horizontal_alignment='center', horizontal=True)
+        cont_chk_2.checkbox('Courbe de tendance', key='show_lowess')
+        if st.session_state.show_lowess:
+            cont_chk_2.slider('test', min_value=0.05, max_value=0.5, step=0.01, value=0.25,
+                                 label_visibility='collapsed', width = 150, key='lambda_lowess')
+
+        if not st.session_state.stats_to_plot:
+            cont.write('Sélectionnez une ou plusieurs stats à afficher')
+        else:
+            player = players_to_show[0]
+            fig = get_plot(player, st.session_state.stats_to_plot,
+                                st.session_state.show_lines,
+                                st.session_state.show_scatter,
+                                st.session_state.show_avg,
+                                st.session_state.show_lowess,
+                                st.session_state.get('lambda_lowess', None),
+                                st.session_state.show_teams,
+                                st.session_state.hide_legend)
+            if fig is not None:
+                st.plotly_chart(fig)
         
 # Display stats tables
 for table in st.session_state.player_stats:
@@ -170,50 +211,6 @@ for table in st.session_state.player_stats:
                             width = PLAYER_STATS_COLUMN_DEF[stat]['width'],
                             help = PLAYER_STATS_COLUMN_DEF[stat]['help']))
                             for stat in df})
-
-# Display individual stats tables and graphs
-onlyone = len(players_to_show) == 1
-if onlyone:
-    hist_perfs = historique_des_perfs(players_to_show[0])
-    titre = f'Graphiques des performances de {players_to_show[0]}'
-    if len(hist_perfs) == 0:
-        titre = 'Aucune stat trouvée'
-        onlyone = False
-    with st.expander(titre, expanded=onlyone):
-        cont = st.container(horizontal_alignment='center')
-        cont.segmented_control('Stats à montrer', 
-                               ['TTFL', 'Min', 'Pts', 'Reb', 'Ast', 'Stl', 'Blk', 'Tov', 'FG', 'FGA', 'FG%',
-                                'FG3', 'FG3A', 'FG3%', 'FT', 'FTA', 'FT%'], 
-                            key='stats_to_plot', 
-                            default='TTFL',
-                            selection_mode='multi',
-                            label_visibility='collapsed')
-        cont_chk = cont.container(horizontal_alignment='center', horizontal=True)
-        cont_chk.checkbox('Montrer les équipes', key='show_teams')
-        cont_chk.checkbox('Afficher les points', key='show_scatter', value=True)
-        cont_chk.checkbox('Relier les points', key='show_lines', value=True)
-        cont_chk.checkbox('Moyennes', key='show_avg', value=False)
-        cont_chk.checkbox('Masquer légende', key='hide_legend')
-        cont_chk_2 = cont.container(horizontal_alignment='center', horizontal=True)
-        cont_chk_2.checkbox('Courbe de tendance', key='show_lowess')
-        if st.session_state.show_lowess:
-            cont_chk_2.slider('test', min_value=0.05, max_value=0.5, step=0.01, value=0.25,
-                                 label_visibility='collapsed', width = 150, key='lambda_lowess')
-
-        if len(players_to_show) == 1:
-            if not st.session_state.stats_to_plot:
-                cont.write('Sélectionnez une ou plusieurs stats à afficher')
-            else:
-                player = players_to_show[0]
-                fig = get_plot(player, st.session_state.stats_to_plot,
-                                    st.session_state.show_lines,
-                                    st.session_state.show_scatter,
-                                    st.session_state.show_avg,
-                                    st.session_state.show_lowess,
-                                    st.session_state.get('lambda_lowess', None),
-                                    st.session_state.show_teams,
-                                    st.session_state.hide_legend)
-                st.plotly_chart(fig)
 
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):

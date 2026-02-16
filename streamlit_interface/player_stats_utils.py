@@ -335,6 +335,9 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
     team = st.session_state.get('matched_team', '')
 
     df = cached_historique_des_perfs(player, alltime, seasons, playoffs, team)
+
+    if df.empty:
+        return None
     
     if isinstance(stats, str):
         stats = [stats]
@@ -423,13 +426,13 @@ def clear_search():
     st.session_state.search_player_indiv_stats = ''
     st.session_state.search_team_indiv_stats = ''
     st.session_state.matched_team = ''
-
-def clear_compare():
     st.session_state.compare_players = []
-    clear_search()
 
 def add_compare():
-    for player in st.session_state.player_stats_matched:
+    matched = st.session_state.player_stats_matched
+    if isinstance(matched, str):
+        matched = [matched]
+    for player in matched:
         if player not in st.session_state.compare_players and player != '':
             st.session_state.compare_players.append(player)
 

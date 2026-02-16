@@ -1013,7 +1013,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     rtat.playerName AS playing_teammate,
     COALESCE(rtat.rel_TTFL_teammate_absent, '0.0') AS rel_TTFL_teammate_absent,
     COALESCE(rtat.games_absent_count, 0) AS games_absent_count,
-    pat.avg_TTFL AS injured_player_avg_TTFL
+    ROUND(pat.avg_TTFL, 1) AS injured_player_avg_TTFL
 
     FROM inj_report ir
     LEFT JOIN rel_TTFL_abs_teammate rtat
@@ -1089,7 +1089,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     ap.playerName, ap.pos, 
     r.playerName AS inj_opp_player,
     ir.simplified_status,
-    pat.avg_TTFL AS opp_player_TTFL,
+    ROUND(pat.avg_TTFL, 1) AS opp_player_TTFL,
     COALESCE(partpop.avg_rel_TTFL_per_opp_pos, 0) AS avg_rel_TTFL_per_opp_pos
 
     FROM all_players ap
