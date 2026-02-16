@@ -59,16 +59,16 @@ Il y a 4 tableaux :
 
 ### 6. Stats par joueurs
 
-Classez tous les joueurs par la stat que vous voulez, ou sélectionner certains joueurs pour les comparer.
-Des filtres sont disponibles pour ajouter des minimums de matchs joués, min par match, ...
+Classez tous les joueurs par la stat que vous voulez, ou sélectionner certains joueurs pour les comparer. Par défaut, les tableaux montrent les stats de la saison actuelle. Cocher 'Stats historiques' montre les stats aggrégées depuis 1946-47. L'aggrégation des stats peut être en moyennes, totaux, ou moyennes par 36 min.
+Des filtres sont disponibles pour ajouter des minimums de matchs joués, points, min par match, ...
 
 - Tableaux de comparaisons :
 
-<img width="4400" height="4153" alt="player_stats_compare" src="https://github.com/user-attachments/assets/e9cc9c7c-f229-4f40-a4b0-c0779c7bee70" />
+<img width="4400" height="7994" alt="player_stats_new" src="https://github.com/user-attachments/assets/4961b290-1612-46e8-9aa1-d3214c1fd039" />
 
-Si un seul joueur est sélectionné, on voit ses moyennes de stats contre chaque équipe, et l'historique de ses lignes de stats :
+Si un seul joueur est sélectionné (champ Joueur en haut de page), ses stats seront affichées au global et par saison, avec un tableau de ses stats par adversaire, un graphique interactif pour tracer l'évolution de tous types de stats, et un détail de toutes ses lignes de stats.
 
-<img width="4400" height="3611" alt="player_stats_indiv" src="https://github.com/user-attachments/assets/925224bb-cd73-42ee-8ad6-88e4767cd3df" />
+<img width="4400" height="7268" alt="player_stats_indiv_graph" src="https://github.com/user-attachments/assets/2df8e863-233e-4378-9380-3e77a6fc767c" />
 
 ## Installation
 
