@@ -1620,7 +1620,8 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     boxscore_cols = """
         playerName, seconds, points, assists, steals, blocks, turnovers, plusMinusPoints, TTFL, 
         reboundsTotal, reboundsOffensive, reboundsDefensive, fieldGoalsMade, fieldGoalsAttempted, 
-        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted, season"""
+        threePointersMade, threePointersAttempted, freeThrowsMade, freeThrowsAttempted, season, 
+        gameDate_ymd"""
     
     agg_cols = """
         playerName, COUNT(*) AS GP, ROUND(AVG(seconds), 1) AS SECONDS, SUM(seconds) AS TOT_SECONDS, 
@@ -1646,10 +1647,12 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
         (SUM(points) / (2 * (SUM(fieldGoalsAttempted) + 0.44 * SUM(freeThrowsAttempted)))) AS TS, 
         (SUM(assists) * 1.0 / NULLIF(SUM(turnovers), 0)) AS ast_to_tov, 
         SUM(TTFL) * 1.0 / (SUM(seconds) / 60) AS ttfl_per_min, 
-        MAX(TTFL) AS max_ttfl, MIN(TTFL) AS min_ttfl
+        MAX(TTFL) AS max_ttfl, MIN(TTFL) AS min_ttfl,
+        MAX(gameDate_ymd) AS last_date
         """
     
-    add_teamTricode = ', teamTricode' if not alltime else ''
+    add_teamTricode = ', b.teamTricode' if not alltime else ''
+    join_last_teamTricode = 'JOIN boxscores b ON b.playerName = agg.playerName AND b.gameDate_ymd = agg.last_date' if not alltime else ''
     active_players = ('active_players AS (SELECT DISTINCT playerName FROM current_boxscores),'
                       if only_active_players else '')
     join_active_players = ('JOIN active_players ap ON ap.playerName = se.playerName' 
@@ -1668,7 +1671,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     query = f"""
     WITH selector AS (
         SELECT 
-            {boxscore_cols}{add_teamTricode} FROM boxscores
+            {boxscore_cols} FROM boxscores
         WHERE seconds > 0
         {add_playoffs}
         {add_seasons}
@@ -1678,7 +1681,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     {active_players}
 
     aggregator AS (
-        SELECT se.{agg_cols}{add_teamTricode}
+        SELECT se.{agg_cols}
         FROM selector se
         {join_active_players} 
         GROUP BY se.playerName
@@ -1703,11 +1706,12 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
     )
 
     SELECT 
-        agg.playerName{add_teamTricode}, TTFL, GP, SECONDS, TOT_SECONDS, Pts, TOT_Pts, Ast, TOT_Ast, Stl, TOT_Stl, Blk, TOT_Blk, 
+        agg.playerName, pat.TTFL, GP, agg.SECONDS, TOT_SECONDS, Pts, TOT_Pts, Ast, TOT_Ast, Stl, TOT_Stl, Blk, TOT_Blk, 
         Stk, TOT_Stk, Reb, TOT_Reb, Oreb, TOT_Oreb, Dreb, TOT_Dreb, Tov, TOT_Tov, FGM, TOT_FGM, FGA, TOT_FGA, 
         FG3M, TOT_FG3M, FG3A, TOT_FG3A, FTM, TOT_FTM, FTA, TOT_FTA, PM, TOT_PM, TOT_TTFL, FG_PCT, FG3_PCT, FT_PCT, 
         EFG, TS, ast_to_tov, ttfl_per_min, max_ttfl, min_ttfl, pat.median_TTFL, pat.stddev_TTFL, ha.home_rel_TTFL, 
         ha.away_rel_TTFL, ha.home_avg_TTFL, ha.away_avg_TTFL, btb.btbTTFL, btb.rel_btb_TTFL, btb.n_btb
+        {add_teamTricode}
 
     FROM aggregator agg
     LEFT JOIN home_away ha 
@@ -1716,6 +1720,7 @@ def query_player_stats(conn, alltime=False, only_active_players=False, seasons=[
         ON btb.playerName = agg.playerName 
     LEFT JOIN avg pat 
         ON pat.playerName = agg.playerName
+    {join_last_teamTricode}
     """
     df = pd.read_sql_query(query, conn, params=seasons)
     return df
