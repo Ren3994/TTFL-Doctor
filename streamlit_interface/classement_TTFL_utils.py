@@ -353,6 +353,10 @@ def df_to_html(
     #         translated_text = translate_df_column(to_translate)
     #         df.loc[~empty_string_mask, col] = translated_text
 
+    # Get indices of rows with max TTFL value
+    if best_pick_allowed and 'TTFL' in df.columns:
+        best_pick_indices = df.index[df['TTFL'] == df['TTFL'].max()].tolist()
+
     # Build HTML table
     html = css + '<table class="custom-table-dark">'
     html += "<thead><tr>"
@@ -380,7 +384,7 @@ def df_to_html(
             if 'Statut' in show_cols and getattr(row, 'Statut') != '':
                 row_class = "injured-pick-row"
             else:
-                row_class = "best-pick-row" if i == 1 else "highlight-row"
+                row_class = "best-pick-row" if (i - 1) in best_pick_indices else "highlight-row"
             html += f'<tr class="{row_class}">'
         else:
             html += "<tr>"
