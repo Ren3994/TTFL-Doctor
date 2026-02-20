@@ -359,7 +359,14 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
     hover_info = {'pts' : df['points'].tolist(), 'reb' : df['reboundsTotal'].tolist(), 
                   'ast' : df['assists'].tolist(), 'opp' : df['opponent'].tolist(), 
                   'date' : df['gameDate'].dt.strftime('%d %b. %y'), 
-                  'min' : df['seconds'].mul(1/60).astype(int).tolist()}
+                  'min' : df['seconds'].mul(1/60).astype(int).tolist(),
+                  'FGA' : df['fieldGoalsAttempted'].tolist(),
+                  'FGM' : df['fieldGoalsMade'].tolist(),
+                  'FG3A' : df['threePointersAttempted'].tolist(),
+                  'FG3M' : df['threePointersMade'].tolist(),
+                  'FTA' : df['freeThrowsAttempted'].tolist(),
+                  'FTM' : df['freeThrowsMade'].tolist()
+                  }
 
     stats_dict = {
         'TTFL' : 'TTFL',

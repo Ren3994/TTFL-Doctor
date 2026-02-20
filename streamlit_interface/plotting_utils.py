@@ -147,12 +147,18 @@ def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends
                                  customdata = np.column_stack((
                                     hover_info['date'], hover_info['opp'], hover_info['pts'],
                                     hover_info['reb'], hover_info['ast'], hover_info['min'],
-                                    [stat] * len(hover_info['date'])
+                                    [stat] * len(hover_info['date']),
+                                    hover_info['FGM'], hover_info['FGA'],
+                                    hover_info['FG3M'], hover_info['FG3A'],
+                                    hover_info['FTM'], hover_info['FTA'],
                                 )),
                                  hovertemplate = ( "          %{customdata[6]} : %{y}<br>"
                                                    "%{customdata[0]} vs. %{customdata[1]}<br>"
                                                    "  %{customdata[2]}-%{customdata[3]}-%{customdata[4]}" 
-                                                   " en %{customdata[5]} min"
+                                                   " en %{customdata[5]} min<br>"
+                                                   "   %{customdata[7]}/%{customdata[8]} - "
+                                                   "%{customdata[9]}/%{customdata[10]} - "
+                                                   "%{customdata[11]}/%{customdata[12]}"
                                                    "<extra></extra>"
                                  )
                                 )
