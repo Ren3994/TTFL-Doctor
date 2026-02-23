@@ -9,9 +9,9 @@ from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
 from streamlit_interface.classement_TTFL_utils import get_pick
+from misc.misc import RESIZED_LOGOS_PATH, FRENCHIES
 from streamlit_interface.top_nuit_utils import *
 from streamlit_interface.sidebar import sidebar
-from misc.misc import RESIZED_LOGOS_PATH
 
 # ---------- Initialize session state ----------
 PAGENAME = 'top_nuit'
@@ -57,6 +57,11 @@ if st.session_state.get("text_parse_error_nuit", False):
 cont_date_obj.button("▶️", on_click=next_date_nuit, key='next_button_nuit')
 
 cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscore_vars)
+if cont_left.toggle('Voir les Frenchies 🇫🇷'):
+    st.session_state.matched_players_nuit = FRENCHIES
+else:
+    st.session_state.matched_players_nuit = ''
+
 spoiler = cont_right.toggle('Éviter les spoilers', key='top_nuit_spoiler')
 if spoiler:
     cont_right.toggle('Montrer TTFL', key='show_TTFL')
