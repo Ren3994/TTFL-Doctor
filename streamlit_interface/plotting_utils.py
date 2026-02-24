@@ -132,7 +132,8 @@ def cached_generate_plot_row(requested_date,
 
     return f"data:image/png;base64,{img_base64}"
 
-def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, player_teams, hover_info, hide_legend):
+def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, 
+                     player_teams, hover_info, hide_legend, show_ttfl_details, ttfl_details):
     import plotly.graph_objects as go
     import plotly.express as px
     import numpy as np
@@ -170,6 +171,10 @@ def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends
         if stat in trends:
             fig.add_trace(go.Scatter(x=dates, y=trends[stat], name=f'Courbe de tendance de {stat}', mode='lines'))
 
+    if show_ttfl_details:
+        for stat in ttfl_details:
+            fig.add_trace(go.Bar(x=dates, y=ttfl_details[stat], name=stat))
+
     if len(player_teams) > 0:
 
         for date in player_teams['trade_dates']:
@@ -201,6 +206,8 @@ def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends
     fig.update_layout(hoverlabel=dict(align="left"), 
                       showlegend=not hide_legend,
                       colorway=px.colors.qualitative.Dark24)
+    if show_ttfl_details:
+        fig.update_layout(barmode='relative')
     
     return fig
 

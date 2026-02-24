@@ -324,7 +324,9 @@ def historique_des_perfs(player):
     
     return html_df
 
-def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lambda_lowess, show_teams, hide_legend):
+def get_plot(player, stats, show_lines, show_scatter, show_avg, 
+             show_lowess, lambda_lowess, show_teams, hide_legend,
+             show_ttfl_details):
     import statsmodels.api as sm
     import pandas as pd
     import numpy as np
@@ -393,6 +395,7 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
     avgs_to_plot = {}
     trends = {}
     player_teams = {}
+    ttfl_details = {}
 
     if show_teams:
         traded = (df["teamTricode"] != df["teamTricode"].shift()) | (df.index == 0) | (df.index == len(df) - 1)
@@ -405,6 +408,18 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
         teams = df.loc[traded, 'teamTricode'].reset_index()['teamTricode'].tolist()[:-1]
         trade_dates = df.loc[traded, 'gameDate'].reset_index()['gameDate'].tolist()[1:-1]
         player_teams = {'mid_dates' : mid_dates, 'teams' : teams, 'trade_dates' : trade_dates}
+
+    if show_ttfl_details:
+        ttfl_details = {
+                'Pts' : df['points'].tolist(), 'Reb' : df['reboundsTotal'].tolist(), 
+                'Ast' : df['assists'].tolist(), 'Stl' : df['steals'].tolist(), 
+                'Blk' : df['blocks'].tolist(), 'FG' : df['fieldGoalsMade'].tolist(),
+                'FG3' : df['threePointersMade'].tolist(), 'FT' : df['freeThrowsMade'].tolist(),
+                'Tov' : df['turnovers'].mul(-1).tolist(), 
+                'FG ratés' : (df['fieldGoalsAttempted'] - df['fieldGoalsMade']).mul(-1).tolist(),
+                'FG3 ratés' : (df['threePointersAttempted'] - df['threePointersMade']).mul(-1).tolist(),
+                'FT ratés' : (df['freeThrowsAttempted'] - df['freeThrowsMade']).mul(-1).tolist()
+        }
 
     for stat in stats:
         if stat == 'Min':
@@ -424,7 +439,8 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg, show_lowess, lam
             trends[stat] = lowess_result
             
     fig = interactive_plot(player, dates, stats_to_plot, show_lines, show_scatter, 
-                           avgs_to_plot, trends, player_teams, hover_info, hide_legend)
+                           avgs_to_plot, trends, player_teams, hover_info, hide_legend,
+                           show_ttfl_details, ttfl_details)
     
     return fig
 

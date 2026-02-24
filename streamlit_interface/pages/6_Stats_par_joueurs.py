@@ -136,14 +136,17 @@ if onlyone:
                             default='TTFL',
                             selection_mode='multi',
                             label_visibility='collapsed')
+        
         cont_chk = cont.container(horizontal_alignment='center', horizontal=True)
         cont_chk.checkbox('Montrer les équipes', key='show_teams')
         cont_chk.checkbox('Afficher les points', key='show_scatter', value=True)
         cont_chk.checkbox('Relier les points', key='show_lines', value=True)
-        cont_chk.checkbox('Moyennes', key='show_avg', value=False)
+        cont_chk.checkbox('Moyenne', key='show_avg', value=False)
         cont_chk.checkbox('Masquer légende', key='hide_legend')
         cont_chk_2 = cont.container(horizontal_alignment='center', horizontal=True)
         cont_chk_2.checkbox('Courbe de tendance', key='show_lowess')
+        if 'TTFL' in st.session_state.stats_to_plot:
+            cont_chk_2.checkbox('Détails TTFL', key='show_ttfl_details')
         if st.session_state.show_lowess:
             cont_chk_2.slider('test', min_value=0.05, max_value=0.5, step=0.01, value=0.25,
                                  label_visibility='collapsed', width = 150, key='lambda_lowess')
@@ -159,7 +162,8 @@ if onlyone:
                                 st.session_state.show_lowess,
                                 st.session_state.get('lambda_lowess', None),
                                 st.session_state.show_teams,
-                                st.session_state.hide_legend)
+                                st.session_state.hide_legend,
+                                st.session_state.get('show_ttfl_details', False))
             if fig is not None:
                 st.plotly_chart(fig)
         

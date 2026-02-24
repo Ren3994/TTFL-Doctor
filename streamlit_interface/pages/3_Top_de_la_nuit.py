@@ -60,7 +60,8 @@ cont_left.toggle('Boxscores par équipes', key='byteam', on_change=clear_boxscor
 if cont_left.toggle('Voir les Frenchies 🇫🇷'):
     st.session_state.matched_players_nuit = FRENCHIES
 else:
-    st.session_state.matched_players_nuit = ''
+    if st.session_state.get('matched_players_nuit', '') == FRENCHIES:
+        st.session_state.matched_players_nuit = ''
 
 spoiler = cont_right.toggle('Éviter les spoilers', key='top_nuit_spoiler')
 if spoiler:
