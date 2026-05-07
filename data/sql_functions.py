@@ -1562,7 +1562,7 @@ def get_missing_gameids(conn):
             SELECT DISTINCT gameId FROM boxscores
         ) b ON s.gameId = b.gameId
         WHERE s.gameStatus = 3 
-          AND s.gameId LIKE '002%'
+          AND (s.gameId LIKE '004%' OR s.gameId LIKE '002%')
           AND s.postponed = 0
           AND b.gameId IS NULL
         ORDER BY gameDate ASC

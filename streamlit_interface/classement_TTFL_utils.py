@@ -162,7 +162,7 @@ def get_deadline(_conn, date):
     except:
         return ''
     df = run_sql_query(_conn, table='schedule', select=['gameDate', 'gameDateTime'], filters=f"gameDate = '{date}'")
-    df['gameDateTime'] = pd.to_datetime(df['gameDateTime']).dt.tz_localize(None)
+    df['gameDateTime'] = pd.to_datetime(df['gameDateTime'], utc=True).dt.tz_localize(None)
     df_before_midnight = df[df['gameDateTime'] - date_dt < timedelta(days=1)]
     if len(df_before_midnight) > 0:
         deadline = df_before_midnight.loc[df_before_midnight['gameDateTime'].dt.hour.idxmin(), 'gameDateTime'].strftime('%Hh%M')
