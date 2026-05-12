@@ -172,7 +172,8 @@ def get_live_games():
             break
         
         except JSONDecodeError as e:
-            print('JSONDecodeError, retrying...')
+            # print('JSONDecodeError, retrying...')
+            pass
 
         except Exception as e:
             if attempt == 2:
