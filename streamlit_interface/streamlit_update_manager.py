@@ -19,7 +19,7 @@ def get_cached_upcoming_games():
                        table='schedule', 
                        select='gameDateTimeUTC', 
                        filters=['gameStatus != 3', 
-                                "gameId LIKE '002%'",
+                                "(gameId LIKE '002%' OR gameId LIKE '004%')",
                                 "postponed = 0"])
     return upcoming_games
 

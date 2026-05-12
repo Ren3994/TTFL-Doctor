@@ -77,6 +77,10 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
                                  key = 'player_stats_agg', 
                                  label_visibility='collapsed')
     
+    cont_seg.segmented_control('Playoffs', ['Saison régulière', 'Playoffs', 'Les deux'],
+                                        label_visibility='collapsed', key='playoffs',
+                                        default='Saison régulière')
+    
     disable_color_chkbox = st.session_state.massive_tables
     help_str_color = 'Les tableaux sont trop gros' if disable_color_chkbox else None
     cont_check.checkbox('Colorer cases', key='color_cells', disabled=disable_color_chkbox, help=help_str_color)
@@ -98,9 +102,6 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     
     if st.session_state.player_alltime_stats:
         cont_check_left.checkbox('Juste joueurs actifs', key='only_active_players')
-        cont_seg.segmented_control('Playoffs', ['Saison régulière', 'Playoffs', 'Les deux'],
-                                              label_visibility='collapsed', key='playoffs',
-                                              default='Saison régulière')
         with st.expander('Sélectionner des saisons', expanded=False):
             cont_chk = st.container(horizontal=True, horizontal_alignment='center')
 
@@ -117,7 +118,7 @@ with st.expander(filter_exp_str, expanded=filter_exp_bool):
     else:
         st.session_state.only_active_players = False
         st.session_state.selected_seasons = []
-        st.session_state.playoffs = 'Saison régulière'
+        # st.session_state.playoffs = 'Saison régulière'
 
 # Display interactive stats graph
 onlyone = len(players_to_show) == 1

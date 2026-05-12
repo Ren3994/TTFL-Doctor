@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import streamlit as st
@@ -24,14 +25,14 @@ def get_live_games():
     pending_games, finished_games = False, False
     all_live_data = {}
 
-    for attempt in range(5):
+    for attempt in range(3):
         try:
-            games = scoreboard.ScoreBoard().games.get_dict()
-            all_boxscores_df = pd.DataFrame()
             upcoming_games = []
             live_games = []
             games_info = []
-
+            all_boxscores_df = pd.DataFrame()
+            games = scoreboard.ScoreBoard().games.get_dict()
+            
             for game in games:
                 if game['gameStatus'] == 1:
                     upcoming_games.append({'homeTeam' : game['homeTeam']['teamTricode'],
@@ -169,9 +170,12 @@ def get_live_games():
                 live_games.append(boxscore_df)
                 all_boxscores_df = pd.concat([all_boxscores_df, boxscore_df], ignore_index=True)
             break
+        
+        except JSONDecodeError as e:
+            print('JSONDecodeError, retrying...')
 
         except Exception as e:
-            if attempt == 4:
+            if attempt == 2:
                 raise e
             time.sleep(5 * attempt)
     
@@ -179,8 +183,9 @@ def get_live_games():
         date_paris = datetime.now(ZoneInfo("Europe/Paris")).date()
         pending_games, finished_games = False, False
     
-        for attempt in range(5):
+        for attempt in range(3):
             try:
+                ## v2 is deprecated -> switch to v3 in the future if problems arise
                 games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
                 upcoming_games = []
                 live_games = []
@@ -207,7 +212,7 @@ def get_live_games():
                                                          .strftime('%d %b. à %Hh%M'))
                                            })
             except Exception as e:
-                if attempt == 4:
+                if attempt == 2:
                     raise e
                 time.sleep(5 * attempt)
     
