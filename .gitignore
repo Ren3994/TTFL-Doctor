@@ -14,7 +14,7 @@ data/sounds
 *.db-wal
 *.db.zst
 *.csv
-!data/data_2025-26.db
+!data/data_2026-27.db
 
 player_clustering/
 

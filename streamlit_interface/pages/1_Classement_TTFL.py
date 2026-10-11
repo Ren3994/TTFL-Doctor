@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_error, st_image_crisp, custom_button_css, custom_CSS
-from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
+from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES, SEASON, LAST_SEASON
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
@@ -81,6 +81,10 @@ cont_date_obj.button("▶️", on_click=next_date)
 cont_right.markdown(get_low_game_count(conn, st.session_state.date_text), unsafe_allow_html=True)
 deadline = get_deadline(conn, st.session_state.date_text)
 cont_right.markdown(deadline, unsafe_allow_html=True)
+
+# cont_right.segmented_control(label='Données de la saison', options=[f'{LAST_SEASON}', f'{SEASON}'],
+#                             key='season_select', on_change=on_season_data_source_change, default=f'{SEASON}')
+
 # cont_right.toggle('Traduire les détails des blessures', key='bool_translate')
 # limit_reached, _ = deepl_api_limit_reached()
 # translate_col = []

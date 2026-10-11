@@ -75,43 +75,46 @@ team_stats = get_team_stats(selected_teams=selected_teams)
 
 for table in team_stats:
     df = get_teams_from_conf(team_stats[table], st.session_state.conf_selector, table)
-    
-    with st.expander(table, expanded=any(true_vars)):
+    if not df.empty:
+        with st.expander(table, expanded=any(true_vars)):
 
-        show_df = df
-        negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL',
-                         'pts', 'ast', 'reb', 'Oreb', 'Dreb', 'stl', 'blk', 'opp_FGM', 'opp_FGA', 
-                         'opp_FG3M', 'opp_FG3A', 'opp_FTM', 'opp_FTA', 'opp_FT_PCT', 'opp_FG_PCT',
-                         'opp_FG3_PCT', 'opp_EFG', 'opp_TS']
-        positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode', 'rank']]
-        negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode', 'rank']]
-        
-        if color_cells:
-            show_df = (df.style
-                       .background_gradient(
-                            subset=positive_in_df,
-                            cmap="YlGn")
-                       .background_gradient(
-                            subset=negative_in_df,
-                            cmap="YlGn_r"))
+            show_df = df
+            negative_cols = ['L', 'TOV', 'DRtg', 'TM_TOV_PCT', 'BLKA', 'avg_opp_TTFL', 'rel_opp_avg_TTFL',
+                            'pts', 'ast', 'reb', 'Oreb', 'Dreb', 'stl', 'blk', 'opp_FGM', 'opp_FGA', 
+                            'opp_FG3M', 'opp_FG3A', 'opp_FTM', 'opp_FTA', 'opp_FT_PCT', 'opp_FG_PCT',
+                            'opp_FG3_PCT', 'opp_EFG', 'opp_TS']
+            positive_in_df = [col for col in df.columns if col not in negative_cols and col not in ['teamTricode', 'rank']]
+            negative_in_df = [col for col in df.columns if col in negative_cols and col not in ['teamTricode', 'rank']]
             
-        st.dataframe(show_df, height='content', hide_index=True,
-                    column_config={stat : (
-                        st.column_config.NumberColumn(
-                        TEAM_STATS_COLUMN_DEF[stat]['display'],
-                        width = TEAM_STATS_COLUMN_DEF[stat]['width'],
-                        format = TEAM_STATS_COLUMN_DEF[stat]['format'],
-                        help = TEAM_STATS_COLUMN_DEF[stat]['help'])
-                        if TEAM_STATS_COLUMN_DEF[stat]['col'] == 'num' else 
-                        st.column_config.TextColumn(
-                        TEAM_STATS_COLUMN_DEF[stat]['display'],
-                        width = TEAM_STATS_COLUMN_DEF[stat]['width'],
-                        help = TEAM_STATS_COLUMN_DEF[stat]['help']))
-                        for stat in df})
+            if color_cells:
+                show_df = (df.style
+                        .background_gradient(
+                                subset=positive_in_df,
+                                cmap="YlGn")
+                        .background_gradient(
+                                subset=negative_in_df,
+                                cmap="YlGn_r"))
+                
+            st.dataframe(show_df, height='content', hide_index=True,
+                        column_config={stat : (
+                            st.column_config.NumberColumn(
+                            TEAM_STATS_COLUMN_DEF[stat]['display'],
+                            width = TEAM_STATS_COLUMN_DEF[stat]['width'],
+                            format = TEAM_STATS_COLUMN_DEF[stat]['format'],
+                            help = TEAM_STATS_COLUMN_DEF[stat]['help'])
+                            if TEAM_STATS_COLUMN_DEF[stat]['col'] == 'num' else 
+                            st.column_config.TextColumn(
+                            TEAM_STATS_COLUMN_DEF[stat]['display'],
+                            width = TEAM_STATS_COLUMN_DEF[stat]['width'],
+                            help = TEAM_STATS_COLUMN_DEF[stat]['help']))
+                            for stat in df})
         
 with st.expander('Évolution du classement', expanded=False):
-    fig = standings_progress_plot()
-    st.plotly_chart(fig)
+    try:
+        fig = standings_progress_plot()
+        st.plotly_chart(fig)
+    except:
+        st.write('Pas de données disponibles pour le moment')
 
 vspace(30)
 

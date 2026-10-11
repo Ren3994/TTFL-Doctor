@@ -36,12 +36,31 @@ def query_team_stats():
             'relt.avg_team_TTFL', 'relt.avg_opp_TTFL',
             'relt.avg_team_TTFL - relt.avg_opp_TTFL AS net_TTFL'
             ])
+    if team_stats is None:
+        import pandas as pd
+        team_stats = pd.DataFrame(columns=['teamTricode', 'GP', 'W', 'L', 'W_PCT',
+                                           'PTS', 'AST', 'REB', 'OREB', 'DREB',
+                                           'STL', 'BLK', 'TOV', 'ORtg', 'DRtg', 'NRtg', 
+                                           'AST_PCT', 'AST_TO', 'OREB_PCT', 'DREB_PCT',
+                                           'REB_PCT', 'Pace', 'TM_TOV_PCT', 'AST_RATIO',
+                                           'BLKA', 'PFD', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 
+                                           'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT',
+                                           'EFG_PCT', 'TS_PCT', 'rel_team_avg_TTFL', 
+                                           'rel_opp_avg_TTFL', 'net_rel_TTFL', 'avg_team_TTFL', 
+                                           'avg_opp_TTFL', 'net_TTFL'])
     return team_stats
 
 def get_team_stats(selected_teams=[]):
     
     team_stats = query_team_stats()
     opp_stats = get_cached_opp_team_stats()
+
+    if team_stats.empty:
+        return {'Statistiques basiques' : team_stats,
+                'Statistiques de tir' : team_stats,
+                'Statistiques avancées' : team_stats,
+                'Statistiques TTFL' : team_stats,
+                'Statistiques des adversaires' : opp_stats}
 
     opp_stats = opp_stats.sort_values(by='wins').drop(columns='wins')
     

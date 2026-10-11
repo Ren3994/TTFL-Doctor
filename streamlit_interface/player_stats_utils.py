@@ -494,6 +494,9 @@ def get_maximums():
                                                         params={'seasons' : seasons},
                                                         group_by='playerName')
     
+    if df.empty:
+        return {'GP' : 1, 'Pts' : 1, 'FG' : 1, 'FG3' : 1, 'FT' : 1, 'MIN' : 48}
+    
     maximums = {'GP' : df['GP'].max(),
                 'Pts' : df['Pts'].max(),
                 'FG' : df['FG'].max(),

@@ -59,6 +59,28 @@ def check_table_exists(conn, table):
             save_to_db(conn, player_pos, table, if_exists="replace")
 
             conn.execute("CREATE INDEX IF NOT EXISTS idx_player_positions_player ON player_positions(playerName);")
+        
+        elif table == 'boxscores':
+            tqdm.write(f"La table {table} est manquante.")
+            conn.execute("""CREATE TABLE boxscores (
+                            gameId TEXT, teamTricode TEXT, isHome INT, opponent TEXT, playerName TEXT, 
+                            minutes TEXT, points INT, assists INT, TTFL INT, win REAL, reboundsTotal INT, 
+                            steals INT, blocks INT, turnovers INT, fieldGoalsMade INT, fieldGoalsAttempted INT,
+                            threePointersMade INT, threePointersAttempted INT, freeThrowsMade INT,
+                            freeThrowsAttempted INT, plusMinusPoints REAL, homeTeam TEXT, visitorTeam TEXT,
+                            seconds INT, reboundsOffensive REAL, position_boxscores TEXT, reboundsDefensive REAL,
+                            gameDate TEXT, gameDate_ymd TEXT, prev_gameDate_ymd TEXT, teamPoints INT,
+                            opponentPoints INT, teamTTFL INT, opponentTTFL INT, season TEXT
+                         )
+                         """)
+            conn.commit()
+        
+        elif table == 'rosters':
+            rosters = get_rosters()
+            if rosters is not None:
+                save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
+            else:
+                tqdm.write("Rosters is None. Table could not be saved.")
         return False
     return True
 
@@ -74,6 +96,8 @@ def add_pos_to_rosters(conn):
     return df
 
 def update_helper_tables(conn):
+
+    check_table_exists(conn, 'rosters')
 
     run_sql_query(
         conn,
@@ -206,6 +230,7 @@ def add_missing_pos_to_rosters(conn):
 
 def update_tables(conn, historical=False):
 
+    check_table_exists(conn, 'boxscores')
     calc_TTFL_stats(conn)
 
     if not historical:
@@ -828,12 +853,12 @@ def update_opp_pos_avg_per_game(conn):
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_opp_pos_avg_per_game_team_game ON opp_pos_avg_per_game(gameId, teamTricode);")
 
-def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
+def topTTFL_query(conn, game_date_ymd):
     import pandas as pd
 
-    params_seasons = ", ".join([f":val{i}" for i in range(len(seasons_list))])
+    # params_seasons = ", ".join([f":val{i}" for i in range(len(seasons_list))])
     params = {'date' : game_date_ymd}
-    params.update({f"val{i}": v for i, v in enumerate(seasons_list)})
+    # params.update({f"val{i}": v for i, v in enumerate(seasons_list)})
 
     query = f"""
 
@@ -848,7 +873,6 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     SELECT homeTeam, homeTeam_wins, homeTeam_losses, awayTeam, awayTeam_wins, awayTeam_losses
     FROM schedule
     WHERE gameDate_ymd = :date
-    --AND season IN ({params_seasons})
     ),
 
     position_expansion AS (
@@ -1018,7 +1042,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     FROM inj_report ir
     LEFT JOIN rel_TTFL_abs_teammate rtat
         ON ir.player_name = rtat.teammate
-    JOIN player_avgTTFL pat
+    LEFT JOIN player_avgTTFL pat
         ON ir.player_name = pat.playerName
     ),
 
@@ -1097,7 +1121,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
         ON r.teamTricode = ap.opponent
     JOIN inj_report ir
         ON ir.player_name = r.playerName
-    JOIN player_avgTTFL pat
+    LEFT JOIN player_avgTTFL pat
         ON r.playerName = pat.playerName
     LEFT JOIN player_avg_rel_TTFL_per_opp_pos partpop
         ON r.playerName = partpop.did_not_play
@@ -1174,7 +1198,7 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
     gd.graph_wins
 
     FROM all_players ap
-    JOIN player_avgTTFL pat
+    LEFT JOIN player_avgTTFL pat
         ON ap.playerName = pat.playerName
     LEFT JOIN inj_report ir
         ON ap.playerName = ir.player_name
@@ -1193,11 +1217,11 @@ def topTTFL_query(conn, game_date_ymd, seasons_list=[SEASON]):
         AND ap.pos = prtvt.pos
     LEFT JOIN graph_data gd
       ON ap.playerName = gd.playerName
-    JOIN rel_avg_opp_TTFL2 raot
+    LEFT JOIN rel_avg_opp_TTFL2 raot
         ON ap.opponent = raot.teamTricode
     LEFT JOIN rel_btb_TTFL btb
         ON btb.playerName = ap.playerName
-    JOIN is_back_to_back ibtb
+    LEFT JOIN is_back_to_back ibtb
         ON ibtb.playerName = ap.playerName
     LEFT JOIN team_nemesis tn
         ON tn.player = ap.playerName
@@ -2008,10 +2032,12 @@ def query_opp_team_avgs(conn):
     return df
 
 if __name__ == '__main__':
-    from misc.misc import DB_PATH, DB_PATH_HISTORICAL
-    with sqlite3.connect(DB_PATH_HISTORICAL) as conn:
+    from misc.misc import DB_PATH, DB_PATH_HISTORICAL, DB_PATH_LAST_SEASON
+    with sqlite3.connect(DB_PATH_LAST_SEASON) as conn:
         # print(query_player_stats(conn, alltime=True, only_active_players=True)['FG_PCT'])
         # print(query_player_v_team(conn, 'Larry Bird', alltime=True))
         # print(query_historique_des_perfs(conn, 'Larry Bird', True))
         # calc_nemesis(conn)
-        print(query_player_stats_by_season(conn, 'LeBron James', playoffs='Playoffs'))
+        # print(query_player_stats_by_season(conn, 'LeBron James', playoffs='Playoffs'))
+        df = topTTFL_query(conn, '2026-01-01')
+        print(df)

@@ -4,6 +4,12 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from io import BytesIO
 import re
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from misc.misc import SEASON
 
 def splitCap(s):
     s_all = re.findall(r"[A-Z][a-z]*", s)
@@ -28,17 +34,21 @@ def get_player_injury_data(splitline, i):
     return player, status, injury_type, injury_location
 
 def get_nbacom_injury_report():
-    PAGE_URL = "https://official.nba.com/nba-injury-report-2025-26-season/"
+    PAGE_URL = f"https://official.nba.com/nba-injury-report-{SEASON}-season/"
     HEADERS = {"User-Agent": "Mozilla/5.0"}
 
     html = requests.get(PAGE_URL, headers=HEADERS).text
     soup = BeautifulSoup(html, "html.parser")
-
-    pdf_link = next(
-        a["href"]
-        for a in soup.find_all("a", href=True)
-        if a["href"].endswith("M.pdf")
-    )
+    
+    try:
+        pdf_link = next(
+            a["href"]
+            for a in soup.find_all("a", href=True)
+            if a["href"].endswith("M.pdf")
+        )
+    except StopIteration:
+        print("No PDF link found on the page.")
+        return pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
 
     pdf_bytes = requests.get(pdf_link).content
     all_rows = []

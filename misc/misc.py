@@ -1,16 +1,16 @@
 import os
 
 LEAGUE_ID = "00"
-SEASON = "2025-26"
-LAST_SEASON = "2024-25"
+SEASON = "2026-27"
+LAST_SEASON = "2025-26"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "..", "data", f"data_{SEASON}.db")
 DB_PATH_LAST_SEASON = os.path.join(BASE_DIR, "..", "data", f"data_{LAST_SEASON}.db")
 DB_PATH_HISTORICAL = os.path.join(BASE_DIR, "..", "data", f"historical_data.db")
 DB_PATH_HISTORICAL_ZST = os.path.join(BASE_DIR, "..", "data", f"historical_data.db.zst")
-CHECKSUM = 'e9daf51a48237383ae72290746628bc82ac38afb02e1535f2e88b553a9ae48af'
-HIST_DB_URL = 'https://github.com/Ren3994/TTFL-Doctor/releases/download/data_v1.4/historical_data.db.zst'
+CHECKSUM = '0a037ea8b6aa099a5a0be4d7190420193566292bcc2fed1106a90f32e02b23f3'
+HIST_DB_URL = 'https://github.com/Ren3994/TTFL-Doctor/releases/download/data_v1.5/historical_data.db.zst'
 
 CACHE_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "cache")
 BACKUP_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "backups")

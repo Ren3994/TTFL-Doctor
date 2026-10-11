@@ -7,7 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import DB_PATH, DB_PATH_HISTORICAL
+from misc.misc import DB_PATH, DB_PATH_HISTORICAL, DB_PATH_LAST_SEASON
 
 @st.cache_resource(show_spinner=False, ttl=300)
 def _create_supabase_client():
@@ -56,7 +56,13 @@ def fetch_supabase_users(_supabase):
 
 @st.cache_resource(show_spinner=False)
 def conn_db():
-    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) 
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
+
+@st.cache_resource(ttl=300, show_spinner=False)
+def conn_db_last_season():
+    conn = sqlite3.connect(DB_PATH_LAST_SEASON, timeout=30, check_same_thread=False)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 

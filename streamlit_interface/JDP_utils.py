@@ -21,6 +21,14 @@ def get_cached_game_dates_completed():
     return gdc
 
 @st.cache_data(show_spinner=False)
+def get_cached_all_game_dates():
+    gdc = run_sql_query(conn=conn_db(),
+                        table='schedule', 
+                        select='DISTINCT gameDate',
+                        filters="gameId LIKE '002%'")
+    return gdc
+
+@st.cache_data(show_spinner=False)
 def get_cached_scoresTTFL():
     scores = run_sql_query(
                     conn=conn_db(),
@@ -109,7 +117,11 @@ class JoueursDejaPick():
         new_dates = (datetime.now(ZoneInfo("Europe/Paris")).strftime('%d/%m/%Y'), 
             (datetime.now(ZoneInfo("Europe/Paris")) - timedelta(days=1)).strftime('%d/%m/%Y'))
         
+        all_dates = get_cached_all_game_dates()
+        
         for new_date in new_dates:
+            if new_date not in all_dates['gameDate'].tolist():
+                continue
             if new_date not in game_dates_completed['gameDate'].tolist():
                 game_dates_completed.loc[len(game_dates_completed)] = new_date
 
@@ -168,6 +180,11 @@ class JoueursDejaPick():
     
     def completeCols(self, df):
         import pandas as pd
+
+        if df.empty:
+            df['TTFL'] = pd.Series(dtype='string')
+            df['avg_TTFL'] = pd.Series(dtype='string')
+            return df
 
         scoresTTFL = get_cached_scoresTTFL()
         avg_TTFL = get_cached_avg_TTFL()
@@ -247,6 +264,26 @@ class JoueursDejaPick():
         except:
             pass
         return df
+    
+    def get_plot(self):
+        import plotly.graph_objects as go
+        import numpy as np
+        df = self.completeCols(self.loadJDP())
+        df = self.display_cols(self.str_cols2dt(df))
+        print(df['Joueur'].tolist())
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(x=df['Date du pick'], y=df['TTFL'], mode='markers', 
+                                 customdata=df[['Joueur']].values,
+                                 hovertemplate = (
+                                 '%{customdata[0]}<br>' \
+                                 'Date du pick: %{x}<br>' \
+                                 'TTFL: %{y}'
+                                 '<extra></extra>')))
+
+        return fig
+
 
 def clean_player_names(df, colname, names_list=None):
     

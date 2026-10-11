@@ -45,83 +45,88 @@ def cached_generate_plot_row(requested_date,
     import matplotlib.dates as mdates
     # import seaborn as sns
 
-    joueur = joueur.split(' (')[0]
-    dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
-    requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
-    alldates = dates.copy()
-    alldates.append(requested_date)
-    njours = (alldates[-1] - alldates[0]).days
-    opps = graph_opps.split(',')
-    avgTTFL = float(avgTTFL[:4])
-    TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
-    wins = [int(win) for win in graph_wins.split(',')]
-
-    linew = 1.5
-    alpha = 0.7
-    ymin = min(0, min(TTFLs) * 1.2)
-    ymax = max(TTFLs) * 1.1
-
     plt.rcParams['figure.autolayout'] = False
     plt.style.use("seaborn-v0_8-dark")
     # palette = sns.color_palette("deep")
     fig, ax = plt.subplots(figsize=(6, 4))
-    # bkg_color = fig.get_facecolor()
 
-    ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
-    ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
-
-    # ypos_list = []
-    # colors_list = []
-    
-    # n = 0
-    for date, opp, TTFL, win in zip(dates, opps, TTFLs, wins):
-        opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
-        img = load_logo(opp_sprite_path)
-
-        imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
-        ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
-        ax.add_artist(ab)
-        # ypos = 0.9 + (-1)**n * 0.04
-        # ypos_list.append(ypos)
-        # colors_list.append(palette[2] if win else palette[3])
-
-        # ax.text(date, ypos, 'W' if win else 'L', color = bkg_color, ha='center', va='center', fontweight='bold', zorder=3, transform=ax.get_xaxis_transform())
-        # n += 1
-        # x_size = timedelta(days=0.7)   imshow instead of AnnotationBbox could be faster with many images ? No diff for ~20 images
-        # y_size = (ymax - ymin) * 0.05
-        # ax.imshow(img,extent=(date - x_size,date + x_size,TTFL - y_size,TTFL + y_size),aspect='auto',zorder=5)
-
-    # ax.scatter(dates, ypos_list, s=350, c=colors_list, edgecolor='k', linewidth=1, zorder=2, transform=ax.get_xaxis_transform())
-    
-    if ymin == 0:
-        ymin = -2
-    if ymax == 0:
-        ymax = 2
-    if ymin != ymax:
-        ax.set_ylim((ymin, ymax))
-
-    if njours < 40:
-        ax.set_xticks(alldates)
-        rotation = 30 + njours * 3 / 4
+    joueur = joueur.split(' (')[0]
+    if graph_dates == [''] or graph_dates == '':
+        ax.text(0.5, 0.5, "Pas de données disponibles", ha='center', va='center', fontsize=20)
+        ax.axis('off')
     else:
-        ax.vlines(alldates[-1], ymin, ymax, color = 'grey', linewidth=linew, alpha=alpha)
-        locator = mdates.AutoDateLocator()
-        ax.xaxis.set_major_locator(locator)
-        rotation = 30
+        dates = [datetime.strptime(date, '%d/%m/%Y') for date in graph_dates.split(',')]
+        requested_date = datetime.strptime(requested_date, '%d/%m/%Y')
+        alldates = dates.copy()
+        alldates.append(requested_date)
+        njours = (alldates[-1] - alldates[0]).days
+        opps = graph_opps.split(',')
+        avgTTFL = float(avgTTFL[:4])
+        TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
+        wins = [int(win) for win in graph_wins.split(',')]
 
-    formatter = mdates.DateFormatter('%d %b.')
-    ax.xaxis.set_major_formatter(formatter)
+        linew = 1.5
+        alpha = 0.7
+        ymin = min(0, min(TTFLs) * 1.2)
+        ymax = max(TTFLs) * 1.1
 
-    for t in ax.get_xticklabels():
-        t.set_rotation(rotation)
+        # bkg_color = fig.get_facecolor()
 
-    secax = ax.secondary_yaxis('right')
-    secax.tick_params(axis='both', labelsize=8)
-    
-    ax.set_title(joueur, fontsize=10)
-    ax.set_ylabel("TTFL", fontsize=8, rotation=0, labelpad=15)
-    ax.tick_params(axis='both', labelsize=8)
-    ax.grid(axis='both', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
+        ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
+        ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
+
+        # ypos_list = []
+        # colors_list = []
+        
+        # n = 0
+        for date, opp, TTFL, win in zip(dates, opps, TTFLs, wins):
+            opp_sprite_path = os.path.join(RESIZED_LOGOS_PATH, f'{opp}.png')
+            img = load_logo(opp_sprite_path)
+
+            imagebox = OffsetImage(img, zoom = 0.23 - (njours * 0.08 / 173))
+            ab = AnnotationBbox(imagebox, (date, TTFL), frameon = False)
+            ax.add_artist(ab)
+            # ypos = 0.9 + (-1)**n * 0.04
+            # ypos_list.append(ypos)
+            # colors_list.append(palette[2] if win else palette[3])
+
+            # ax.text(date, ypos, 'W' if win else 'L', color = bkg_color, ha='center', va='center', fontweight='bold', zorder=3, transform=ax.get_xaxis_transform())
+            # n += 1
+            # x_size = timedelta(days=0.7)   imshow instead of AnnotationBbox could be faster with many images ? No diff for ~20 images
+            # y_size = (ymax - ymin) * 0.05
+            # ax.imshow(img,extent=(date - x_size,date + x_size,TTFL - y_size,TTFL + y_size),aspect='auto',zorder=5)
+
+        # ax.scatter(dates, ypos_list, s=350, c=colors_list, edgecolor='k', linewidth=1, zorder=2, transform=ax.get_xaxis_transform())
+        
+        if ymin == 0:
+            ymin = -2
+        if ymax == 0:
+            ymax = 2
+        if ymin != ymax:
+            ax.set_ylim((ymin, ymax))
+
+        if njours < 40:
+            ax.set_xticks(alldates)
+            rotation = 30 + njours * 3 / 4
+        else:
+            ax.vlines(alldates[-1], ymin, ymax, color = 'grey', linewidth=linew, alpha=alpha)
+            locator = mdates.AutoDateLocator()
+            ax.xaxis.set_major_locator(locator)
+            rotation = 30
+
+        formatter = mdates.DateFormatter('%d %b.')
+        ax.xaxis.set_major_formatter(formatter)
+
+        for t in ax.get_xticklabels():
+            t.set_rotation(rotation)
+
+        secax = ax.secondary_yaxis('right')
+        secax.tick_params(axis='both', labelsize=8)
+        
+        ax.set_title(joueur, fontsize=10)
+        ax.set_ylabel("TTFL", fontsize=8, rotation=0, labelpad=15)
+        ax.tick_params(axis='both', labelsize=8)
+        ax.grid(axis='both', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
 
     # plt.show()
     # fig.tight_layout()

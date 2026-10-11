@@ -109,6 +109,7 @@ def get_espn_injury_report():
         
     if df is None:
         tqdm.write('Impossible de télécharger le injury report (espn.com)')
+        df = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
         return df
 
     return df

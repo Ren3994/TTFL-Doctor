@@ -94,10 +94,13 @@ def update_total_boxscores():
         hist_conn.execute("CREATE INDEX idx_playoffs ON boxscores(gameId) WHERE gameId LIKE '004%'")
     
     query_last_gameDate = """SELECT gameDate_ymd FROM boxscores ORDER BY gameDate_ymd DESC LIMIT 1"""
-    last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
+    try:
+        last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
+    except:
+        last_gameDate_current_boxscores = None
     last_gameDate_total_boxscores = hist_conn.execute(query_last_gameDate).fetchone()[0]
 
-    up_to_date = last_gameDate_current_boxscores == last_gameDate_total_boxscores
+    up_to_date = (last_gameDate_current_boxscores == last_gameDate_total_boxscores) or (last_gameDate_current_boxscores is None)
     if not up_to_date:
 
         current_boxscores = run_sql_query(conn, 'boxscores')
@@ -108,13 +111,22 @@ def update_total_boxscores():
 
         hist_conn.commit()
         update_tables(hist_conn, historical=True)
+
+def compress_hist_db(level=19):
+    with open(DB_PATH_HISTORICAL, 'rb') as f:
+        cctx = zstd.ZstdCompressor(level=level)
+        with open(f'{DB_PATH_HISTORICAL_ZST}.tmp', 'wb') as out:
+            cctx.copy_stream(f, out)
+    os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL_ZST)
+    print(f'Compressed {DB_PATH_HISTORICAL} to \n{DB_PATH_HISTORICAL_ZST} with level {level}')
+    print(f'checksum: {checksum()}')
     
 if __name__ == '__main__':
     # init_hist_db()
     # t0 = time.time()
     # update_total_boxscores()
     # print(time.time() - t0)
-    hist_conn = conn_hist_db()
+    # hist_conn = conn_hist_db()
     # update_tables(hist_conn, historical=True)
     # print(time.time() - t0)
 
@@ -139,7 +151,9 @@ if __name__ == '__main__':
     # import zstandard as zstd
     # with open(DB_PATH_HISTORICAL_ZST, 'rb') as f:
     #     dctx = zstd.ZstdDecompressor()
-    #     with open(DB_PATH_HISTORICAL, 'wb') as out:
+    #     with open(f'{DB_PATH_HISTORICAL}2', 'wb') as out:
     #         dctx.copy_stream(f, out)
 
     print(checksum())
+
+    # compress_hist_db(level=22)

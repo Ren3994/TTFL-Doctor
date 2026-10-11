@@ -24,6 +24,7 @@ def get_rosters():
 
             rosters_df = allPlayers[['playerName', 'teamTricode']].copy()
             rosters_df['season'] = SEASON
+            rosters_df['position'] = '?'
             break
 
         except Exception as e:

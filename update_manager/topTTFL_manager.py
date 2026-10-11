@@ -3,8 +3,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.resource_manager import conn_db
+from streamlit_interface.resource_manager import conn_db, conn_db_last_season
 from data.sql_functions import topTTFL_query
+from misc.misc import LAST_SEASON
 
 def get_top_TTFL(game_date_ymd: str):
 
@@ -33,9 +34,9 @@ def format_to_table(df) :
     prettydf['Adversaire'] = df['opponent'] + ' (' + df['oppWins'].astype(str) + 'W-' + df['oppLosses'].astype(str) + 'L)'
     prettydf['clean_team'] = df['team']
     prettydf['clean_opp'] = df['opponent']
-    prettydf['TTFL'] = df['avg_TTFL'].round(1).fillna('N/A')
-    prettydf['stdTTFL'] = df['stddev_TTFL'].round(1).fillna('N/A')
-    prettydf['median_TTFL'] = df['median_TTFL'].astype(int).fillna('N/A')
+    prettydf['TTFL'] = pd.to_numeric(df['avg_TTFL']).round(1).fillna('N/A')
+    prettydf['stdTTFL'] = pd.to_numeric(df['stddev_TTFL']).round(1).fillna('N/A')
+    prettydf['median_TTFL'] = pd.to_numeric(df['median_TTFL']).fillna(-1000).astype(int).replace(-1000, 'N/A')
     prettydf['opp'] = df['opponent']
     prettydf['is_b2b'] = df['is_b2b']
     prettydf['n_btb'] = df['n_btb']
@@ -172,8 +173,8 @@ def format_to_table(df) :
     
     prettydf['rel_opp_avg_TTFL'] = 'Toutes les équipes contre ' + df['opponent'] + ' : ' + \
                                 np.select([df['rel_opp_avg_TTFL'].isna(), df['rel_opp_avg_TTFL'] >= 0],
-                                [           'N/A',           '+' + df['rel_opp_avg_TTFL'].round(1).astype(str) + '%'],
-                                df['rel_opp_avg_TTFL'].round(1).astype(str) + '%')
+                                [           'N/A',           '+' + pd.to_numeric(df['rel_opp_avg_TTFL']).round(1).astype(str) + '%'],
+                                pd.to_numeric(df['rel_opp_avg_TTFL']).round(1).astype(str) + '%')
     
     prettydf['rel_btb_TTFL'] = df['playerName'] + ' en back to back : ' + \
                                 np.select([df['rel_btb_TTFL'].isna(), df['rel_btb_TTFL'] >= 0],
@@ -260,6 +261,22 @@ def format_to_table(df) :
     df['opp_simp_split'] = df['inj_opponents_simp_statuses'].str.split(",")
     df['opp_TTFL_split'] = df['inj_opponents_TTFLs'].str.split(",")
     df['rel_opp_pos_split'] = df['pos_rel_TTFL_when_inj_opp'].str.split(",")
+    
+    if df['opp_TTFL_split'].unique()[0] is None:
+        df['opp_TTFL_split'] = df.apply(
+            lambda row: [None] * len(row['opp_inj_split'])
+            if isinstance(row['opp_inj_split'], (list, tuple))
+            and (
+                row['opp_TTFL_split'] is None
+                or (
+                    isinstance(row['opp_TTFL_split'], (list, tuple))
+                    and all(x is None for x in row['opp_TTFL_split'])
+                )
+            )
+            else row['opp_TTFL_split'],
+            axis=1
+        )
+
 
     df_inj_opp = df.explode(['opp_inj_split', 'opp_simp_split', 
                             'opp_TTFL_split', 'rel_opp_pos_split'])
@@ -383,9 +400,9 @@ def format_to_table(df) :
     exploded_graph_df
     .groupby(level=0, sort=False)
     .agg({
-        'graph_dates_split': lambda x: ','.join(x.dt.strftime('%d/%m/%Y')),
-        'graph_opps_split': lambda x: ','.join(x),
-        'graph_TTFLs_split': lambda x: ','.join(x)
+        'graph_dates_split': lambda x: ','.join(x.dropna().dt.strftime('%d/%m/%Y')),
+        'graph_opps_split': lambda x: ','.join(x.dropna()),
+        'graph_TTFLs_split': lambda x: ','.join(x.dropna())
     })
     )
     prettydf[['graph_dates', 'graph_opps', 'graph_TTFLs']] = graph_df_sorted
@@ -406,12 +423,36 @@ def format_to_table(df) :
     
     prettydf['team_info'] = prettydf['team_injury_status'] + '<br><br>' + '10 derniers matchs : ' + prettydf['team_last_wins']
     prettydf['opp_info'] = prettydf['opp_inj_status'] + '<br><br>' + '10 derniers matchs : ' + prettydf['opp_last_wins']
+    prettydf['team_info'] = prettydf['team_info'].fillna('')
+    prettydf['opp_info'] = prettydf['opp_info'].fillna('')
     
     prettydf = prettydf.sort_values(by='TTFL', ascending=False)
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL', 'team_last_wins', 'opp_last_wins', 'clean_team', 'clean_opp'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
-    prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + prettydf['streak_indicator']
+    # prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + prettydf['streak_indicator']
+    prettydf['TTFL'] = prettydf['TTFL'] + prettydf['streak_indicator']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
     prettydf = prettydf.reset_index(drop=True)
+
+    if 'N/A' in prettydf['TTFL'].unique():
+        con_ls = conn_db_last_season()
+        last_season = pd.read_sql_query("""SELECT playerName AS Joueur, AVG(TTFL) AS avg_ls FROM boxscores
+            GROUP BY playerName
+            ORDER BY AVG(TTFL) DESC
+            """, con_ls)
+
+        mask = prettydf['TTFL'].eq('N/A')
+        to_replace = prettydf[prettydf.loc[mask, 'Joueur'].isin(last_season['Joueur'])]
+        untouched = prettydf[~prettydf.loc[mask, 'Joueur'].isin(last_season['Joueur'])]
+        to_replace = (to_replace.merge(last_season, on='Joueur')
+                                .sort_values('avg_ls', ascending=False)
+                                .round({'avg_ls' : 1})
+                                .drop(columns='TTFL')
+                                .rename(columns={'avg_ls' : 'TTFL'})
+                                .reset_index(drop=True))
+        
+        to_replace['TTFL'] = to_replace['TTFL'].astype(str) + ' ('  + LAST_SEASON[2:] + ')'
+        prettydf = pd.concat([to_replace, untouched], ignore_index=True, sort=False)
+        prettydf['TTFL'] = prettydf['TTFL'].astype(str) + prettydf['streak_indicator']
 
     return prettydf

@@ -75,7 +75,7 @@ def get_cbs_injury_report():
         
     if df is None:
         tqdm.write('Impossible de télécharger le injury report (espn.com)')
-        return df
+        return pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
 
     return df
 

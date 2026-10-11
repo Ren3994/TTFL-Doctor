@@ -59,5 +59,9 @@ with save_col:
 with error_col:
     if st.session_state.JDP_save_error:
          st.error("Rentrez un nom d'utilisateur avant de sauvegarder pour que vos picks soit enregistrés pour la prochaine fois")
+
+if 'jdp_df' in st.session_state and not (st.session_state.jdp_df['Joueur'] == '').all():
+    fig = st.session_state.JDP.get_plot()
+    st.plotly_chart(fig)
     
 SEO('footer')
