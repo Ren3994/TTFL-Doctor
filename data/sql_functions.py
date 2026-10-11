@@ -378,6 +378,7 @@ def calc_nemesis(conn):
             time.sleep(0.5)
 
     hist_conn = conn_hist_db()
+    check_table_exists(hist_conn, 'boxscores')
 
     query = """
     WITH selector AS (
