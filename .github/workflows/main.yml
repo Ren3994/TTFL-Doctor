@@ -2,7 +2,7 @@ name: Keep Streamlit Alive
 
 on:
   schedule:
-    - cron: "0 */10 * * *"   # every 10 hours (GitHub Actions cron runs in UTC)
+    - cron: "6 */6 * * *"   # every 10 hours (GitHub Actions cron runs in UTC)
   workflow_dispatch:         # manual run button in Actions tab
 
 permissions:
