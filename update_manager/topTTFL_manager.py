@@ -442,17 +442,26 @@ def format_to_table(df) :
             """, con_ls)
 
         mask = prettydf['TTFL'].eq('N/A')
-        to_replace = prettydf[prettydf.loc[mask, 'Joueur'].isin(last_season['Joueur'])]
-        untouched = prettydf[~prettydf.loc[mask, 'Joueur'].isin(last_season['Joueur'])]
+        players_in_last_season = prettydf['Joueur'].isin(last_season['Joueur'])
+
+        to_replace = prettydf.loc[mask & players_in_last_season].copy()
+        untouched = prettydf.loc[~(mask & players_in_last_season)].copy()
+
         to_replace = (to_replace.merge(last_season, on='Joueur')
-                                .sort_values('avg_ls', ascending=False)
                                 .round({'avg_ls' : 1})
                                 .drop(columns='TTFL')
                                 .rename(columns={'avg_ls' : 'TTFL'})
                                 .reset_index(drop=True))
         
+        untouched['TTFL2'] = untouched['TTFL'].replace('N/A', np.nan).astype(float)
+        to_replace['TTFL2'] = to_replace['TTFL'].astype(float)
+        
         to_replace['TTFL'] = to_replace['TTFL'].astype(str) + ' ('  + LAST_SEASON[2:] + ')'
         prettydf = pd.concat([to_replace, untouched], ignore_index=True, sort=False)
+        prettydf = (prettydf.sort_values(by='TTFL2', ascending=False, na_position='last')
+                            .drop(columns='TTFL2')
+                            .reset_index(drop=True))
+         
         prettydf['TTFL'] = prettydf['TTFL'].astype(str) + prettydf['streak_indicator']
 
     return prettydf
