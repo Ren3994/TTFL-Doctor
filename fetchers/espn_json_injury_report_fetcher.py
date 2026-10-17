@@ -21,18 +21,17 @@ def get_espn_injury_report_from_json():
                 for player in team.get('injuries'):
                     playerName = player.get('athlete', {}).get('displayName')
                     short_comment = player.get('shortComment', '')
+                    short_comment_lower = short_comment.lower()
                     # long_comment = player.get('longComment', '')
                     simplified = player.get('status', '')
-
                     update_date = player.get('date', '')
                     est_return = player.get('details', {}).get('returnDate', '')
 
                     update_date_fmt = pd.to_datetime(update_date).strftime('%d/%m') if update_date else '??'
                     est_return_fmt = pd.to_datetime(est_return).strftime('%d/%m') if est_return else '??'
-
+                
                     if simplified.lower() == "day-to-day":
-                        text_lower = short_comment.lower()
-                        if any(x in text_lower for x in [
+                        if any(x in short_comment_lower for x in [
                                 "will not suit up", 
                                 "won't suit up", 
                                 "isn't warming up", 
@@ -56,10 +55,10 @@ def get_espn_injury_report_from_json():
                                 "won't be available"]):
                             simplified = "Out"
 
-                    elif "questionable" in text_lower:
+                    elif "questionable" in short_comment_lower:
                         simplified = "Questionable"
 
-                    elif "probable" in text_lower:
+                    elif "probable" in short_comment_lower:
                         simplified = "Probable"
 
                     injury_reports.append({
