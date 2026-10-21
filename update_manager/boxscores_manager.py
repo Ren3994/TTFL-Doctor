@@ -70,6 +70,13 @@ def normalize_position(pos: str) -> str:
         return '-'.join(parts)
     else:
         return mapping.get(pos, pos)
+    
+def height2cm(height_ft):
+    try:
+        height_cm = int(height_ft.split("-")[0]) * 30.48 + int(height_ft.split("-")[1]) * 2.54
+    except:
+        height_cm = None
+    return height_cm
 
 def add_columns(df) :
     import numpy as np

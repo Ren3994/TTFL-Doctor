@@ -63,7 +63,7 @@ def cached_generate_plot_row(requested_date,
         opps = graph_opps.split(',')
         avgTTFL = float(avgTTFL[:4])
         TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
-        wins = [int(win) for win in graph_wins.split(',')]
+        wins = [int(float(win)) for win in graph_wins.split(',')]
 
         linew = 1.5
         alpha = 0.7

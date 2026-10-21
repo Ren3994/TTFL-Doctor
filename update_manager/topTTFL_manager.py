@@ -191,6 +191,21 @@ def format_to_table(df) :
     df['inj_team_rel_abs'] = df['rel_TTFL_inj_teammate_abs'].str.split(",")
     df['inj_team_n_abs_split'] = df['inj_teammates_abs_count'].str.split(",")
 
+    if df['inj_team_TTFL_split'].unique()[0] is None:
+        df['inj_team_TTFL_split'] = df.apply(
+            lambda row: [None] * len(row['inj_team_split'])
+            if isinstance(row['inj_team_split'], (list, tuple))
+            and (
+                row['inj_team_TTFL_split'] is None
+                or (
+                    isinstance(row['inj_team_TTFL_split'], (list, tuple))
+                    and all(x is None for x in row['inj_team_TTFL_split'])
+                )
+            )
+            else row['inj_team_TTFL_split'],
+            axis=1
+        )
+
     df_inj_teammates = df.explode(['inj_team_split', 'inj_team_simp_split', 
                                 'inj_team_TTFL_split', 'inj_team_rel_abs',
                                 'inj_team_n_abs_split'])
@@ -426,11 +441,13 @@ def format_to_table(df) :
     prettydf['team_info'] = prettydf['team_info'].fillna('')
     prettydf['opp_info'] = prettydf['opp_info'].fillna('')
     
-    prettydf = prettydf.sort_values(by='TTFL', ascending=False)
+    prettydf['TTFL'] = pd.to_numeric(prettydf['TTFL'], errors='coerce')
+    prettydf = prettydf.sort_values(by='TTFL', ascending=False, na_position='last')
+    prettydf['TTFL'] = prettydf['TTFL'].replace(np.nan, 'N/A')
     prettydf = prettydf.drop(['Poste', 'pos_rel_TTFL_v_team', 'opp', 'pos_v_team', 'rel_TTFL_v_opp', 'ha_rel_TTFL', 'team_last_wins', 'opp_last_wins', 'clean_team', 'clean_opp'], axis = 1)
     prettydf = prettydf.rename({'pos' : 'Poste'}, axis = 1)
     # prettydf['TTFL'] = prettydf['TTFL'].round(1).fillna('N/A').astype(str) + prettydf['streak_indicator']
-    prettydf['TTFL'] = prettydf['TTFL'] + prettydf['streak_indicator']
+    prettydf['TTFL'] = prettydf['TTFL'].astype(str) + prettydf['streak_indicator']
     prettydf['Joueur'] = prettydf['Joueur'].where(prettydf['is_b2b'] == 0, prettydf['Joueur'] + ' (B2B)')
     prettydf = prettydf.reset_index(drop=True)
 
