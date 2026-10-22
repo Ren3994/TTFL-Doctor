@@ -1,6 +1,18 @@
 from tqdm import tqdm
 import time
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 def fetch_boxscores(game_date, game_id, visitor_team, home_team):
     from nba_api.stats.endpoints import BoxScoreTraditionalV3
     from datetime import timedelta
@@ -19,7 +31,8 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
                 start_range=0,
                 end_range=0,
                 range_type=0,
-                timeout=5
+                timeout=5,
+                headers=headers
                 )
             
             boxscore_df = boxscore.get_data_frames()[0]

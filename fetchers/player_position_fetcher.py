@@ -9,6 +9,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from update_manager.boxscores_manager import normalize_name, normalize_position, height2cm
 from misc.misc import SEASON, LEAGUE_ID
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 def fetch_player_positions():
     from nba_api.stats.endpoints import commonplayerinfo
     from nba_api.stats.static import players
@@ -22,7 +34,8 @@ def fetch_player_positions():
     for player_id in tqdm(player_ids, desc = 'Téléchargement des postes des joueurs (une seule fois)', ncols = 100) :
         for attempt in range(5):
             try:
-                player_info = commonplayerinfo.CommonPlayerInfo(player_id, timeout=3).get_data_frames()[0]
+                player_info = commonplayerinfo.CommonPlayerInfo(player_id, timeout=3,
+                                                                headers=headers).get_data_frames()[0]
                 player_positions['playerName'].append(player_info['DISPLAY_FIRST_LAST'][0])
                 player_positions['position'].append(player_info['POSITION'][0])
                 player_positions['country'].append(player_info['COUNTRY'][0])

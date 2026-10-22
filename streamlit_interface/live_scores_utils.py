@@ -12,6 +12,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.JDP_utils import clean_player_names, get_cached_avg_TTFL
 from misc.misc import TEAM_IDS2TRICODE
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 @st.cache_data(ttl=15, show_spinner=False)
 def get_live_games():
     from nba_api.live.nba.endpoints import boxscore, scoreboard
@@ -31,7 +43,7 @@ def get_live_games():
             live_games = []
             games_info = []
             all_boxscores_df = pd.DataFrame()
-            games = scoreboard.ScoreBoard().games.get_dict()
+            games = scoreboard.ScoreBoard(headers=headers).games.get_dict()
             
             for game in games:
                 if game['gameStatus'] == 1:
@@ -49,7 +61,7 @@ def get_live_games():
                 elif game['gameStatus'] == 3:
                     finished_games = True   
 
-                boxscores = boxscore.BoxScore(game_id=game['gameId']).get_dict()['game']
+                boxscores = boxscore.BoxScore(game_id=game['gameId'], headers=headers).get_dict()['game']
                 games_info.append({'time' : boxscores['gameStatusText'],
                                 'homeTeam' : boxscores['homeTeam']['teamTricode'],
                                 'homeScore' : boxscores['homeTeam']['score'],
@@ -187,7 +199,8 @@ def get_live_games():
         for attempt in range(3):
             try:
                 ## v2 is deprecated -> switch to v3 in the future if problems arise
-                games = scoreboardv2.ScoreboardV2(game_date=date_paris).game_header.get_dict()['data']
+                games = scoreboardv2.ScoreboardV2(game_date=date_paris,
+                                                  headers=headers).game_header.get_dict()['data']
                 upcoming_games = []
                 live_games = []
                 games_info = []

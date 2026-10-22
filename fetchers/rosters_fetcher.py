@@ -8,6 +8,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from misc.misc import SEASON, LEAGUE_ID
 from update_manager.boxscores_manager import normalize_name
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 def get_rosters():
     from nba_api.stats.endpoints import CommonAllPlayers
 
@@ -16,7 +28,8 @@ def get_rosters():
         try:
             allPlayers = CommonAllPlayers(is_only_current_season=1, 
                                           league_id= LEAGUE_ID, 
-                                          season=SEASON).get_data_frames()[0]
+                                          season=SEASON,
+                                          headers=headers).get_data_frames()[0]
 
             allPlayers['teamTricode'] = allPlayers['TEAM_ABBREVIATION']
             allPlayers['playerName'] = allPlayers['DISPLAY_FIRST_LAST']

@@ -7,6 +7,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import SEASON, LEAGUE_ID, FULLNAME2TRICODE
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 def get_team_stats():
     from nba_api.stats.endpoints import leaguedashteamstats
 
@@ -42,7 +54,8 @@ def get_team_stats():
                     season=SEASON,
                     measure_type_detailed_defense=table_type,
                     per_mode_detailed="PerGame",
-                    league_id_nullable=LEAGUE_ID
+                    league_id_nullable=LEAGUE_ID,
+                    headers=headers
                 ).get_data_frames()[0]
                 break
 

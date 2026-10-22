@@ -7,6 +7,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 
+headers = {
+"Host": "stats.nba.com",
+"Connection": "keep-alive",
+"Accept": "application/json, text/plain, /",
+"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+"Referer": "https://www.nba.com/",
+"Origin": "https://www.nba.com",
+"x-nba-stats-origin": "stats",
+"x-nba-stats-token": "true",
+"Accept-Language": "en-US,en;q=0.9"
+}
+
 def get_schedule(season=SEASON):
     from nba_api.stats.endpoints import ScheduleLeagueV2
     import pandas as pd
@@ -17,7 +29,8 @@ def get_schedule(season=SEASON):
         try :
             full_schedule = ScheduleLeagueV2(
                 league_id=LEAGUE_ID,
-                season=season
+                season=season,
+                headers=headers
             )
 
             schedule_df = full_schedule.get_data_frames()[0]
