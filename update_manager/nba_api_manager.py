@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from data.sql_functions import init_db, save_to_db, get_missing_gameids, check_boxscores_integrity
 from update_manager.boxscores_manager import get_boxscores, log_failure
+from data.ttfl_data import save_boxscores
 
 def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
     import pandas as pd
@@ -69,6 +70,7 @@ def update_nba_data(conn, update_attempt=1, max_update_attempts=3, init_database
 
         if new_boxscores:
             save_to_db(conn, pd.DataFrame(new_boxscores), "boxscores", if_exists="append", index=False)
+            save_boxscores(pd.DataFrame(new_boxscores))
             new_boxscores.clear()
     
     final_missing_gameIds_df = get_missing_gameids(conn)

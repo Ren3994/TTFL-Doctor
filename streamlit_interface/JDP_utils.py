@@ -270,7 +270,6 @@ class JoueursDejaPick():
         import numpy as np
         df = self.completeCols(self.loadJDP())
         df = self.display_cols(self.str_cols2dt(df))
-        print(df['Joueur'].tolist())
         
         fig = go.Figure()
         

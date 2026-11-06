@@ -185,30 +185,59 @@ def format_to_table(df) :
     
     # -------------------------------------------- Team injury status ------------------------------------------------
 
-    df['inj_team_split'] = df['injured_teammates'].str.split(",")
-    df['inj_team_simp_split'] = df['simp_statuses'].str.split(",")
-    df['inj_team_TTFL_split'] = df['inj_teammates_TTFLs'].str.split(",")
-    df['inj_team_rel_abs'] = df['rel_TTFL_inj_teammate_abs'].str.split(",")
-    df['inj_team_n_abs_split'] = df['inj_teammates_abs_count'].str.split(",")
+    # Split the original columns
+    df['inj_team_split'] = df['injured_teammates'].str.split(',')
+    df['inj_team_simp_split'] = df['simp_statuses'].str.split(',')
+    df['inj_team_TTFL_split'] = df['inj_teammates_TTFLs'].str.split(',')
+    df['inj_team_rel_abs'] = df['rel_TTFL_inj_teammate_abs'].str.split(',')
+    df['inj_team_n_abs_split'] = df['inj_teammates_abs_count'].str.split(',')
 
-    if df['inj_team_TTFL_split'].unique()[0] is None:
-        df['inj_team_TTFL_split'] = df.apply(
-            lambda row: [None] * len(row['inj_team_split'])
-            if isinstance(row['inj_team_split'], (list, tuple))
-            and (
-                row['inj_team_TTFL_split'] is None
-                or (
-                    isinstance(row['inj_team_TTFL_split'], (list, tuple))
-                    and all(x is None for x in row['inj_team_TTFL_split'])
-                )
-            )
-            else row['inj_team_TTFL_split'],
-            axis=1
-        )
+    # Columns that must have matching list lengths
+    split_cols = [
+    'inj_team_simp_split',
+    'inj_team_TTFL_split',
+    'inj_team_rel_abs',
+    'inj_team_n_abs_split'
+    ]
 
-    df_inj_teammates = df.explode(['inj_team_split', 'inj_team_simp_split', 
-                                'inj_team_TTFL_split', 'inj_team_rel_abs',
-                                'inj_team_n_abs_split'])
+    # Use the teammate list as the reference length
+    for idx in df.index:
+        teammates = df.at[idx, 'inj_team_split']
+
+    # Handle missing teammate lists
+        if not isinstance(teammates, (list, tuple)):
+            continue
+
+        n = len(teammates)
+
+        for col in split_cols:
+            values = df.at[idx, col]
+
+            # Replace missing or entirely-None values
+            if values is None or (
+                isinstance(values, (list, tuple))
+                and all(pd.isna(v) for v in values)
+            ):
+                values = [None] * n
+
+            # Normalize the length to match the teammate list
+            elif isinstance(values, (list, tuple)):
+                values = list(values[:n]) + [None] * max(0, n - len(values))
+
+            else:
+                values = [values] + [None] * max(0, n - 1)
+
+            df.at[idx, col] = values
+
+        # Explode the aligned columns
+        df_inj_teammates = df.explode([
+        'inj_team_split',
+        'inj_team_simp_split',
+        'inj_team_TTFL_split',
+        'inj_team_rel_abs',
+        'inj_team_n_abs_split'
+        ])
+
 
     df_inj_teammates = df_inj_teammates.drop_duplicates(
             subset=[

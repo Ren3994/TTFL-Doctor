@@ -178,7 +178,8 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'ZU' : 'Ivica Zubac',
              'VUC' : 'Nikola Vucevic',
              'KLAW' : 'Kawhi Leonard',
-             'CLAW' : 'Kawhi Leonard'
+             'CLAW' : 'Kawhi Leonard',
+             'DOMAS' : 'Domantas Sabonis',
              }
 
 TEAM_NICKNAMES = {
