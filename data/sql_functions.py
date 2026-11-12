@@ -12,12 +12,14 @@ from streamlit_interface.resource_manager import conn_hist_db
 from fetchers.team_stats_fetcher import get_team_stats
 from fetchers.schedule_fetcher import get_schedule
 from fetchers.rosters_fetcher import get_rosters
+from data.ttfl_data import save_schedule, save_rosters
 
 def init_db(conn):
     try :
         schedule = get_schedule()
         if schedule is not None:
             save_to_db(conn, schedule, "schedule", if_exists="replace")
+            save_schedule(schedule)
         else :
             tqdm.write("Schedule is None. Table could not be saved.")
     except:
@@ -26,6 +28,7 @@ def init_db(conn):
     rosters = get_rosters()
     if rosters is not None:
         save_to_db(conn, rosters, 'rosters', if_exists = 'replace')
+        save_rosters(rosters)
     else:
         tqdm.write("Rosters is None. Table could not be saved.")
 

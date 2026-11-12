@@ -73,7 +73,8 @@ def cached_generate_plot_row(requested_date,
         # bkg_color = fig.get_facecolor()
 
         ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
-        ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=alpha)
+        ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=0.4)
+        ax.vlines(requested_date, ymin, ymax, ls='--', color='grey', alpha=alpha)
 
         # ypos_list = []
         # colors_list = []
@@ -126,7 +127,8 @@ def cached_generate_plot_row(requested_date,
         ax.set_title(joueur, fontsize=10)
         ax.set_ylabel("TTFL", fontsize=8, rotation=0, labelpad=15)
         ax.tick_params(axis='both', labelsize=8)
-        ax.grid(axis='both', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
+        ax.grid(axis='y', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
+        ax.vlines(dates, ymin, ymax, colors=['g' if w == 1 else 'r' for w in wins], ls='--', lw=linew, alpha=alpha)
 
     # plt.show()
     # fig.tight_layout()
