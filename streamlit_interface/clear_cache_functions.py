@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.JDP_utils import get_cached_rosters, get_cached_pat, get_cached_game_dates_completed, get_cached_scoresTTFL, get_cached_avg_TTFL, get_cached_player_list
+from streamlit_interface.JDP_utils import get_cached_rosters, get_cached_game_dates_completed, get_cached_scoresTTFL, get_cached_avg_TTFL, get_cached_player_list
 from streamlit_interface.classement_TTFL_utils import get_low_game_count, get_deadline, get_joueurs_blesses, cached_get_top_TTFL, apply_df_filters, get_joueurs_pas_dispo
 from streamlit_interface.player_stats_utils import cached_player_stats, cached_player_v_team, cached_historique_des_perfs, cached_player_stats_by_season
 from streamlit_interface.team_stats_utils import query_team_stats, get_cached_opp_team_stats
@@ -19,7 +19,6 @@ def clear_after_db_update():
     query_team_stats.clear()
     get_cached_opp_team_stats.clear()
     cached_player_stats.clear()
-    get_cached_pat.clear()
     get_cached_game_dates_completed.clear()
     get_cached_scoresTTFL.clear()
     get_cached_avg_TTFL.clear()

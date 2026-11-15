@@ -4,55 +4,57 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.sql_functions import run_sql_query, query_opp_team_avgs
+# from data.sql_functions import run_sql_query, query_opp_team_avgs
 from streamlit_interface.plotting_utils import team_standings
-from streamlit_interface.resource_manager import conn_db
-from misc.misc import CONFERENCES
+# from streamlit_interface.resource_manager import conn_db
+from misc.misc import CONFERENCES, SEASON
+from data.ttfl_stats import query_team_stats, query_opp_team_avgs, scan_boxscores
 
 @st.cache_data(show_spinner=False)
-def query_team_stats():
-    conn = conn_db()
-    team_stats = run_sql_query(conn, table='team_stats ts', joins=[{
-        "table" : "rel_avg_opp_TTFL relt",
-        "on" : "ts.teamTricode = relt.teamTricode"
-    }],
-    select=[ # Regular stats
-            'ts.teamTricode', 'ts.GP', 'ts.W', 'ts.L', 'ts.W_PCT',
-            'ts.PTS', 'ts.AST', 'ts.REB', 'ts.OREB', 'ts.DREB',
-            'ts.TOV', 'ts.STL', 'ts.BLK',
+def query_team_stats_cached():
+    team_stats = query_team_stats()
+    # conn = conn_db()
+    # team_stats = run_sql_query(conn, table='team_stats ts', joins=[{
+    #     "table" : "rel_avg_opp_TTFL relt",
+    #     "on" : "ts.teamTricode = relt.teamTricode"
+    # }],
+    # select=[ # Regular stats
+    #         'ts.teamTricode', 'ts.GP', 'ts.W', 'ts.L', 'ts.W_PCT',
+    #         'ts.PTS', 'ts.AST', 'ts.REB', 'ts.OREB', 'ts.DREB',
+    #         'ts.TOV', 'ts.STL', 'ts.BLK',
 
-            # Advanced stats
-            'ts.ORtg', 'ts.DRtg', 'ts.NRtg', 'ts.AST_PCT', 'ts.AST_TO', 'ts.OREB_PCT',
-            'ts.DREB_PCT', 'ts.REB_PCT', 'ts.Pace', 'ts.TM_TOV_PCT',
-            'ts.AST_RATIO', 'ts.BLKA', 'ts.PFD',
+    #         # Advanced stats
+    #         'ts.ORtg', 'ts.DRtg', 'ts.NRtg', 'ts.AST_PCT', 'ts.AST_TO', 'ts.OREB_PCT',
+    #         'ts.DREB_PCT', 'ts.REB_PCT', 'ts.Pace', 'ts.TM_TOV_PCT',
+    #         'ts.AST_RATIO', 'ts.BLKA', 'ts.PFD',
 
-            # Shooting stats
-            'ts.FGM', 'ts.FGA', 'ts.FG_PCT', 'ts.FG3M', 'ts.FG3A', 'ts.FG3_PCT', 
-            'ts.FTM', 'ts.FTA', 'ts.FT_PCT', 'ts.EFG_PCT', 'ts.TS_PCT',
+    #         # Shooting stats
+    #         'ts.FGM', 'ts.FGA', 'ts.FG_PCT', 'ts.FG3M', 'ts.FG3A', 'ts.FG3_PCT', 
+    #         'ts.FTM', 'ts.FTA', 'ts.FT_PCT', 'ts.EFG_PCT', 'ts.TS_PCT',
 
-            # TTFL stats
-            'relt.rel_team_avg_TTFL', 'relt.rel_opp_avg_TTFL',
-            'relt.rel_team_avg_TTFL - relt.rel_opp_avg_TTFL AS net_rel_TTFL',
-            'relt.avg_team_TTFL', 'relt.avg_opp_TTFL',
-            'relt.avg_team_TTFL - relt.avg_opp_TTFL AS net_TTFL'
-            ])
-    if team_stats is None:
-        import pandas as pd
-        team_stats = pd.DataFrame(columns=['teamTricode', 'GP', 'W', 'L', 'W_PCT',
-                                           'PTS', 'AST', 'REB', 'OREB', 'DREB',
-                                           'STL', 'BLK', 'TOV', 'ORtg', 'DRtg', 'NRtg', 
-                                           'AST_PCT', 'AST_TO', 'OREB_PCT', 'DREB_PCT',
-                                           'REB_PCT', 'Pace', 'TM_TOV_PCT', 'AST_RATIO',
-                                           'BLKA', 'PFD', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 
-                                           'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT',
-                                           'EFG_PCT', 'TS_PCT', 'rel_team_avg_TTFL', 
-                                           'rel_opp_avg_TTFL', 'net_rel_TTFL', 'avg_team_TTFL', 
-                                           'avg_opp_TTFL', 'net_TTFL'])
+    #         # TTFL stats
+    #         'relt.rel_team_avg_TTFL', 'relt.rel_opp_avg_TTFL',
+    #         'relt.rel_team_avg_TTFL - relt.rel_opp_avg_TTFL AS net_rel_TTFL',
+    #         'relt.avg_team_TTFL', 'relt.avg_opp_TTFL',
+    #         'relt.avg_team_TTFL - relt.avg_opp_TTFL AS net_TTFL'
+    #         ])
+    # if team_stats is None:
+    #     import pandas as pd
+    #     team_stats = pd.DataFrame(columns=['teamTricode', 'GP', 'W', 'L', 'W_PCT',
+    #                                        'PTS', 'AST', 'REB', 'OREB', 'DREB',
+    #                                        'STL', 'BLK', 'TOV', 'ORtg', 'DRtg', 'NRtg', 
+    #                                        'AST_PCT', 'AST_TO', 'OREB_PCT', 'DREB_PCT',
+    #                                        'REB_PCT', 'Pace', 'TM_TOV_PCT', 'AST_RATIO',
+    #                                        'BLKA', 'PFD', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 
+    #                                        'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT',
+    #                                        'EFG_PCT', 'TS_PCT', 'rel_team_avg_TTFL', 
+    #                                        'rel_opp_avg_TTFL', 'net_rel_TTFL', 'avg_team_TTFL', 
+    #                                        'avg_opp_TTFL', 'net_TTFL'])
     return team_stats
 
 def get_team_stats(selected_teams=[]):
     
-    team_stats = query_team_stats()
+    team_stats = query_team_stats_cached()
     opp_stats = get_cached_opp_team_stats()
 
     if team_stats.empty:
@@ -112,15 +114,20 @@ def get_team_stats(selected_teams=[]):
 
 @st.cache_data(show_spinner=False)
 def get_cached_opp_team_stats():
-    df = query_opp_team_avgs(conn_db())
+    df = query_opp_team_avgs()
     return df
 
 def standings_progress_plot():
     import pandas as pd
-    df = run_sql_query(conn_db(), table='boxscores', select=['DISTINCT teamTricode', 'gameDate_ymd', 'win'],
-                   order_by='teamTricode, gameDate_ymd ASC', filters='gameDate_ymd IS NOT NULL')
+    import polars as pl
+    df = (scan_boxscores(SEASON)
+         .group_by(['teamTricode', 'gameDate_ymd'])
+         .agg(pl.mean('win'))
+         .sort(['teamTricode', 'gameDate_ymd'])
+         .collect()
+         .to_pandas())
 
-    df['gameDate_ymd'] = pd.to_datetime(df['gameDate_ymd'])
+    # df['gameDate_ymd'] = pd.to_datetime(df['gameDate_ymd'])
     df['cum_wins'] = df.groupby('teamTricode')['win'].cumsum()
 
     fig = team_standings(df)
@@ -143,5 +150,28 @@ def get_teams_from_conf(df, conf, name):
     
     return df
 
-if __name__ == '__main__':
-    a = get_team_stats()
+# if __name__ == '__main__':
+#     # a = get_team_stats()
+#     # a = query_team_stats()
+#     # b = qts2()
+
+#     # print(a)
+#     # print(b)
+
+#     from data.sql_functions import run_sql_query
+#     from data.ttfl_data import scan_boxscores
+#     from misc.misc import SEASON
+#     import polars as pl
+
+#     a = run_sql_query(conn_db(), table='boxscores', select=['DISTINCT teamTricode', 'gameDate_ymd', 'win'],
+#                    order_by='teamTricode, gameDate_ymd ASC', filters='gameDate_ymd IS NOT NULL')
+    
+#     print(a)
+
+#     b = (scan_boxscores(SEASON)
+#          .group_by(['teamTricode', 'gameDate_ymd'])
+#          .agg(pl.mean('win'))
+#          .sort(['teamTricode', 'gameDate_ymd'])
+#          .collect())
+    
+#     print(b)

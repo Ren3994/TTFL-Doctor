@@ -10,7 +10,7 @@ from fetchers.espn_json_injury_report_fetcher import get_espn_injury_report_from
 from data.sql_functions import save_to_db
 from data.ttfl_data import save_injuries
 
-def update_injury_report(conn):
+def update_injury_report():
     import pandas as pd
     
     injury_report_df = get_espn_injury_report_from_json()
@@ -23,6 +23,6 @@ def update_injury_report(conn):
             injury_report_df = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
         
     if injury_report_df is not None:
-        save_to_db(conn, injury_report_df, 'injury_report', if_exists = 'replace')
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_injury_report_player ON injury_report(player_name);")
+        # save_to_db(conn, injury_report_df, 'injury_report', if_exists = 'replace')
+        # conn.execute("CREATE INDEX IF NOT EXISTS idx_injury_report_player ON injury_report(player_name);")
         save_injuries(injury_report_df)

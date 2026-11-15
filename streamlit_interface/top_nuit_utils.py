@@ -1,16 +1,19 @@
 from datetime import datetime, timedelta
 import streamlit as st
+import polars as pl
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo, get_idx_pick
-from streamlit_interface.resource_manager import conn_db
+# from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.JDP_utils import match_player
-from data.sql_functions import run_sql_query
+# from data.sql_functions import run_sql_query
+from data.ttfl_data import scan_boxscores
+from misc.misc import SEASON
 
-# @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     import pandas as pd
     import numpy as np
@@ -18,19 +21,39 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     spoiler = st.session_state.get('top_nuit_spoiler', False)
     show_TTFL = st.session_state.get('show_TTFL', False)
 
-    conn = conn_db()                        
-    df = run_sql_query(conn,
-                    table='boxscores b', 
-                    filters=[f"gameDate = '{date}'", 'seconds > 0'],
-                    select=['b.playerName', 'b.teamTricode', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
-                            'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
-                            'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
-                            'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
-                            'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win'],
-                    joins=[{
-                        'table' : 'player_avg_TTFL pat',
-                        'on' : 'b.playerName = pat.playerName'
-                    }])
+    # conn = conn_db()
+
+    df = (scan_boxscores(SEASON)
+         .with_columns(
+             gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
+             avg_TTFL=pl.mean('TTFL').over('playerName').round(1),
+             minutes=pl.format(
+                 '{}:{}',
+                 pl.col('seconds') // 60,
+                 (pl.col('seconds') % 60).cast(pl.String).str.pad_start(2, '0')
+                ),
+             Matchup=pl.format(
+                 '{} {} {}',
+                 pl.col('teamTricode'),
+                 pl.when(pl.col('isHome') != 1)
+                   .then(pl.lit('@'))
+                   .otherwise(pl.lit('v.')),
+                 pl.col('opponent')
+                )
+             )
+         .filter([pl.col('gameDate') == date,
+                  pl.col('seconds') > 0])
+         .select([
+             'playerName', 'teamTricode', 'minutes', 'seconds', 'points', 'avg_TTFL', 'reboundsTotal',
+                    'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
+                    'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
+                    'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
+                    'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win', 'Matchup'
+                    ])
+         .collect()
+         .to_pandas()
+         )
+        
     if df.empty:
         current_date = datetime.today()
         if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
@@ -98,6 +121,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
                           'freeThrowsAttempted', 'win', 'seconds'])
     df.rename(columns={
                 "playerName": "Joueur",
+                "teamTricode" : "Équipe",
                 "minutes": "Mins",
                 "points": "Pts",
                 "assists": "Ast",
@@ -108,16 +132,13 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
                 "plusMinusPoints": "Pm"
             }, inplace=True)
     
-    joueurs_pas_dispo = get_joueurs_pas_dispo(conn, date)
-
+    joueurs_pas_dispo = get_joueurs_pas_dispo(date)
+    show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
+                                'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'Matchup', 'Win']
     if len(joueurs_pas_dispo) > 0:
         df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
-        show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
-                                        'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm', 'Dispo']
-    else:
-        show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
-                                        'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Win', 'Pm']
-        
+        show_cols.append('Dispo')
+
     if spoiler:
         cols_shown = ['Joueur', 'Dispo']
         cols_hidden = df.columns.difference(cols_shown).tolist()
@@ -225,3 +246,43 @@ def clear_boxscore_vars():
     for key in list(st.session_state.keys()):
         if key.startswith('boxscore_nuit_'):
             st.session_state[key] = False
+
+# if __name__ == '__main__':
+#     date = '13/11/2026'
+#     a = run_sql_query(conn_db(),
+#                     table='boxscores b', 
+#                     filters=[f"gameDate = '{date}'", 'seconds > 0'],
+#                     select=['b.playerName', 'b.teamTricode', 'minutes', 'seconds', 'points', 'pat.avg_TTFL', 'reboundsTotal',
+#                             'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
+#                             'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
+#                             'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
+#                             'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win'],
+#                     joins=[{
+#                         'table' : 'player_avg_TTFL pat',
+#                         'on' : 'b.playerName = pat.playerName'
+#                     }],
+#                     order_by=['avg_TTFL', 'b.playerName'])
+    
+#     print(a)
+    
+
+
+#     b = (scan_boxscores(SEASON)
+#          .with_columns(
+#              gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
+#              avg_TTFL=pl.mean('TTFL').over('playerName')
+#              )
+#          .filter([pl.col('gameDate') == date,
+#                   pl.col('seconds') > 0])
+#          .select([
+#              'playerName', 'teamTricode', 'seconds', 'points', 'avg_TTFL', 'reboundsTotal',
+#                     'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
+#                     'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
+#                     'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
+#                     'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win'
+#                     ])
+#          .collect()
+#          .to_pandas()
+#          )
+    
+#     print(b)

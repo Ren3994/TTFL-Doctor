@@ -9,9 +9,10 @@ from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES, S
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
-from streamlit_interface.resource_manager import conn_db
+# from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.classement_TTFL_utils import *
-from data.sql_functions import get_games_for_date
+# from data.sql_functions import get_games_for_date
+from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
@@ -20,7 +21,7 @@ update_all_data()
 init_session_state(page=PAGENAME)
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
-conn = conn_db()
+# conn = conn_db()
 sc = get_sc()
 
 # ---------- UI ----------
@@ -78,8 +79,8 @@ if st.session_state.get("text_parse_error", False):
         
 cont_date_obj.button("▶️", on_click=next_date)
 
-cont_right.markdown(get_low_game_count(conn, st.session_state.date_text), unsafe_allow_html=True)
-deadline = get_deadline(conn, st.session_state.date_text)
+cont_right.markdown(get_low_game_count(st.session_state.date_text), unsafe_allow_html=True)
+deadline = get_deadline(st.session_state.date_text)
 cont_right.markdown(deadline, unsafe_allow_html=True)
 
 # cont_right.segmented_control(label='Données de la saison', options=[f'{LAST_SEASON}', f'{SEASON}'],
@@ -96,7 +97,7 @@ st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_all
 vspace()
 
 # Display tonight's games
-games_for_date = get_games_for_date(conn, st.session_state.date_text).to_dict(orient="records")
+games_for_date = get_games_for_date(st.session_state.date_text)#.to_dict(orient="records")
 cont_games_tonight = st.container(horizontal_alignment='center',
                                   key=st.session_state.date_text, 
                                   gap='medium')
@@ -109,7 +110,7 @@ for i in range(0, len(games_for_date), games_per_row):
                                             width=int(len(row_games) * button_width),
                                             key=f'{i}{st.session_state.date_text}')
     row_cont.empty()
-    for game in row_games:
+    for _, game in row_games.iterrows():
 
         ha = [game["homeTeam"], game["awayTeam"]]
         idx = f'{ha[0]}-{ha[1]}'
@@ -190,7 +191,7 @@ else:
             if st.session_state[key]:
                 selected_games.append(key[11:])
 
-    st.session_state.display_df = apply_df_filters(conn,
+    st.session_state.display_df = apply_df_filters(
                                            st.session_state.date_text,
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,

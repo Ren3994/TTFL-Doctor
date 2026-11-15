@@ -4,9 +4,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.sql_functions import run_sql_query, query_player_stats, query_player_v_team, query_historique_des_perfs, query_player_stats_by_season
-from streamlit_interface.resource_manager import conn_db, conn_hist_db
-from streamlit_interface.historical_data_manager import init_hist_db
+# from data.sql_functions import run_sql_query, query_player_stats, query_player_v_team, query_historique_des_perfs, query_player_stats_by_season
+from data.ttfl_stats import query_player_stats, query_player_stats_by_season, query_player_v_team, query_historique_des_perfs, distinct_seasons, sql_sum
+from data.ttfl_data import scan_boxscores, latest_season, franchise_expr
+# from streamlit_interface.resource_manager import conn_db, conn_hist_db
+# from streamlit_interface.historical_data_manager import init_hist_db
 from streamlit_interface.streamlit_utils import uspace, french_flag
 from streamlit_interface.JDP_utils import match_player, match_team
 from streamlit_interface.classement_TTFL_utils import df_to_html
@@ -15,13 +17,14 @@ from misc.misc import FRANCHISE_FILTERS
 
 @st.cache_data(show_spinner=False)
 def cached_player_stats(alltime, only_active, seasons, playoffs, team):
-    conn = conn_db() if not alltime else conn_hist_db()
-    player_stats = query_player_stats(conn, alltime, only_active, seasons, playoffs, team)
+    # conn = conn_db() if not alltime else conn_hist_db()
+    # player_stats = query_player_stats(conn, alltime, only_active, seasons, playoffs, team)
+    player_stats = query_player_stats(alltime, only_active, seasons, playoffs, team)
     return player_stats
 
 @st.cache_data(show_spinner=False)
 def cached_player_stats_by_season(player, seasons, playoffs, team):
-    df = query_player_stats_by_season(conn_hist_db(), player, seasons, playoffs, team)
+    df = query_player_stats_by_season(player, seasons, playoffs, team)
     return df
 
 def get_all_player_stats(matched=[]): 
@@ -47,6 +50,8 @@ def get_all_player_stats(matched=[]):
     fg3_min = st.session_state.get('slider_fg3', 0)
     ft_min = st.session_state.get('slider_ft', 0)
     agg = st.session_state.get('player_stats_agg', 'Moyennes')
+
+    player_stats = pd.DataFrame(player_stats, columns=player_stats.columns)
     
     if len(matched) != 1:
         player_stats = player_stats[player_stats['GP'] >= min_games]
@@ -76,6 +81,7 @@ def get_all_player_stats(matched=[]):
     player_stats['Dreb'] = pd.to_numeric(player_stats['Dreb'], errors='coerce')
     player_stats['PM'] = pd.to_numeric(player_stats['PM'], errors='coerce')
     player_stats['FG3_PCT'] = pd.to_numeric(player_stats['FG3_PCT'], errors='coerce')
+    player_stats['FGA'] = pd.to_numeric(player_stats['FGA'], errors='coerce')
 
     player_stats['ast_to_tov'] = player_stats['ast_to_tov'].fillna(0)
     player_stats['Oreb'] = player_stats['Oreb'].fillna(0)
@@ -86,13 +92,13 @@ def get_all_player_stats(matched=[]):
     player_stats['FG3_PCT'] = (player_stats['FG3_PCT'] * 100).fillna(0)
     player_stats['FT_PCT'] = (player_stats['FT_PCT'] * 100).fillna(0)
     
-    player_stats['FG2M'] = player_stats['FGM'] - player_stats['FG3M']
-    player_stats['FG2A'] = player_stats['FGA'] - player_stats['FG3A']
+    player_stats['FG2M'] = pd.to_numeric(player_stats['FGM'] - player_stats['FG3M'], errors='coerce')
+    player_stats['FG2A'] = pd.to_numeric(player_stats['FGA'] - player_stats['FG3A'], errors='coerce')
     player_stats['TOT_FG2M'] = player_stats['TOT_FGM'] - player_stats['TOT_FG3M']
     player_stats['TOT_FG2A'] = player_stats['TOT_FGA'] - player_stats['TOT_FG3A']
     player_stats['FG2_PCT'] = (100 * player_stats['FG2M'] / player_stats['FG2A']).round(1).fillna(0)
 
-    player_stats['FG3_ratio'] = (100 * player_stats['FG3A'] / player_stats['FGA']).fillna(0).round(1)
+    player_stats['FG3_ratio'] = (100 * player_stats['FG3A'] / player_stats['FGA'].replace(0, pd.NA)).fillna(0).round(1)
 
     player_stats['home_avg_TTFL'] = player_stats['home_avg_TTFL'].fillna(0)
     player_stats['away_avg_TTFL'] = player_stats['away_avg_TTFL'].fillna(0)
@@ -180,8 +186,9 @@ def get_all_player_stats(matched=[]):
 
 @st.cache_data(show_spinner=False)
 def cached_player_v_team(player, alltime, seasons, playoffs, team):
-    conn = conn_db() if not alltime else conn_hist_db()
-    df = query_player_v_team(conn, player, alltime, seasons, playoffs, team)
+    # conn = conn_db() if not alltime else conn_hist_db()
+    # df = query_player_v_team(conn, player, alltime, seasons, playoffs, team)
+    df = query_player_v_team(player, alltime, seasons, playoffs, team)
     return df
 
 def player_v_team(player_list):
@@ -195,7 +202,7 @@ def player_v_team(player_list):
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
     team = st.session_state.get('matched_team', '')
 
-    df = cached_player_v_team(player_list[0], alltime, seasons, playoffs, team)
+    df = cached_player_v_team(player_list[0], alltime, seasons, playoffs, team).to_pandas()
 
     if df.empty:
         return pd.DataFrame()
@@ -228,8 +235,9 @@ def player_v_team(player_list):
 
 @st.cache_data(show_spinner=False)
 def cached_historique_des_perfs(player, alltime, seasons, playoffs, team):
-    conn = conn_db() if not alltime else conn_hist_db()
-    df = query_historique_des_perfs(conn, player, alltime, seasons, playoffs, team)
+    # conn = conn_db() if not alltime else conn_hist_db()
+    # df = query_historique_des_perfs(conn, player, alltime, seasons, playoffs, team)
+    df = query_historique_des_perfs(player, alltime, seasons, playoffs, team)
     return df
 
 def historique_des_perfs(player):
@@ -241,7 +249,7 @@ def historique_des_perfs(player):
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
     team = st.session_state.get('matched_team', '')
 
-    df = cached_historique_des_perfs(player, alltime, seasons, playoffs, team)
+    df = cached_historique_des_perfs(player, alltime, seasons, playoffs, team).to_pandas()
 
     if df.empty:
         return ''
@@ -336,7 +344,7 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg,
     playoffs = st.session_state.get('playoffs', 'Saison régulière')
     team = st.session_state.get('matched_team', '')
 
-    df = cached_historique_des_perfs(player, alltime, seasons, playoffs, team)
+    df = cached_historique_des_perfs(player, alltime, seasons, playoffs, team).to_pandas()
 
     if df.empty:
         return None
@@ -478,21 +486,40 @@ def on_search_team_stats():
         st.session_state.matched_team = matched_team
 
 def get_maximums():
+    import polars as pl
 
     alltime = st.session_state.get('player_alltime_stats', False)
     seasons = st.session_state.get('selected_seasons', [])
-    conn = conn_hist_db() if alltime else conn_db()
+
+    # conn = conn_hist_db() if alltime else conn_db()
     
-    df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
-                                                        'SUM(points) AS Pts',
-                                                        'SUM(fieldGoalsMade) AS FG',
-                                                        'SUM(threePointersMade) AS FG3',
-                                                        'SUM(freeThrowsMade) AS FT',
-                                                        'AVG(seconds) / 60 AS MIN'
-                                                        ],
-                                                        filters='season IN :seasons',
-                                                        params={'seasons' : seasons},
-                                                        group_by='playerName')
+    if alltime and len(seasons) == 0:
+        bs = scan_boxscores(None if alltime else [latest_season()])
+        seasons = distinct_seasons(bs)
+        
+    df = (scan_boxscores()
+          .filter(pl.col("season").is_in(seasons))
+          .group_by("playerName")
+          .agg(GP=pl.len(),
+               Pts=sql_sum("points"),
+               FG=sql_sum("fieldGoalsMade"),
+               FG3=sql_sum("threePointersMade"),
+               FT=sql_sum("freeThrowsMade"),
+               MIN=pl.col("seconds").mean() / 60)
+          .sort("playerName")
+          .collect()
+          .to_pandas())
+        
+    # df = run_sql_query(conn, table='boxscores', select=['COUNT(*) AS GP',
+    #                                                     'SUM(points) AS Pts',
+    #                                                     'SUM(fieldGoalsMade) AS FG',
+    #                                                     'SUM(threePointersMade) AS FG3',
+    #                                                     'SUM(freeThrowsMade) AS FT',
+    #                                                     'AVG(seconds) / 60 AS MIN'
+    #                                                     ],
+    #                                                     filters='season IN :seasons',
+    #                                                     params={'seasons' : seasons},
+    #                                                     group_by='playerName')
     
     if df.empty:
         return {'GP' : 1, 'Pts' : 1, 'FG' : 1, 'FG3' : 1, 'FT' : 1, 'MIN' : 48}
@@ -507,8 +534,8 @@ def get_maximums():
     return maximums
 
 def alltime_checked():
-    if st.session_state.get('player_alltime_stats', False):
-        init_hist_db()
+    # if st.session_state.get('player_alltime_stats', False):
+    #     init_hist_db()
     set_filters_default()
     filters_to_zero()
     st.session_state.color_cells = False
@@ -593,30 +620,42 @@ def filter_expander_vars():
     return label, bool
 
 def update_player_stats(players_to_show):
+    import polars as pl
     st.session_state.player_stats = get_all_player_stats(matched=players_to_show)
     st.session_state.massive_tables = len(st.session_state.player_stats['Statistiques basiques']) > 550
 
     filters = None
-    params = None
+    # params = None
     
     alltime = st.session_state.get('player_alltime_stats', False)
     team = st.session_state.get('matched_team', '')
 
-    if len(players_to_show) > 0 or team != '':
-        filters = []
-        if len(players_to_show) > 0:
-            filters.append("playerName IN :players")
-            params = {'players' : players_to_show}
-        if team != '':
-            filters.append(f'{FRANCHISE_FILTERS[team]}')
+    bs = scan_boxscores(None if alltime else [latest_season()])
+    filters = []
+    if len(players_to_show) > 0:
+        filters.append(pl.col("playerName").is_in(list(players_to_show)))   # was: "playerName IN :players" + params
+    if team != '':
+        filters.append(franchise_expr(team))                                # was: FRANCHISE_FILTERS[team]
+
+    seasons = distinct_seasons(bs.filter(*filters) if filters else bs)      # no filters -> every season, as before
+    st.session_state.available_seasons = seasons
+
+
+    # if len(players_to_show) > 0 or team != '':
+    #     filters = []
+    #     if len(players_to_show) > 0:
+    #         filters.append("playerName IN :players")
+    #         params = {'players' : players_to_show}
+    #     if team != '':
+    #         filters.append(f'{FRANCHISE_FILTERS[team]}')
         
-    seasons = run_sql_query(conn_hist_db() if alltime else conn_db(), 
-                                table='boxscores', 
-                                select='DISTINCT season',
-                                filters=filters,
-                                params=params,
-                                order_by='season ASC')
-    st.session_state.available_seasons = seasons['season'].tolist()
+    # seasons = run_sql_query(conn_hist_db() if alltime else conn_db(), 
+    #                             table='boxscores', 
+    #                             select='DISTINCT season',
+    #                             filters=filters,
+    #                             params=params,
+    #                             order_by='season ASC')
+    # st.session_state.available_seasons = seasons['season'].tolist()
 
 if __name__ == '__main__':
     df = query_player_stats(season_list=[])

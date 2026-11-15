@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import streamlit as st
+import polars as pl
 import sys
 import os
 import re
@@ -10,9 +11,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.color_palette import get_palette
-from update_manager.topTTFL_manager import get_top_TTFL
+# from update_manager.topTTFL_manager import get_top_TTFL
 from data.sql_functions import run_sql_query
+from data.ttfl_data import scan_injuries, scan_schedule, scan_table
 from data.new_topTTFL_manager import get_top_TTFL as top2
+from misc.misc import SEASON
 
 def accentuate_pct(text: str) -> str:
     palette = get_palette('pct')
@@ -73,7 +76,7 @@ def accentuate_pct(text: str) -> str:
     return text
 
 @st.cache_data(show_spinner=False)
-def get_joueurs_pas_dispo(_conn, date) :
+def get_joueurs_pas_dispo(date) :
     import pandas as pd
     
     try:
@@ -84,12 +87,12 @@ def get_joueurs_pas_dispo(_conn, date) :
     limite = date_dt - timedelta(days=30)
     jdp, joueurs_pas_dispo = [], []
 
-    if st.session_state.local_instance:
-        jdp = (run_sql_query(_conn, table="joueurs_deja_pick")
-               .rename(columns={'datePick' : 'Date du pick', 'joueur' : 'Joueur'}))
-    else:
-        if 'jdp_df' in st.session_state and not (st.session_state.jdp_df['Joueur'] == '').all():
-            jdp = st.session_state.jdp_df[['Joueur', 'Date du pick']]
+    # if st.session_state.local_instance:
+    #     jdp = (run_sql_query(_conn, table="joueurs_deja_pick")
+    #            .rename(columns={'datePick' : 'Date du pick', 'joueur' : 'Joueur'}))
+    # else:
+    if 'jdp_df' in st.session_state and not (st.session_state.jdp_df['Joueur'] == '').all():
+        jdp = st.session_state.jdp_df[['Joueur', 'Date du pick']]
 
     if len(jdp) > 0:
         jdp = jdp[jdp['Date du pick'] != date].copy()
@@ -99,79 +102,88 @@ def get_joueurs_pas_dispo(_conn, date) :
     return joueurs_pas_dispo
 
 @st.cache_data(show_spinner=False)
-def get_joueurs_blesses(_conn):
-    injury_report = run_sql_query(_conn,
-                                  table="injury_report", 
-                                  select='player_name', 
-                                  filters="""simplified_status != 'Probable'""")
-    
-    return injury_report['player_name'].tolist()
+def get_joueurs_blesses():
+    injured = (scan_injuries()
+                .filter(pl.col('simplified_status') != 'Probable')
+                .select('player_name')
+                .collect()
+                .to_series()
+                .to_list())
+    return injured
 
 @st.cache_data(show_spinner=False)
-def get_low_game_count(_conn, date) :
-    import pandas as pd
-    
-    try:
-        date_dt = datetime.strptime(date, '%d/%m/%Y')
-    except:
-        return ''
-    limite = date_dt + timedelta(days=30)
-    n_games = 2
+def get_low_game_count(date, delta=30, min_games=2) :
+    import polars as pl
 
-    games_per_day = run_sql_query(_conn, 
-                                  table="schedule", 
-                                  select=['gameDate', 
-                                          'GROUP_CONCAT(homeTeam) AS homes', 
-                                          'GROUP_CONCAT(awayTeam) AS aways', 
-                                          'COUNT(*) AS n_games'], 
-                                  filters=["gameId NOT LIKE '003%'", 'homeTeam IS NOT NULL'], 
-                                  group_by='gameDate')
-    
-    games_per_day['gameDate'] = pd.to_datetime(games_per_day['gameDate'], errors='coerce', dayfirst=True)
-    games_per_day = games_per_day.sort_values(by='gameDate')
-    
-    mask_date = (games_per_day['gameDate'] >= date_dt) & (games_per_day['gameDate'] <= limite)
-    games_in_mask = games_per_day[mask_date]
-    
-    low_games_count = games_in_mask[games_in_mask['n_games'] <= n_games].reset_index(drop=True)
-    low_games_count['homes'] = low_games_count['homes'].str.split(',')
-    low_games_count['aways'] = low_games_count['aways'].str.split(',')
+    date_dt = datetime.strptime(date, '%d/%m/%Y')
+    low_game_count = (scan_schedule()
+                      .filter([~pl.col('gameId').str.starts_with('003'),
+                               pl.col('season') == SEASON,
+                               pl.col('homeTeam').is_not_null(),
+                               pl.col('gameDate_ymd').is_between(date_dt, date_dt + timedelta(days=delta))])
+                      .group_by('gameDate_ymd')
+                      .agg(n_games=pl.len(), 
+                           games=pl.concat_str([
+                           pl.col('homeTeam'), pl.lit('-'), pl.col('awayTeam')
+                          ])
+                        )
+                      .filter(pl.col('n_games') <= min_games)
+                      .with_columns(
+                          result=pl.format(
+                              '{} : {} matchs ({})',
+                              pl.col('gameDate_ymd').dt.strftime('%d/%m'),
+                              pl.col('n_games'),
+                              pl.col('games').list.join(', ')
+                          )
+                      )
+                      .select('result')
+                      .collect()
+                )
 
-    if len(low_games_count) > 0:
-        parts = []
-        for _, row in low_games_count.iterrows():
-            date_str = pd.to_datetime(row['gameDate']).strftime('%d/%m')
-            games = [f"{h}-{a}" for h, a in zip(row['homes'], row['aways'])]
-            games_str = ", ".join(games)
-            part = f"{date_str} : {row['n_games']} matchs ({games_str})"
-            parts.append(part)
-        result_str = ''.join(['&nbsp;'] * 20) + f'<b>Jours avec moins de {n_games} matchs :</b>'
-        for p in parts:
-            result_str += '<br>'
-            result_str += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;&nbsp;' + p
+    if not low_game_count.is_empty():
+        result_str = (
+            '&nbsp;' * 20
+            + f'<b>Jours avec moins de {min_games} matchs :</b><br>'
+            + ('<br>' + '&nbsp;' * 10 + '•&nbsp;&nbsp;&nbsp;&nbsp;').join(
+                low_game_count['result'].to_list()
+            )
+        )
     else:
-        result_str = ''.join(['&nbsp;'] * 15) + f'Pas de jours avec moins de {n_games} matchs'
+        result_str = ''.join(['&nbsp;'] * 15) + f'Pas de jours avec moins de {min_games} matchs'
    
     return result_str
 
 @st.cache_data(show_spinner=False)
-def get_deadline(_conn, date):
-    import pandas as pd
+def get_deadline(date):
+    import polars as pl
+    from zoneinfo import ZoneInfo
 
-    try:
-        date_dt = datetime.strptime(date, '%d/%m/%Y')
-    except:
-        return ''
-    df = run_sql_query(_conn, table='schedule', select=['gameDate', 'gameDateTime'], filters=f"gameDate = '{date}'")
-    df['gameDateTime'] = pd.to_datetime(df['gameDateTime'], utc=True).dt.tz_localize(None)
-    df_before_midnight = df[df['gameDateTime'] - date_dt < timedelta(days=1)]
-    if len(df_before_midnight) > 0:
-        deadline = df_before_midnight.loc[df_before_midnight['gameDateTime'].dt.hour.idxmin(), 'gameDateTime'].strftime('%Hh%M')
-        result_str = '<b>' + ''.join(['&nbsp;'] * 33)  + f'Deadline : {deadline}</b>'
+    date_dt = datetime.strptime(date, '%d/%m/%Y').replace(tzinfo=ZoneInfo('Europe/Paris'), hour=12)
+
+    b = (scan_table('schedule')
+        .filter(pl.col('season') == SEASON)
+        .with_columns(
+            paris_time=pl.col('gameDateTimeUTC').str.to_datetime(time_zone="UTC")
+            .dt.convert_time_zone('Europe/Paris')
+        )
+        .filter([
+            pl.col('paris_time') >= date_dt, 
+            pl.col('paris_time') < date_dt + timedelta(hours=12),
+            ])
+        .limit(1)
+        .with_columns(hour=pl.col('paris_time').dt.strftime('%Hh%M'))
+        
+                    
+        .select(['hour'])
+        .collect()
+        )
+
+    if not b.is_empty():
+        deadline = '<b>' + ''.join(['&nbsp;'] * 33)  + f'Deadline : {b.item()}</b>'
     else:
-        result_str = ''
-    
-    return result_str
+        deadline = ''
+
+    return deadline
 
 # @st.cache_data(show_spinner=False)
 # def translate_df_column(col_to_translate):
@@ -203,7 +215,7 @@ def get_idx_pick(df, date, colname):
     idx_pick = None
     pick = get_pick(date)
     dfcopy = df.copy()
-    dfcopy[colname] = dfcopy[colname].str.split(r' \(B2B\)').str[0]
+    dfcopy[colname] = dfcopy[colname].str.split(r' \((?:IST|B2B)\)').str[0]
     if (pick is not None and pick != '' and 
         pick in dfcopy[colname].tolist()):
         idx_pick = dfcopy.index[dfcopy[colname] == pick] + 1
@@ -467,15 +479,15 @@ def update_session_state_df(date_ymd):
     clear_classement_vars()
 
 @st.cache_data(show_spinner=False)
-def apply_df_filters(_conn, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
-    joueurs_pas_dispo = get_joueurs_pas_dispo(_conn, date)
-    joueurs_blesses = get_joueurs_blesses(_conn)
+def apply_df_filters(date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
+    joueurs_pas_dispo = get_joueurs_pas_dispo(date)
+    joueurs_blesses = get_joueurs_blesses()
 
     filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
     if filter_JDP:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \(B2B\)').str[0].isin(joueurs_pas_dispo)]
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_pas_dispo)]
     if filter_inj:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \(B2B\)').str[0].isin(joueurs_blesses)]
+        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_blesses)]
     
     if len(selected_games) > 0:
         filtered_topTTFL_df['team'] = filtered_topTTFL_df['Équipe'].str.split(' ').str[0]

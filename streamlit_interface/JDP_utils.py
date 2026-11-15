@@ -1,111 +1,143 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import streamlit as st
+import polars as pl
 import sys
 import os
 import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.resource_manager import conn_db, conn_hist_db, conn_supabase, fetch_supabase_users
-from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, FRANCHISE_FILTERS, TRICODE2FULLNAME
-from data.sql_functions import run_sql_query
+from streamlit_interface.resource_manager import conn_supabase, fetch_supabase_users
+from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, FRANCHISE_FILTERS, TRICODE2FULLNAME, SEASON
+# from data.sql_functions import run_sql_query
+from data.ttfl_data import scan_schedule, scan_boxscores, scan_rosters
 
 @st.cache_data(show_spinner=False)
 def get_cached_game_dates_completed():
-    gdc = run_sql_query(conn=conn_db(),
-                        table='schedule', 
-                        select='DISTINCT gameDate',
-                        filters=['gameStatus = 3', 
-                                "gameId LIKE '002%'"])
+    gdc = (scan_schedule()
+         .filter([
+             pl.col('season') == SEASON,
+             pl.col('gameStatus') == 3,
+             pl.col('gameId').str.starts_with('002')
+             ])
+         .select('gameDate_ymd').unique().sort('gameDate_ymd')
+         .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
+         .select('gameDate')
+         .collect()
+         .to_pandas()
+        #  .to_series()
+        #  .to_list()
+         )
     return gdc
 
 @st.cache_data(show_spinner=False)
 def get_cached_all_game_dates():
-    gdc = run_sql_query(conn=conn_db(),
-                        table='schedule', 
-                        select='DISTINCT gameDate',
-                        filters="gameId LIKE '002%'")
+    gdc  = (scan_schedule()
+         .filter([
+             pl.col('season') == SEASON,
+             pl.col('gameId').str.starts_with('002')
+             ])
+         .select('gameDate_ymd').unique().sort('gameDate_ymd')
+         .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
+         .select('gameDate')
+         .collect()
+         .to_series()
+         .to_list()
+         )
     return gdc
 
 @st.cache_data(show_spinner=False)
 def get_cached_scoresTTFL():
-    scores = run_sql_query(
-                    conn=conn_db(),
-                    table="boxscores",
-                    select=['playerName', 'gameDate', 'TTFL'],
-                    filters='seconds > 0'
-        )
+    scores = (scan_boxscores(SEASON)
+         .filter(pl.col('seconds') > 0)
+         .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
+         .select(['playerName', 'gameDate', 'TTFL'])
+         .sort(['TTFL', 'playerName'])
+         .collect()
+         .to_pandas()
+         )
     return scores
 
 @st.cache_data(show_spinner=False)
-def get_cached_avg_TTFL():
-    avg_TTFL = run_sql_query(conn=conn_db(),
-                                table='player_avg_TTFL', 
-                                select=['playerName', 'avg_TTFL'])
+def get_cached_avg_TTFL(alltime=False):
+    if not alltime:
+        seasons = SEASON
+    else:
+        seasons = None
+    avg_TTFL = (scan_boxscores(SEASON)
+         .filter(pl.col('seconds') > 0)
+         .group_by('playerName')
+         .agg(avg_TTFL=pl.mean('TTFL').round(2))
+         .select(['playerName', 'avg_TTFL'])
+         .sort(['avg_TTFL', 'playerName'])
+         .collect()
+         .to_pandas()
+         )
     return avg_TTFL
 
 @st.cache_data(show_spinner=False)
 def get_cached_player_list():
-    player_list = run_sql_query(conn=conn_db(), 
-                                table='boxscores', 
-                                select='DISTINCT playerName')
-    return player_list['playerName'].tolist()
-
-@st.cache_data(show_spinner=False)
-def get_cached_alltime_player_list():
-    current_player_list = get_cached_player_list()
-    old_player_list = (run_sql_query(conn=conn_hist_db(), 
-                                table='boxscores', 
-                                select='DISTINCT playerName')
-                                ['playerName'].tolist())
-    
-    player_list = list(set(current_player_list + old_player_list))
+    player_list = (scan_boxscores(SEASON)
+                   .select('playerName')
+                   .unique()
+                   .collect()
+                   .to_series()
+                   .to_list())
     return player_list
 
 @st.cache_data(show_spinner=False)
-def get_cached_pat(alltime):
-    pat = run_sql_query(conn=conn_db() if not alltime else conn_hist_db(), table='player_avg_TTFL')
-    return pat
+def get_cached_alltime_player_list():
+    player_list = (scan_boxscores()
+                   .select('playerName')
+                   .unique()
+                   .collect()
+                   .to_series()
+                   .to_list())
+    
+    return player_list
 
 @st.cache_data(show_spinner=False)
 def get_cached_rosters():
-    rosters = run_sql_query(conn=conn_db(), table='rosters')
+    rosters = (scan_rosters(SEASON)
+         .select(['playerName', 'teamTricode', 'position'])
+         .collect()
+         .to_pandas())
     return rosters
 
 class JoueursDejaPick():
     def __init__(self):
-        self.conn = conn_db()
+        # self.conn = conn_db()
         self.supabase = conn_supabase()
         self.existing_users = []
         self._init_db()
             
     def _init_db(self):
-        if st.session_state.local_instance:
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
-                    joueur TEXT,
-                    datePick TEXT
-                )
-            """)
-            self.conn.commit()
-        else:
-            self.existing_users = fetch_supabase_users(self.supabase)
+        # if st.session_state.local_instance:
+        #     self.conn.execute("""
+        #         CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
+        #             joueur TEXT,
+        #             datePick TEXT
+        #         )
+        #     """)
+        #     self.conn.commit()
+        # else:
+        self.existing_users = fetch_supabase_users(self.supabase)
             
     def loadJDP(self):
         import pandas as pd
 
-        if st.session_state.local_instance:
-            df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
-        else:
-            df = pd.DataFrame(columns=['joueur', 'datePick'])
-            username_clean = re.sub(r'\W+', '', st.session_state.get('username', ''))
-            if username_clean in self.existing_users:
-                df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
-                                                .select("picks")
-                                                .eq("username", username_clean)
-                                                .execute()
-                                        ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
+        # if st.session_state.local_instance:
+        #     df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
+        # else:
+        df = pd.DataFrame(columns=['joueur', 'datePick'])
+        username_clean = re.sub(r'\W+', '', st.session_state.get('username', ''))
+        if username_clean in self.existing_users:
+            df = pd.DataFrame(list((self.supabase.table("ttfl_doctor_user_picks")
+                                            .select("picks")
+                                            .eq("username", username_clean)
+                                            .execute()
+                                    ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
         return df
             
     def initJDP(self):
@@ -113,14 +145,13 @@ class JoueursDejaPick():
 
         good_df = self.loadJDP()
         game_dates_completed = get_cached_game_dates_completed()
+        all_dates = get_cached_all_game_dates()
 
         new_dates = (datetime.now(ZoneInfo("Europe/Paris")).strftime('%d/%m/%Y'), 
             (datetime.now(ZoneInfo("Europe/Paris")) - timedelta(days=1)).strftime('%d/%m/%Y'))
         
-        all_dates = get_cached_all_game_dates()
-        
         for new_date in new_dates:
-            if new_date not in all_dates['gameDate'].tolist():
+            if new_date not in all_dates:
                 continue
             if new_date not in game_dates_completed['gameDate'].tolist():
                 game_dates_completed.loc[len(game_dates_completed)] = new_date
@@ -156,24 +187,24 @@ class JoueursDejaPick():
         df_db = df_db[df_db['joueur'] != '']
         
         if save:
-            if st.session_state.local_instance:
-                df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
-            else:
-                picks = dict(zip(df_db['datePick'], df_db['joueur']))
-                if st.session_state.get('username', '') != '':
-                    username_clean = re.sub(r'\W+', '', st.session_state.username)
-                    if username_clean in self.existing_users:
-                        update = (self.supabase.table("ttfl_doctor_user_picks")
-                                                .update({"picks" : picks})
-                                                .eq("username", username_clean)
-                                                .execute())
-                    else:
-                        insert = (self.supabase.table("ttfl_doctor_user_picks")
-                                                .insert({"username" : username_clean, 
-                                                        "picks" : picks})
-                                                .execute())
-                        fetch_supabase_users.clear()
-                        self.existing_users = fetch_supabase_users(self.supabase)
+            # if st.session_state.local_instance:
+            #     df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
+            # else:
+            picks = dict(zip(df_db['datePick'], df_db['joueur']))
+            if st.session_state.get('username', '') != '':
+                username_clean = re.sub(r'\W+', '', st.session_state.username)
+                if username_clean in self.existing_users:
+                    update = (self.supabase.table("ttfl_doctor_user_picks")
+                                            .update({"picks" : picks})
+                                            .eq("username", username_clean)
+                                            .execute())
+                else:
+                    insert = (self.supabase.table("ttfl_doctor_user_picks")
+                                            .insert({"username" : username_clean, 
+                                                    "picks" : picks})
+                                            .execute())
+                    fetch_supabase_users.clear()
+                    self.existing_users = fetch_supabase_users(self.supabase)
 
         df = self.display_cols(df)
         return df
@@ -332,7 +363,7 @@ def match_player(input_name, names_list=None, multi=False):
         if multi:
             matched_name = abbv_map[input_upper]
         else:
-            pat = get_cached_pat(alltime)
+            pat = get_cached_avg_TTFL(alltime)
             filtered_df = pat[pat['playerName'].isin(abbv_map[input_upper])]
             matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
     
@@ -340,7 +371,7 @@ def match_player(input_name, names_list=None, multi=False):
         if multi:
             matched_name = splits[input_upper]
         else:
-            pat = get_cached_pat(alltime)
+            pat = get_cached_avg_TTFL(alltime)
             filtered_df = pat[pat['playerName'].isin(splits[input_upper])]
             matched_name = filtered_df.loc[filtered_df['avg_TTFL'].idxmax(), 'playerName']
 
@@ -394,7 +425,16 @@ def generate_dicts(names_list):
 
     return abbreviations, splits
 
-if __name__ == '__main__':
-    for a in FRANCHISE_FILTERS.keys():
-        for e in a.split(' '):
-            print(f'{e} : {match_team(e)}')
+# if __name__ == '__main__':
+#     gdc = run_sql_query(conn=conn_db(), table='rosters')
+    
+#     print(gdc)
+
+#     from data.ttfl_data import scan_table, scan_schedule, scan_boxscores, scan_rosters
+
+#     a = (scan_rosters(SEASON)
+#          .select(['playerName', 'teamTricode', 'position'])
+#          .collect()
+#          .to_pandas())
+#     print(a)
+#     print(all(a == gdc))

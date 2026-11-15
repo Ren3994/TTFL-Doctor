@@ -1,159 +1,159 @@
-import sys
-import os
-import requests
-import time
-import zstandard as zstd
-import hashlib
-import streamlit as st
+# import sys
+# import os
+# import requests
+# import time
+# import zstandard as zstd
+# import hashlib
+# import streamlit as st
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.resource_manager import conn_hist_db, conn_db
-from data.sql_functions import update_tables, run_sql_query, save_to_db
-from misc.misc import DB_PATH_HISTORICAL, DB_PATH_HISTORICAL_ZST, HIST_DB_URL, CHECKSUM
+# from streamlit_interface.resource_manager import conn_hist_db, conn_db
+# from data.sql_functions import update_tables, run_sql_query, save_to_db
+# from misc.misc import DB_PATH_HISTORICAL, DB_PATH_HISTORICAL_ZST, HIST_DB_URL, CHECKSUM
 
-def checksum():
-    h = hashlib.sha256()
-    with open(DB_PATH_HISTORICAL_ZST, 'rb') as f:
-        for chunk in iter(lambda: f.read(1024*1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+# def checksum():
+#     h = hashlib.sha256()
+#     with open(DB_PATH_HISTORICAL_ZST, 'rb') as f:
+#         for chunk in iter(lambda: f.read(1024*1024), b""):
+#             h.update(chunk)
+#     return h.hexdigest()
 
-def download_hist_db():
-    with st.spinner('Téléchargement des boxscores historiques...'):
-        with requests.get(HIST_DB_URL, stream=True, timeout=(10, 300)) as r:
-            r.raise_for_status()
-            downloaded = 0
-            with open(DB_PATH_HISTORICAL_ZST, "wb") as f:
-                for chunk in r.iter_content(1024*1024):
-                    if not chunk:
-                        continue
-                    f.write(chunk)
-                    downloaded += len(chunk)
+# def download_hist_db():
+#     with st.spinner('Téléchargement des boxscores historiques...'):
+#         with requests.get(HIST_DB_URL, stream=True, timeout=(10, 300)) as r:
+#             r.raise_for_status()
+#             downloaded = 0
+#             with open(DB_PATH_HISTORICAL_ZST, "wb") as f:
+#                 for chunk in r.iter_content(1024*1024):
+#                     if not chunk:
+#                         continue
+#                     f.write(chunk)
+#                     downloaded += len(chunk)
 
-def init_hist_db():
+# def init_hist_db():
     
-    os.makedirs(os.path.dirname(DB_PATH_HISTORICAL_ZST), exist_ok=True)
-    if not os.path.exists(DB_PATH_HISTORICAL_ZST): # Télécharger si manquant
-        download_hist_db()
+#     os.makedirs(os.path.dirname(DB_PATH_HISTORICAL_ZST), exist_ok=True)
+#     if not os.path.exists(DB_PATH_HISTORICAL_ZST): # Télécharger si manquant
+#         download_hist_db()
 
-    new_file_hash = checksum() # Vérifier la validité du fichier
-    if new_file_hash != CHECKSUM:
-        os.remove(DB_PATH_HISTORICAL_ZST)
-        print('Wrong hash')
-        return False
+#     new_file_hash = checksum() # Vérifier la validité du fichier
+#     if new_file_hash != CHECKSUM:
+#         os.remove(DB_PATH_HISTORICAL_ZST)
+#         print('Wrong hash')
+#         return False
     
-    with st.spinner('Mise à jour des tables de données...'):
-        if not os.path.exists(DB_PATH_HISTORICAL): # Décompression de l'archive
-            with open(DB_PATH_HISTORICAL_ZST, "rb") as f:
-                dctx = zstd.ZstdDecompressor()
-                with dctx.stream_reader(f) as reader:
-                    with open(f'{DB_PATH_HISTORICAL_ZST}.tmp', "wb") as out:
-                        while True:
-                            chunk = reader.read(16384)
-                            if not chunk:
-                                break
-                            out.write(chunk)
+#     with st.spinner('Mise à jour des tables de données...'):
+#         if not os.path.exists(DB_PATH_HISTORICAL): # Décompression de l'archive
+#             with open(DB_PATH_HISTORICAL_ZST, "rb") as f:
+#                 dctx = zstd.ZstdDecompressor()
+#                 with dctx.stream_reader(f) as reader:
+#                     with open(f'{DB_PATH_HISTORICAL_ZST}.tmp', "wb") as out:
+#                         while True:
+#                             chunk = reader.read(16384)
+#                             if not chunk:
+#                                 break
+#                             out.write(chunk)
 
-            os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL)
-            os.remove(DB_PATH_HISTORICAL_ZST)
+#             os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL)
+#             os.remove(DB_PATH_HISTORICAL_ZST)
         
-        update_total_boxscores()
-    return True
+#         update_total_boxscores()
+#     return True
 
-def update_total_boxscores():
+# def update_total_boxscores():
     
-    conn = conn_db()
-    hist_conn = conn_hist_db()
+#     conn = conn_db()
+#     hist_conn = conn_hist_db()
 
-    boxscore_cols = '''
-        season, gameId, teamTricode, isHome, opponent, playerName, minutes, points, assists, TTFL, win, 
-        reboundsTotal, steals, blocks, turnovers, fieldGoalsMade, fieldGoalsAttempted, threePointersMade, 
-        threePointersAttempted, freeThrowsMade, freeThrowsAttempted, plusMinusPoints, homeTeam, visitorTeam, 
-        seconds, reboundsOffensive, position_boxscores, reboundsDefensive, gameDate, gameDate_ymd, prev_gameDate_ymd, 
-        teamPoints, opponentPoints, teamTTFL, opponentTTFL
-        '''
+#     boxscore_cols = '''
+#         season, gameId, teamTricode, isHome, opponent, playerName, minutes, points, assists, TTFL, win, 
+#         reboundsTotal, steals, blocks, turnovers, fieldGoalsMade, fieldGoalsAttempted, threePointersMade, 
+#         threePointersAttempted, freeThrowsMade, freeThrowsAttempted, plusMinusPoints, homeTeam, visitorTeam, 
+#         seconds, reboundsOffensive, position_boxscores, reboundsDefensive, gameDate, gameDate_ymd, prev_gameDate_ymd, 
+#         teamPoints, opponentPoints, teamTTFL, opponentTTFL
+#         '''
 
-    table_exists = hist_conn.execute("""SELECT 1
-                                        FROM sqlite_master
-                                        WHERE type='table'
-                                        AND name='boxscores'
-                                     """).fetchone()
+#     table_exists = hist_conn.execute("""SELECT 1
+#                                         FROM sqlite_master
+#                                         WHERE type='table'
+#                                         AND name='boxscores'
+#                                      """).fetchone()
 
-    if not table_exists:
-        hist_conn.execute(f'''CREATE TABLE boxscores AS
-                              SELECT {boxscore_cols}
-                              FROM historical_boxscores''')
+#     if not table_exists:
+#         hist_conn.execute(f'''CREATE TABLE boxscores AS
+#                               SELECT {boxscore_cols}
+#                               FROM historical_boxscores''')
         
-        hist_conn.execute("CREATE UNIQUE INDEX idx_unique ON boxscores(playerName, gameId)")
-        hist_conn.execute("CREATE INDEX idx_seconds ON boxscores(seconds)")
-        hist_conn.execute("CREATE INDEX idx_gameDate_ymd ON boxscores(gameDate_ymd)")
-        hist_conn.execute("CREATE INDEX idx_season ON boxscores(season)")
-        hist_conn.execute("CREATE INDEX idx_team ON boxscores(teamTricode)")
-        hist_conn.execute("CREATE INDEX idx_reg_season ON boxscores(gameId) WHERE gameId LIKE '002%'")
-        hist_conn.execute("CREATE INDEX idx_playoffs ON boxscores(gameId) WHERE gameId LIKE '004%'")
+#         hist_conn.execute("CREATE UNIQUE INDEX idx_unique ON boxscores(playerName, gameId)")
+#         hist_conn.execute("CREATE INDEX idx_seconds ON boxscores(seconds)")
+#         hist_conn.execute("CREATE INDEX idx_gameDate_ymd ON boxscores(gameDate_ymd)")
+#         hist_conn.execute("CREATE INDEX idx_season ON boxscores(season)")
+#         hist_conn.execute("CREATE INDEX idx_team ON boxscores(teamTricode)")
+#         hist_conn.execute("CREATE INDEX idx_reg_season ON boxscores(gameId) WHERE gameId LIKE '002%'")
+#         hist_conn.execute("CREATE INDEX idx_playoffs ON boxscores(gameId) WHERE gameId LIKE '004%'")
     
-    query_last_gameDate = """SELECT gameDate_ymd FROM boxscores ORDER BY gameDate_ymd DESC LIMIT 1"""
-    try:
-        last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
-    except:
-        last_gameDate_current_boxscores = None
-    last_gameDate_total_boxscores = hist_conn.execute(query_last_gameDate).fetchone()[0]
+#     query_last_gameDate = """SELECT gameDate_ymd FROM boxscores ORDER BY gameDate_ymd DESC LIMIT 1"""
+#     try:
+#         last_gameDate_current_boxscores = conn.execute(query_last_gameDate).fetchone()[0]
+#     except:
+#         last_gameDate_current_boxscores = None
+#     last_gameDate_total_boxscores = hist_conn.execute(query_last_gameDate).fetchone()[0]
 
-    up_to_date = (last_gameDate_current_boxscores == last_gameDate_total_boxscores) or (last_gameDate_current_boxscores is None)
-    if not up_to_date:
+#     up_to_date = (last_gameDate_current_boxscores == last_gameDate_total_boxscores) or (last_gameDate_current_boxscores is None)
+#     if not up_to_date:
 
-        current_boxscores = run_sql_query(conn, 'boxscores')
-        save_to_db(hist_conn, current_boxscores, 'current_boxscores', if_exists='replace')
-        hist_conn.execute(f'''INSERT OR IGNORE INTO boxscores ({boxscore_cols})
-                            SELECT {boxscore_cols}
-                            FROM current_boxscores''')
+#         current_boxscores = run_sql_query(conn, 'boxscores')
+#         save_to_db(hist_conn, current_boxscores, 'current_boxscores', if_exists='replace')
+#         hist_conn.execute(f'''INSERT OR IGNORE INTO boxscores ({boxscore_cols})
+#                             SELECT {boxscore_cols}
+#                             FROM current_boxscores''')
 
-        hist_conn.commit()
-        update_tables(hist_conn, historical=True)
+#         hist_conn.commit()
+#         update_tables(hist_conn, historical=True)
 
-def compress_hist_db(level=19):
-    with open(DB_PATH_HISTORICAL, 'rb') as f:
-        cctx = zstd.ZstdCompressor(level=level)
-        with open(f'{DB_PATH_HISTORICAL_ZST}.tmp', 'wb') as out:
-            cctx.copy_stream(f, out)
-    os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL_ZST)
-    print(f'Compressed {DB_PATH_HISTORICAL} to \n{DB_PATH_HISTORICAL_ZST} with level {level}')
-    print(f'checksum: {checksum()}')
+# def compress_hist_db(level=19):
+#     with open(DB_PATH_HISTORICAL, 'rb') as f:
+#         cctx = zstd.ZstdCompressor(level=level)
+#         with open(f'{DB_PATH_HISTORICAL_ZST}.tmp', 'wb') as out:
+#             cctx.copy_stream(f, out)
+#     os.replace(f'{DB_PATH_HISTORICAL_ZST}.tmp', DB_PATH_HISTORICAL_ZST)
+#     print(f'Compressed {DB_PATH_HISTORICAL} to \n{DB_PATH_HISTORICAL_ZST} with level {level}')
+#     print(f'checksum: {checksum()}')
     
-if __name__ == '__main__':
-    # init_hist_db()
-    # t0 = time.time()
-    # update_total_boxscores()
-    # print(time.time() - t0)
-    # hist_conn = conn_hist_db()
-    # update_tables(hist_conn, historical=True)
-    # print(time.time() - t0)
+# if __name__ == '__main__':
+#     # init_hist_db()
+#     # t0 = time.time()
+#     # update_total_boxscores()
+#     # print(time.time() - t0)
+#     # hist_conn = conn_hist_db()
+#     # update_tables(hist_conn, historical=True)
+#     # print(time.time() - t0)
 
-    # hist_conn.execute("""VACUUM;""")
-    # hist_conn.execute("""ANALYZE;""")
+#     # hist_conn.execute("""VACUUM;""")
+#     # hist_conn.execute("""ANALYZE;""")
 
-    # hist_conn.execute("""
-    # CREATE UNIQUE INDEX idx_unique_player_date_season ON boxscores(playerName, gameDate_ymd, season)
-    # """)
-    # hist_conn.commit()
+#     # hist_conn.execute("""
+#     # CREATE UNIQUE INDEX idx_unique_player_date_season ON boxscores(playerName, gameDate_ymd, season)
+#     # """)
+#     # hist_conn.commit()
 
-    # a = hist_conn.execute("""
-    # SELECT name, sql
-    # FROM sqlite_master
-    # WHERE type='index' AND tbl_name='boxscores'
-    # """).fetchall()
+#     # a = hist_conn.execute("""
+#     # SELECT name, sql
+#     # FROM sqlite_master
+#     # WHERE type='index' AND tbl_name='boxscores'
+#     # """).fetchall()
 
-    # print(os.path.dirname(DB_PATH_HISTORICAL_ZST))
+#     # print(os.path.dirname(DB_PATH_HISTORICAL_ZST))
 
-    # init_hist_db()
+#     # init_hist_db()
 
-    # import zstandard as zstd
-    # with open(DB_PATH_HISTORICAL_ZST, 'rb') as f:
-    #     dctx = zstd.ZstdDecompressor()
-    #     with open(f'{DB_PATH_HISTORICAL}2', 'wb') as out:
-    #         dctx.copy_stream(f, out)
+#     # import zstandard as zstd
+#     # with open(DB_PATH_HISTORICAL_ZST, 'rb') as f:
+#     #     dctx = zstd.ZstdDecompressor()
+#     #     with open(f'{DB_PATH_HISTORICAL}2', 'wb') as out:
+#     #         dctx.copy_stream(f, out)
 
-    print(checksum())
+#     print(checksum())
 
-    # compress_hist_db(level=22)
+#     # compress_hist_db(level=22)
