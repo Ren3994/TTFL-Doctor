@@ -7,7 +7,7 @@ from fetchers.espn_injury_report_fetcher import get_espn_injury_report
 from fetchers.cbs_injury_report_fetcher import get_cbs_injury_report
 from fetchers.nbacom_injury_report_fetcher import get_nbacom_injury_report
 from fetchers.espn_json_injury_report_fetcher import get_espn_injury_report_from_json
-from data.sql_functions import save_to_db
+# from data.sql_functions import save_to_db
 from data.ttfl_data import save_injuries
 
 def update_injury_report():

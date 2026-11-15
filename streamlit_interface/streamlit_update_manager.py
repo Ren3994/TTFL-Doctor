@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_db_update, clear_after_injury_update
-from data.sql_functions import run_sql_query, update_tables, check_table_exists#, get_missing_gameids
+# from data.sql_functions import run_sql_query, update_tables, check_table_exists#, get_missing_gameids
 from update_manager.injury_report_manager import update_injury_report
 # from streamlit_interface.historical_data_manager import init_hist_db
 from update_manager.nba_api_manager import update_nba_data

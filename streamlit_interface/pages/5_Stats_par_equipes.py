@@ -110,11 +110,11 @@ for table in team_stats:
                             for stat in df})
         
 with st.expander('Évolution du classement', expanded=False):
-    try:
+    # try:
         fig = standings_progress_plot()
         st.plotly_chart(fig)
-    except:
-        st.write('Pas de données disponibles pour le moment')
+    # except:
+    #     st.write('Pas de données disponibles pour le moment')
 
 vspace(30)
 

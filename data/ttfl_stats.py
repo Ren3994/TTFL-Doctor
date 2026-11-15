@@ -30,12 +30,12 @@ import polars.selectors as cs
 try:                                              # files side by side ...
     from ttfl_data import (
         DATA_DIR, SEASON, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
-        scan_rosters, scan_schedule, to_date, to_pl, with_legacy_columns,
+        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
     )
 except ImportError:                               # ... or imported as part of the `data` package
     from data.ttfl_data import (
         DATA_DIR, SEASON, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
-        scan_rosters, scan_schedule, to_date, to_pl, with_legacy_columns,
+        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
     )
 
 c = pl.col
@@ -69,6 +69,11 @@ def _sum(col: str) -> pl.Expr:
     x = c(col)
     return pl.when(x.count() > 0).then(x.sum())
 
+sql_sum = _sum
+
+def distinct_seasons(bs: pl.LazyFrame) -> list[str]:
+    """SELECT DISTINCT season ... ORDER BY season ASC, as a plain Python list (ready for .is_in())."""
+    return bs.select("season").unique().sort("season").collect()["season"].to_list()
 
 def played(bs: pl.LazyFrame) -> pl.LazyFrame:
     return bs.filter(c("seconds") > 0)
@@ -390,7 +395,7 @@ def graph_data(bs: pl.LazyFrame) -> pl.LazyFrame:
     """The four graph_* GROUP_CONCATs (which had no ORDER BY) as aligned, chronologically sorted lists."""
     return (played(bs).sort("gameDate_ymd").group_by("playerName", maintain_order=True)
             .agg(graph_dates=c("gameDate_ymd").dt.strftime("%d/%m/%Y"), graph_opps=c("opponent"),
-                 graph_TTFLs=c("TTFL"), graph_wins=c("win")))
+                 graph_TTFLs=c("TTFL"), graph_wins=c("win"), graph_ishome=c("isHome")))
 
 
 # =====================================================================================
@@ -477,7 +482,7 @@ def get_derived() -> Derived:
 LIST_COLS = ["player_nemesis", "rel_TTFL_v_player_nemesis", "games_v_player_nemesis",
              "injured_teammates", "simp_statuses", "inj_teammates_TTFLs", "rel_TTFL_inj_teammate_abs",
              "inj_teammates_abs_count", "inj_opponents", "inj_opponents_simp_statuses", "inj_opponents_TTFLs",
-             "pos_rel_TTFL_when_inj_opp", "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins"]
+             "pos_rel_TTFL_when_inj_opp", "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins", "graph_ishome"]
 
 TOP_COLS = ["playerName", "pos", "isHome", "team", "teamWins", "teamLosses", "opponent", "oppWins", "oppLosses",
             "avg_TTFL", "stddev_TTFL", "median_TTFL", "injury_status", "details", "min_restr",
@@ -487,7 +492,7 @@ TOP_COLS = ["playerName", "pos", "isHome", "team", "teamWins", "teamLosses", "op
             "injured_teammates", "simp_statuses", "inj_teammates_TTFLs", "rel_TTFL_inj_teammate_abs",
             "inj_teammates_abs_count", "inj_opponents", "inj_opponents_simp_statuses", "inj_opponents_TTFLs",
             "pos_rel_TTFL_when_inj_opp", "team_last_wins", "opp_last_wins",
-            "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins"]
+            "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins", "graph_ishome", "IST"]
 
 
 def top_ttfl(game_date, d: Derived | None = None, injuries: pl.DataFrame | None = None,
@@ -517,7 +522,7 @@ def top_ttfl(game_date, d: Derived | None = None, injuries: pl.DataFrame | None 
             c(f"{me}Team").alias("team"), c(f"{me}Team_wins").alias("teamWins"),
             c(f"{me}Team_losses").alias("teamLosses"), c(f"{other}Team").alias("opponent"),
             c(f"{other}Team_wins").alias("oppWins"), c(f"{other}Team_losses").alias("oppLosses"),
-            pl.lit(is_home, dtype=pl.Int8).alias("isHome"))
+            pl.lit(is_home, dtype=pl.Int8).alias("isHome"), c("IST").alias("IST"))
 
     sides = pl.concat([side("home", "away", 1), side("away", "home", 0)])
     b2b = (pl.DataFrame({"team": yday["homeTeam"].to_list() + yday["awayTeam"].to_list()},
@@ -778,7 +783,28 @@ def query_opp_team_avgs(seasons=()) -> pl.DataFrame:
         c("win").sum().alias("wins"))
         .rename({"opponent": "teamTricode"})
         .sort("pts", descending=True)
-        .collect())
+        .collect()
+        .to_pandas())
+
+TEAM_STATS_COLUMNS = [*TEAM_STATS_SOURCE_COLUMNS, "rel_team_avg_TTFL", "rel_opp_avg_TTFL", "net_rel_TTFL",
+                      "avg_team_TTFL", "avg_opp_TTFL", "net_TTFL"]
+ 
+ 
+def query_team_stats() -> pl.DataFrame:
+    """team_stats (fetched from the NBA API, 30 rows) joined with the TTFL averages computed from the boxscores of
+    the latest season with games. Replaces the run_sql_query join on rel_avg_opp_TTFL.
+    Inner join like before: a team with no game yet has no TTFL row and is left out (use how="left" to keep it)."""
+    ts = scan_table("team_stats").collect()
+    if "teamTricode" not in ts.columns:                       # no team_stats.parquet yet (was: result None)
+        return pl.DataFrame(schema={n: pl.Utf8 if n == "teamTricode" else pl.Float64 for n in TEAM_STATS_COLUMNS})
+    ttfl = (rel_avg_opp_ttfl(scan_boxscores([latest_season()]))
+            .select("teamTricode", "rel_team_avg_TTFL", "rel_opp_avg_TTFL", "avg_team_TTFL", "avg_opp_TTFL")
+            .collect())
+    return (ts.join(ttfl, on="teamTricode", how="inner")
+              .with_columns(net_rel_TTFL=c("rel_team_avg_TTFL") - c("rel_opp_avg_TTFL"),
+                            net_TTFL=c("avg_team_TTFL") - c("avg_opp_TTFL"))
+              .select(TEAM_STATS_COLUMNS)
+              .to_pandas())
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ LEGACY_BOX_COLS = ("minutes", "gameDate", "prev_gameDate_ymd", "homeTeam", "visi
 
 SCHEDULE_SCHEMA: dict = {
     "gameId": _STR, "season": _STR, "gameDate_ymd": pl.Date, "gameStatus": _I8,
-    "homeTeam": _STR, "awayTeam": _STR,
+    "homeTeam": _STR, "awayTeam": _STR, 'IST': _I8,
     "homeTeam_wins": _I16, "homeTeam_losses": _I16, "awayTeam_wins": _I16, "awayTeam_losses": _I16,
     "postponed": _I8, "gameDateTimeUTC": _STR, "gameDateTime": _STR,
 }
@@ -128,6 +128,8 @@ def save_boxscores(df) -> None:
 def scan_boxscores(seasons=None) -> pl.LazyFrame:
     """seasons=None -> whole history; otherwise only those season files are opened."""
     if seasons:
+        if isinstance(seasons, str):
+            seasons = [seasons]
         paths = [str(box_path(s)) for s in seasons if box_path(s).exists()]
     else:
         paths = [str(p) for p in sorted(BOX_DIR.glob("*.parquet"))] if BOX_DIR.exists() else []
@@ -174,14 +176,18 @@ def _replace_seasons(name: str, new: pl.DataFrame, schema: dict) -> None:
 
 def save_schedule(df) -> None:
     df = _conform(_parse_date(to_pl(df), "gameDate_ymd"), SCHEDULE_SCHEMA)
-    df = df.with_columns(pl.col("postponed").fill_null(0))
+    df = df.with_columns(pl.col("postponed").fill_null(0), pl.col("IST").fill_null(0))
     _replace_seasons("schedule", df, SCHEDULE_SCHEMA)
 
 
 def scan_schedule() -> pl.LazyFrame:
     # `gameDate` (dd/mm/yyyy text) is derived on read, it is no longer stored
-    return scan_table("schedule").with_columns(
-        gameDate=pl.col("gameDate_ymd").dt.strftime("%d/%m/%Y"))
+    lf = scan_table("schedule")
+    names = lf.collect_schema().names()
+    if names and "IST" not in names:             # schedule.parquet written before the IST column existed: nobody is IST
+        lf = lf.with_columns(IST=pl.lit(0, dtype=_I8))
+    return lf.with_columns(gameDate=pl.col("gameDate_ymd").dt.strftime("%d/%m/%Y"), 
+                           IST=pl.col("IST").fill_null(0))
 
 
 def save_rosters(df, season: str = SEASON) -> None:
@@ -207,6 +213,29 @@ def save_injuries(df) -> None:
 def scan_injuries() -> pl.LazyFrame:
     # the old table has names like ' Niederhauser' (leading space) which never matched a join
     return scan_table("injury_report").with_columns(pl.col("player_name").str.strip_chars())
+
+# Columns of team_stats that the page reads (the NBA API fetch must provide all of them).
+TEAM_STATS_SOURCE_COLUMNS = [
+    "teamTricode", "GP", "W", "L", "W_PCT", "PTS", "AST", "REB", "OREB", "DREB", "TOV", "STL", "BLK",   # regular
+    "ORtg", "DRtg", "NRtg", "AST_PCT", "AST_TO", "OREB_PCT", "DREB_PCT", "REB_PCT", "Pace", "TM_TOV_PCT",
+    "AST_RATIO", "BLKA", "PFD",                                                                         # advanced
+    "FGM", "FGA", "FG_PCT", "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA", "FT_PCT", "EFG_PCT", "TS_PCT",     # shooting
+]
+ 
+ 
+def save_team_stats(df) -> None:
+    """Replace team_stats.parquet with a fresh fetch (one row per team).
+ 
+    Validates BEFORE writing, so a bad fetch (empty result, or a column renamed by the NBA API) raises and the
+    previous good file stays in place; refresh_reference_data() catches it and prints the reason."""
+    df = to_pl(df)
+    if df.is_empty():
+        raise ValueError("team_stats fetch returned no rows; keeping the previous file")
+    missing = [col for col in TEAM_STATS_SOURCE_COLUMNS if col not in df.columns]
+    if missing:
+        raise ValueError(f"team_stats is missing columns {missing}; keeping the previous file")
+    df = df.drop_nulls("teamTricode").unique(subset="teamTricode", keep="last", maintain_order=True)
+    save_table("team_stats", df)
 
 
 # --------------------------------------------------------------------------------------
@@ -326,7 +355,7 @@ def get_missing_gameids() -> pl.DataFrame:
     have = scan_boxscores().select("gameId").unique()
     return (
         scan_schedule()
-        .filter((c("gameStatus") == 3) & (c("postponed") == 0)
+        .filter((c('season') == SEASON) & (c("gameStatus") == 3) & (c("postponed") == 0)
                 & (c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004")))
         .join(have, on="gameId", how="anti")
         .sort("gameDate_ymd")       # the SQL sorted the dd/mm/yyyy *text*, i.e. not chronologically
@@ -341,7 +370,7 @@ def get_games_for_date(game_date) -> pl.DataFrame:
           .with_columns(pl.col("homeTeam").fill_null("TBD"), pl.col("awayTeam").fill_null("TBD")))
     h, a = pl.col("homeTeam"), pl.col("awayTeam")
     pair = pl.when(h <= a).then(pl.concat_str([h, a], separator="|")).otherwise(pl.concat_str([a, h], separator="|"))
-    return df.with_columns(_pair=pair).unique(subset="_pair", keep="first", maintain_order=True).drop("_pair")
+    return df.with_columns(_pair=pair).unique(subset="_pair", keep="first", maintain_order=True).drop("_pair").to_pandas()
 
 
 # --------------------------------------------------------------------------------------
@@ -362,7 +391,7 @@ def refresh_reference_data(verbose: bool = True) -> None:
 
     for label, fn, saver in (("schedule", get_schedule, save_schedule),
                              ("rosters", get_rosters, save_rosters),
-                             ("team_stats", get_team_stats, lambda d: save_table("team_stats", d))):
+                             ("team_stats", get_team_stats, save_team_stats)):
         try:
             data = fn()
             if data is None:
@@ -436,5 +465,6 @@ def migrate_from_sqlite(hist_db: str, last_season_db: str | None = None, current
 
 
 if __name__ == "__main__":
-    from misc.misc import DB_PATH, DB_PATH_LAST_SEASON, DB_PATH_HISTORICAL
-    migrate_from_sqlite(DB_PATH_HISTORICAL, DB_PATH_LAST_SEASON, DB_PATH)
+    # from misc.misc import DB_PATH, DB_PATH_LAST_SEASON, DB_PATH_HISTORICAL
+    # migrate_from_sqlite(DB_PATH_HISTORICAL, DB_PATH_LAST_SEASON, DB_PATH)
+    refresh_reference_data()

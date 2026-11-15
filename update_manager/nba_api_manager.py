@@ -8,7 +8,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.sql_functions import init_db#, save_to_db, #get_missing_gameids, check_boxscores_integrity
+# from data.sql_functions import init_db#, save_to_db, #get_missing_gameids, check_boxscores_integrity
 from update_manager.boxscores_manager import get_boxscores, log_failure
 from data.ttfl_data import save_boxscores, get_missing_gameids, refresh_reference_data
 

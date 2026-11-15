@@ -1,6 +1,7 @@
 from datetime import datetime
 from io import BytesIO
 import streamlit as st
+import numpy as np
 import base64
 import sys
 import os
@@ -14,6 +15,11 @@ def load_logo(path):
     import matplotlib.image as mpimg
     return mpimg.imread(path)
 
+def letter_vlines(ax, letter, x, ymin, ymax, **kwargs):
+    extent = ymax-ymin
+    ys = np.linspace(ymin + 0.1*extent, ymax-0.1*extent, 10)
+    [ax.text(x, y, letter, ha='center', va='center', **kwargs) for y in ys]
+
 def generate_all_plots(row_nographs, date):
     row = row_nographs.copy()
     joueur = row['Joueur']
@@ -21,6 +27,7 @@ def generate_all_plots(row_nographs, date):
     graph_opps = row['graph_opps']
     graph_TTFLs = row['graph_TTFLs']
     graph_wins = row['graph_wins']
+    graph_ishome = row['graph_ishome']
     avgTTFL = row['TTFL']
     row['plots'] = cached_generate_plot_row(date, 
                                             joueur, 
@@ -28,6 +35,7 @@ def generate_all_plots(row_nographs, date):
                                             graph_opps, 
                                             graph_TTFLs, 
                                             graph_wins, 
+                                            graph_ishome,
                                             avgTTFL)
     return row
     
@@ -38,6 +46,7 @@ def cached_generate_plot_row(requested_date,
                              graph_opps, 
                              graph_TTFLs, 
                              graph_wins, 
+                             graph_ishome,
                              avgTTFL):
     
     from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -64,6 +73,7 @@ def cached_generate_plot_row(requested_date,
         avgTTFL = float(avgTTFL[:4])
         TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
         wins = [int(float(win)) for win in graph_wins.split(',')]
+        ishome = [int(float(home)) for home in graph_ishome.split(',')]
 
         linew = 1.5
         alpha = 0.7
@@ -128,7 +138,9 @@ def cached_generate_plot_row(requested_date,
         ax.set_ylabel("TTFL", fontsize=8, rotation=0, labelpad=15)
         ax.tick_params(axis='both', labelsize=8)
         ax.grid(axis='y', which='major', linewidth=linew, alpha=alpha-0.5, color='grey')
-        ax.vlines(dates, ymin, ymax, colors=['g' if w == 1 else 'r' for w in wins], ls='--', lw=linew, alpha=alpha)
+        # ax.vlines(dates, ymin, ymax, colors=['g' if w == 1 else 'r' for w in wins], ls='--', lw=linew, alpha=alpha)
+        [letter_vlines(ax, 'H' if h else 'A', x, ymin, ymax, alpha=alpha-0.3, c='g' if w == 1 else 'r', zorder=0) 
+         for (x, w, h) in zip(dates, wins, ishome)]
 
     # plt.show()
     # fig.tight_layout()

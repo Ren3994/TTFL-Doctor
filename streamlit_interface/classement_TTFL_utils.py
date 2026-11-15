@@ -12,7 +12,7 @@ from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.color_palette import get_palette
 # from update_manager.topTTFL_manager import get_top_TTFL
-from data.sql_functions import run_sql_query
+# from data.sql_functions import run_sql_query
 from data.ttfl_data import scan_injuries, scan_schedule, scan_table
 from data.new_topTTFL_manager import get_top_TTFL as top2
 from misc.misc import SEASON

@@ -28,9 +28,9 @@ import math
 HOT3, HOT1, COLD3, COLD1 = " 🔥🔥🔥", " 🔥", " ❄️❄️❄️", " ❄️"
 
 COLUMNS = [
-    "Joueur", "Poste", "Lieu", "Équipe", "Adversaire", "TTFL", "stdTTFL", "median_TTFL", "is_b2b", "n_btb",
+    "Joueur", "Poste", "Lieu", "Équipe", "Adversaire", "TTFL", "stdTTFL", "median_TTFL", "is_b2b", "IST", "n_btb",
     "Statut", "details", "team_nemesis", "player_nemesis", "nemesis", "streak_str", "streak_indicator",
-    "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins", "rel_opp_avg_TTFL", "rel_btb_TTFL",
+    "graph_dates", "graph_opps", "graph_TTFLs", "graph_wins", "graph_ishome", "rel_opp_avg_TTFL", "rel_btb_TTFL",
     "rel_btb_TTFL_with_br", "team_injury_status", "opp_inj_status", "allrel", "team_info", "opp_info",
 ]
 # Dropped vs the old output: the three graph_*_split leftovers and clean_team/clean_opp/opp (all dead weight).
@@ -115,6 +115,9 @@ def pct(x, na: str = "N/A") -> str:
     """'+3.2%', '-1.0%', or 'N/A'."""
     return na if _missing(x) else f"{_r1(x):+.1f}%"
 
+def _n(x) -> int:
+    """A count for display ('6', never '6.0'), 0 when unknown."""
+    return 0 if _missing(x) else int(x)
 
 def _lists(r: dict, *cols: str) -> list[tuple]:
     """Rows of aligned list columns; a player without any (left join -> null) gives []."""
@@ -233,13 +236,13 @@ def _player_row(rows: list[dict], last_avgs: dict, last_label: str) -> dict:
 
     return {
         "_sort": sort_key,
-        "Joueur": name + (" (B2B)" if r["is_b2b"] else ""),
+        "Joueur": name + (" (IST)" if r["IST"] == 1 else "") + (" (B2B)" if r["is_b2b"] else ""),
         "Poste": "-".join(positions),
         "Lieu": "Dom." if home else "Ext.",
         "Équipe": f"{team} ({r['teamWins'] or 0}W-{r['teamLosses'] or 0}L)",
         "Adversaire": f"{opp} ({r['oppWins'] or 0}W-{r['oppLosses'] or 0}L)",
         "TTFL": ttfl + indicator, "stdTTFL": std, "median_TTFL": med,
-        "is_b2b": r["is_b2b"], "n_btb": None if _missing(r["n_btb"]) else n_btb,
+        "is_b2b": r["is_b2b"], "IST": _n(r["IST"]), "n_btb": None if _missing(r["n_btb"]) else n_btb,
         "Statut": statut, "details": details,
         "team_nemesis": team_nem, "player_nemesis": player_nem, "nemesis": nemesis,
         "streak_str": streak_str, "streak_indicator": indicator,
@@ -247,6 +250,7 @@ def _player_row(rows: list[dict], last_avgs: dict, last_label: str) -> dict:
         "graph_dates": ",".join(r["graph_dates"] or []), "graph_opps": ",".join(r["graph_opps"] or []),
         "graph_TTFLs": ",".join("" if x is None else str(x) for x in r["graph_TTFLs"] or []),
         "graph_wins": ",".join("" if x is None else str(x) for x in r["graph_wins"] or []),
+        "graph_ishome": ",".join("" if x is None else str(x) for x in r["graph_ishome"] or []),
         "rel_opp_avg_TTFL": rel_opp, "rel_btb_TTFL": btb, "rel_btb_TTFL_with_br": btb_with_br,
         "team_injury_status": team_inj, "opp_inj_status": opp_inj,
         "allrel": allrel, "team_info": team_info, "opp_info": opp_info,
