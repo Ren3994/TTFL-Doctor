@@ -7,18 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import SEASON, LEAGUE_ID, NAME2TRICODE
 
-headers = {
-"Host": "stats.nba.com",
-"Connection": "keep-alive",
-"Accept": "application/json, text/plain, /",
-"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-"Referer": "https://www.nba.com/",
-"Origin": "https://www.nba.com",
-"x-nba-stats-origin": "stats",
-"x-nba-stats-token": "true",
-"Accept-Language": "en-US,en;q=0.9"
-}
-
 def get_schedule(season=SEASON):
     from nba_api.stats.endpoints import ScheduleLeagueV2
     import pandas as pd
@@ -30,7 +18,6 @@ def get_schedule(season=SEASON):
             full_schedule = ScheduleLeagueV2(
                 league_id=LEAGUE_ID,
                 season=season,
-                headers=headers
             )
 
             schedule_df = full_schedule.get_data_frames()[0]
@@ -46,7 +33,8 @@ def get_schedule(season=SEASON):
                 "homeTeam_wins",
                 "homeTeam_losses",
                 "gameDateTimeUTC",
-                "postponedStatus"
+                "postponedStatus",
+                "gameSubtype"
             ]
 
             schedule = schedule_df[columns_needed].copy()
@@ -59,10 +47,13 @@ def get_schedule(season=SEASON):
             
             schedule['gameDateTime'] = schedule['gameDateTimeUTC'].dt.tz_convert('Europe/Paris')
 
+            schedule['gameSubtype'] = schedule['gameSubtype'].str.contains('in-season')
+
             schedule.rename(columns={
                 "homeTeam_teamName": "homeTeam",
                 "awayTeam_teamName": "awayTeam",
-                "postponedStatus" : "postponed"
+                "postponedStatus" : "postponed",
+                "gameSubtype" : "IST"
             }, inplace=True)
             
             schedule['homeTeam'] = schedule['homeTeam'].apply(replace_team_name)
@@ -70,6 +61,8 @@ def get_schedule(season=SEASON):
             schedule['season'] = season
             
             schedule['postponed'] = np.select([schedule['postponed'] == 'Y', schedule['postponed'] == 'N'],
+                                              [1, 0], 0)
+            schedule['IST'] = np.select([schedule['IST'] == True, schedule['IST'] == False],
                                               [1, 0], 0)
 
             # schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('006')].copy()
@@ -96,6 +89,7 @@ def replace_team_name(team):
 
 if __name__ == '__main__':
     df = get_schedule()#season='2024-25')
-    # for i, row in df.iterrows():
+    from data.ttfl_data import save_schedule
+    save_schedule(df)
     #     print(row['homeTeam'], row['awayTeam'], row['gameDate'], type(row['gameTime']))
         # print(row['gameDate'] == row['dateEST'], row['gameDate'] == row['dateUTC'])

@@ -80,4 +80,5 @@ def get_espn_injury_report_from_json():
         return df_injury_reports
     
 if __name__ == "__main__":
-    print(get_espn_injury_report_from_json())
+    df = get_espn_injury_report_from_json()
+    print(df)
