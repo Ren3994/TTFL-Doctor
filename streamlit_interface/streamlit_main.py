@@ -67,15 +67,16 @@ tests = [
 ]
 
 for i, (name, request) in enumerate(tests):
-    print(f"\nTesting {name}...")
+    # print(f"\nTesting {name}...")
+    st.subheader(f'Testing {name}...')
     start = time.time()
     try:
         request()
-        print(f"SUCCESS in {time.time() - start:.1f}s")
+        st.subheader(f"SUCCESS in {time.time() - start:.1f}s")
 
     except Exception as e:
-        print(f"FAILED in {time.time() - start:.1f}s")
-        print(type(e).__name__, str(e))
+        st.subheader(f"FAILED in {time.time() - start:.1f}s")
+        st.subheader(f'{type(e).__name__} {str(e)}')
 
     time.sleep(5)
 
