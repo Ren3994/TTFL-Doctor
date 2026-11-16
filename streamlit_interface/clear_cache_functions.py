@@ -16,7 +16,7 @@ def clear_after_db_update():
     get_deadline.clear()
     cached_generate_plot_row.clear()
     # get_top_de_la_nuit.clear()
-    query_team_stats.clear()
+    # query_team_stats.clear()
     get_cached_opp_team_stats.clear()
     cached_player_stats.clear()
     get_cached_game_dates_completed.clear()
