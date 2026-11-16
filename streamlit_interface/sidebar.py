@@ -102,6 +102,8 @@ def sidebar(page):
 
         if 'local_instance' in st.session_state:
             st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
+            st.sidebar.write('Proxy is None' if st.session_state.nba_api_proxy is None 
+                             else 'Proxy activated')
 
             cont = centered(sidebar=True)
             if cont.button('Switch instance'):
