@@ -12,14 +12,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from update_manager.boxscores_manager import get_boxscores, log_failure
 from data.ttfl_data import save_boxscores, get_missing_gameids, refresh_reference_data
 
-def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
+def update_nba_data(proxy=None, update_attempt=1, max_update_attempts=3, init_database=True, progress=None, status=None):
     import pandas as pd
 
     new_games_found = True
 
     if init_database:
         # init_db()
-        refresh_reference_data()
+        refresh_reference_data(proxy=proxy)
     
     # check_boxscores_integrity(conn) # Removes rows with malformed data and duplicate rows
 
@@ -55,7 +55,7 @@ def update_nba_data(update_attempt=1, max_update_attempts=3, init_database=True,
 
         for attempt in range(5):  # Retry up to 5 times
             try:
-                boxscore = get_boxscores(game_date, game_id, visitor_team, home_team)
+                boxscore = get_boxscores( game_date, game_id, visitor_team, home_team, proxy=proxy)
                 if not boxscore.empty and game_id in boxscore['gameId'].values:
                     new_boxscores.extend(boxscore.to_dict(orient="records"))
                     time.sleep(random.uniform(lower_bound, upper_bound))

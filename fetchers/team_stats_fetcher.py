@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import SEASON, LEAGUE_ID, FULLNAME2TRICODE
 
-def get_team_stats():
+def get_team_stats(proxy=None):
     from nba_api.stats.endpoints import leaguedashteamstats
 
     table_types = ['Advanced', 'Base']
@@ -42,7 +42,8 @@ def get_team_stats():
                     season=SEASON,
                     measure_type_detailed_defense=table_type,
                     per_mode_detailed="PerGame",
-                    league_id_nullable=LEAGUE_ID
+                    league_id_nullable=LEAGUE_ID,
+                    proxy=proxy
                 ).get_data_frames()[0]
                 break
 

@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import time
 
-def fetch_boxscores(game_date, game_id, visitor_team, home_team):
+def fetch_boxscores(game_date, game_id, visitor_team, home_team, proxy=None):
     from nba_api.stats.endpoints import BoxScoreTraditionalV3
     from datetime import timedelta
     import pandas as pd
@@ -20,6 +20,7 @@ def fetch_boxscores(game_date, game_id, visitor_team, home_team):
                 end_range=0,
                 range_type=0,
                 timeout=5,
+                proxy=proxy
                 )
             
             boxscore_df = boxscore.get_data_frames()[0]

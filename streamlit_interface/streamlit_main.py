@@ -22,33 +22,33 @@ with col_text:
 
 
 
-from curl_cffi import requests
+# from curl_cffi import requests
 
-# BROWSER_HEADERS = {
-#     "User-Agent": (
-#         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-#         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-#     ),
-#     "Referer": "https://www.nba.com/",
-#     "Origin": "https://www.nba.com",
+# # BROWSER_HEADERS = {
+# #     "User-Agent": (
+# #         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+# #         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+# #     ),
+# #     "Referer": "https://www.nba.com/",
+# #     "Origin": "https://www.nba.com",
+# #     "Accept": "application/json, text/plain, */*",
+# #     "Accept-Language": "en-US,en;q=0.9",
+# # }
+
+# url = 'https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json'
+
+# session = requests.Session(impersonate="chrome")
+
+# session.headers.update({
 #     "Accept": "application/json, text/plain, */*",
 #     "Accept-Language": "en-US,en;q=0.9",
-# }
+#     "Origin": "https://www.nba.com",
+#     "Referer": "https://www.nba.com/",
+# })
 
-url = 'https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json'
+# response = session.get(url, timeout=30)
 
-session = requests.Session(impersonate="chrome")
-
-session.headers.update({
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Origin": "https://www.nba.com",
-    "Referer": "https://www.nba.com/",
-})
-
-response = session.get(url, timeout=30)
-
-st.header(response.json())
+# st.header(response.json().keys())
 
 
 # st.markdown('<div class="date-title">Pages disponibles</div>', unsafe_allow_html=True)
@@ -81,7 +81,7 @@ st.header(response.json())
 # with col6:
 #     st.markdown('<div class="big-text">Stats par joueurs</div>', unsafe_allow_html=True)
 
-# vspace(50)
-# SEO('footer')
+vspace(50)
+SEO('footer')
 
-# st.switch_page('pages/1_Classement_TTFL.py')
+st.switch_page('pages/1_Classement_TTFL.py')

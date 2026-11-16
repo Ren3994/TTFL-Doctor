@@ -45,37 +45,37 @@ def sidebar(page):
             vspace(container=cont)
             cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
 
-        if not st.session_state.local_instance:
-            if st.session_state.get('username', '') == '':
-                if st.session_state.get('auth_token', None) is not None:
-                    user_found = check_user_cookies_to_login()
-                    if user_found:
-                        on_username_change()
-
-            cont_input_login = st.sidebar.container(horizontal=True, horizontal_alignment='center')
-            cont_input_login.text_input(
-                label="Nom d'utilisateur",
-                placeholder="Nom d'utilisateur",
-                key="username",
-                on_change=on_username_change,
-                label_visibility='collapsed',
-                width=200)
-            
-            if st.session_state.get('username', '') != '':
-                cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
-
-                if st.session_state.auth_token is None:
-                    if cont.button('Rester connecté'):
-                        remember_user(st.session_state.username)
-                        
-                if cont.button('Se déconnecter'):
-                    st.session_state.pop("username", None)
-                    st.session_state.auth_token = None
-                    forget_user()
+        # if not st.session_state.local_instance:
+        if st.session_state.get('username', '') == '':
+            if st.session_state.get('auth_token', None) is not None:
+                user_found = check_user_cookies_to_login()
+                if user_found:
                     on_username_change()
-                    st.rerun()
-            else:
-                cont_input_login.button('Login')
+
+        cont_input_login = st.sidebar.container(horizontal=True, horizontal_alignment='center')
+        cont_input_login.text_input(
+            label="Nom d'utilisateur",
+            placeholder="Nom d'utilisateur",
+            key="username",
+            on_change=on_username_change,
+            label_visibility='collapsed',
+            width=200)
+        
+        if st.session_state.get('username', '') != '':
+            cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
+
+            if st.session_state.auth_token is None:
+                if cont.button('Rester connecté'):
+                    remember_user(st.session_state.username)
+                    
+            if cont.button('Se déconnecter'):
+                st.session_state.pop("username", None)
+                st.session_state.auth_token = None
+                forget_user()
+                on_username_change()
+                st.rerun()
+        else:
+            cont_input_login.button('Login')
                 
     st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
     
@@ -91,7 +91,7 @@ def sidebar(page):
     if st.session_state.get('username', '') == 'dev' or st.secrets.environment == 'local':
         st.sidebar.page_link('pages/7_Test_page.py', label='7 - tests')
                 
-    if st.secrets.environment == 'local':
+    if st.session_state.username == 'admin':
         if page != 'main':
             st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
         

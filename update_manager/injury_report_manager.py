@@ -14,15 +14,15 @@ def update_injury_report():
     import pandas as pd
     
     injury_report_df = get_espn_injury_report_from_json()
-    if injury_report_df.empty:
-        injury_report_df = get_cbs_injury_report()
-        if injury_report_df.empty:
-            injury_report_df = get_nbacom_injury_report()
-            if injury_report_df.empty:
-                injury_report_df = get_espn_injury_report()
-            injury_report_df = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
+    # if injury_report_df.empty:
+    #     injury_report_df = get_cbs_injury_report()
+    #     if injury_report_df.empty:
+    #         injury_report_df = get_nbacom_injury_report()
+    #         if injury_report_df.empty:
+    #             injury_report_df = get_espn_injury_report()
+    injury_report_df = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
         
-    if injury_report_df is not None:
+    if not injury_report_df.empty:
         # save_to_db(conn, injury_report_df, 'injury_report', if_exists = 'replace')
         # conn.execute("CREATE INDEX IF NOT EXISTS idx_injury_report_player ON injury_report(player_name);")
         save_injuries(injury_report_df)

@@ -8,10 +8,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from misc.misc import FAILED_LOG_PATH, CHAR_MAP, NAME2TRICODE, SEASON
 from fetchers.boxscore_fetcher import fetch_boxscores
 
-def get_boxscores(game_date, game_id, visitor_team, home_team):
+def get_boxscores(game_date, game_id, visitor_team, home_team, proxy=None):
     import pandas as pd
 
-    boxscores = fetch_boxscores(game_date, game_id, visitor_team, home_team)
+    boxscores = fetch_boxscores(game_date, game_id, visitor_team, home_team, proxy=proxy)
     if boxscores.empty:
         return pd.DataFrame()
     full_boxscores = add_columns(boxscores)

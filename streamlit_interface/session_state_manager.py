@@ -18,8 +18,10 @@ def init_session_state(page, arg=None):
         env = st.secrets.get("environment", "unknown")
         if env == 'local':
             st.session_state.local_instance = True
+            st.session_state.nba_api_proxy = None
         elif env == 'cloud':
             st.session_state.local_instance = False
+            st.session_state.nba_api_proxy = st.secrets.get('PROXY_URL')
 
     if 'mobile_layout' not in st.session_state:
         st.session_state.mobile_layout = is_mobile_layout()

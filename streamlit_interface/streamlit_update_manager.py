@@ -81,7 +81,7 @@ def update_all_data(force_update=False):
         with update_status.container():
             with st.spinner('Téléchargement des matchs...'):
 
-                update_nba_data()
+                update_nba_data(proxy=st.session_state.nba_api_proxy)
                 # init_hist_db()
 
                 get_cached_upcoming_games.clear()

@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from misc.misc import SEASON, LEAGUE_ID
 from update_manager.boxscores_manager import normalize_name
 
-def get_rosters():
+def get_rosters(proxy=None):
     from nba_api.stats.endpoints import CommonAllPlayers
 
     rosters_df = None
@@ -16,7 +16,8 @@ def get_rosters():
         try:
             allPlayers = CommonAllPlayers(is_only_current_season=1, 
                                           league_id= LEAGUE_ID, 
-                                          season=SEASON).get_data_frames()[0]
+                                          season=SEASON,
+                                          proxy=proxy).get_data_frames()[0]
 
             allPlayers['teamTricode'] = allPlayers['TEAM_ABBREVIATION']
             allPlayers['playerName'] = allPlayers['DISPLAY_FIRST_LAST']

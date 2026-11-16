@@ -376,11 +376,11 @@ def get_games_for_date(game_date) -> pl.DataFrame:
 # --------------------------------------------------------------------------------------
 # Refresh of reference data (replaces init_db / check_table_exists)
 # --------------------------------------------------------------------------------------
-def refresh_reference_data(verbose: bool = True) -> None:
+def refresh_reference_data(verbose: bool = True, proxy=None) -> None:
     """Re-download schedule, rosters, team stats (and player positions if the file is missing).
     Positions in rosters are no longer written back: they are resolved at read time
     (see ttfl_stats.current_rosters)."""
-    from fetchers.schedule_fetcher import get_schedule
+    from fetchers.schedule_fetcher_json import get_schedule_json
     from fetchers.rosters_fetcher import get_rosters
     from fetchers.team_stats_fetcher import get_team_stats
     from fetchers.player_position_fetcher import fetch_player_positions
@@ -389,11 +389,14 @@ def refresh_reference_data(verbose: bool = True) -> None:
         if verbose:
             print(msg)
 
-    for label, fn, saver in (("schedule", get_schedule, save_schedule),
+    if verbose and proxy is not None:
+        print('Proxy is activated')
+
+    for label, fn, saver in (("schedule", get_schedule_json, save_schedule),
                              ("rosters", get_rosters, save_rosters),
                              ("team_stats", get_team_stats, save_team_stats)):
         try:
-            data = fn()
+            data = fn(proxy)
             if data is None:
                 say(f"{label} is None - not saved")
             else:

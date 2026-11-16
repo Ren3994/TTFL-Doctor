@@ -61,9 +61,9 @@ def get_schedule(season=SEASON):
             schedule['season'] = season
             
             schedule['postponed'] = np.select([schedule['postponed'] == 'Y', schedule['postponed'] == 'N'],
-                                              [1, 0], 0)
+                                              [1, 0], 0).astype('int8')
             schedule['IST'] = np.select([schedule['IST'] == True, schedule['IST'] == False],
-                                              [1, 0], 0)
+                                              [1, 0], 0).astype('int8')
 
             # schedule_reg_season = schedule[schedule['gameId'].astype(str).str.startswith('006')].copy()
 
@@ -88,8 +88,12 @@ def replace_team_name(team):
 # Game IDs : starting with 001 : preseason, 002 : regular season, 003 : all-star game, 004 : playoffs, 005 : play-in tournament, 006 : IST finals
 
 if __name__ == '__main__':
+    import time
+    t0 = time.time()
     df = get_schedule()#season='2024-25')
-    from data.ttfl_data import save_schedule
-    save_schedule(df)
+
+    print(time.time() - t0)
+    # from data.ttfl_data import save_schedule
+    # save_schedule(df)
     #     print(row['homeTeam'], row['awayTeam'], row['gameDate'], type(row['gameTime']))
         # print(row['gameDate'] == row['dateEST'], row['gameDate'] == row['dateUTC'])
