@@ -9,7 +9,7 @@ from streamlit_interface.session_state_manager import init_session_state
 
 # ---------- Initialize session state ----------
 PAGENAME = 'main'
-init_session_state(PAGENAME)
+# init_session_state(PAGENAME)
 config(page=PAGENAME)
 
 st.markdown(custom_CSS, unsafe_allow_html=True)
@@ -19,6 +19,66 @@ col_spacer1, col_text, col_spacer2 = st.columns([2, 5, 2])
 with col_text:
     SEO('header')
     vspace(5)
+
+import time
+import requests
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from nba_api.stats.endpoints import BoxScoreTraditionalV3
+from nba_api.stats.endpoints import commonplayerinfo
+from nba_api.stats.static import players
+from nba_api.stats.endpoints import CommonAllPlayers
+from nba_api.stats.endpoints import ScheduleLeagueV2
+from nba_api.stats.endpoints import leaguedashteamstats
+from nba_api.live.nba.endpoints import scoreboard
+from nba_api.stats.endpoints import scoreboardv2
+
+tests = [
+    ('injuries', 
+    lambda: requests.get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries")),
+    ('BoxScoreTraditionalV3', lambda: BoxScoreTraditionalV3(
+            game_id='0022501227',
+            start_period=1,
+            end_period=10,
+            start_range=0,
+            end_range=0,
+            range_type=0,
+            timeout=30,
+        )
+    ),
+    ('players',  lambda: players.get_active_players()),
+    ('commonplayerinfo', lambda: commonplayerinfo.CommonPlayerInfo('1630164', timeout=30)),
+    ('CommonAllPlayers', lambda: CommonAllPlayers(is_only_current_season=1, 
+                                          league_id= '00', 
+                                          season='2026-27')),
+    ('ScheduleLeagueV2', lambda: ScheduleLeagueV2(
+                league_id="00",
+                season="2026-27",
+            )),
+    ('LeagueDashTeamStats', lambda: leaguedashteamstats.LeagueDashTeamStats(
+                    season='2026-27',
+                    measure_type_detailed_defense='Advanced',
+                    per_mode_detailed="PerGame",
+                    league_id_nullable='00'
+                )),
+    ('ScoreBoard', lambda: scoreboard.ScoreBoard()), 
+    ('ScoreboardV2', lambda: scoreboardv2.ScoreboardV2(game_date=datetime.now(ZoneInfo("Europe/Paris")).date()))
+]
+
+for i, (name, request) in enumerate(tests):
+    print(f"\nTesting {name}...")
+    start = time.time()
+    try:
+        request()
+        print(f"SUCCESS in {time.time() - start:.1f}s")
+
+    except Exception as e:
+        print(f"FAILED in {time.time() - start:.1f}s")
+        print(type(e).__name__, str(e))
+
+    time.sleep(5)
+
 
 # st.markdown('<div class="date-title">Pages disponibles</div>', unsafe_allow_html=True)
 
@@ -49,7 +109,10 @@ with col_text:
 #     st.markdown('<div class="big-text">Stats par équipes</div>', unsafe_allow_html=True)
 # with col6:
 #     st.markdown('<div class="big-text">Stats par joueurs</div>', unsafe_allow_html=True)
-vspace(50)
-SEO('footer')
 
-st.switch_page('pages/1_Classement_TTFL.py')
+
+
+# vspace(50)
+# SEO('footer')
+
+# st.switch_page('pages/1_Classement_TTFL.py')
