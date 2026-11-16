@@ -81,7 +81,7 @@ st.header(response.json())
 # with col6:
 #     st.markdown('<div class="big-text">Stats par joueurs</div>', unsafe_allow_html=True)
 
-vspace(50)
-SEO('footer')
+# vspace(50)
+# SEO('footer')
 
-st.switch_page('pages/1_Classement_TTFL.py')
+# st.switch_page('pages/1_Classement_TTFL.py')
