@@ -67,9 +67,6 @@ def cached_update_injury_report():
 
 def update_all_data(force_update=False):
     # conn = conn_db()
-
-    st.subheader('proxy is none' if st.session_state.nba_api_proxy is None else f'Proxy is not None {st.session_state.nba_api_proxy[:1]}')
-    
     default_ts = datetime(2000, 1, 1, tzinfo=ZoneInfo("Europe/Paris"))
     ij_prev_update = st.session_state.get('last_update', default_ts)
     st.session_state.last_update = cached_update_injury_report()

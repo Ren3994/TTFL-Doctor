@@ -14,6 +14,7 @@ from streamlit_interface.streamlit_utils import requests_form, centered, vspace,
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.file_manager import cleanup_db, manage_backups
+from update_manager.proxy_usage_stats import get_proxy_stats
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
 def on_username_change():
@@ -100,30 +101,38 @@ def sidebar(page):
         # limit_reached, usage = deepl_api_limit_reached()
         # st.sidebar.write(f'Deepl : {usage} ({limit_reached})')
 
-        if 'local_instance' in st.session_state:
+        if st.session_state.local_instance:
             st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
             st.sidebar.write('Proxy is None' if st.session_state.nba_api_proxy is None 
                              else 'Proxy activated')
+            st.sidebar.markdown(
+                '<div class="centered-text">' + 
+                    get_proxy_stats(
+                        api_key=st.session_state.get('proxy_api', None),
+                        breakline='<br>') + 
+                '</div class="centered-text">',
+                    unsafe_allow_html=True)
             
-            if st.session_state.get('username', 'no') == 'admin':
-                cont = centered(sidebar=True)
-                if cont.button('Switch instance'):
-                    st.session_state.local_instance = not st.session_state.local_instance
-                    st.session_state.pop('jdp_df', None)
-                    st.session_state.pop('JDP', None)
-                    st.rerun()
-                
-                cont = centered(sidebar=True)
-                if cont.button('Force update'):
-                    update_all_data(force_update=True)
-                    
-                cont = centered(sidebar=True)
-                if cont.button("🛑 Quitter"):
-                    cleanup_db()
-                    manage_backups()
+            vspace(sidebar=True)
 
-                    keyboard.press_and_release('ctrl+w')
-                    os.kill(os.getpid(), signal.SIGTERM)
+            cont = centered(sidebar=True)
+            if cont.button('Switch instance'):
+                st.session_state.local_instance = not st.session_state.local_instance
+                st.session_state.pop('jdp_df', None)
+                st.session_state.pop('JDP', None)
+                st.rerun()
+            
+            cont = centered(sidebar=True)
+            if cont.button('Force update'):
+                update_all_data(force_update=True)
+                
+            cont = centered(sidebar=True)
+            if cont.button("🛑 Quitter"):
+                cleanup_db()
+                manage_backups()
+
+                keyboard.press_and_release('ctrl+w')
+                os.kill(os.getpid(), signal.SIGTERM)
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
         cont = centered(sidebar=True)

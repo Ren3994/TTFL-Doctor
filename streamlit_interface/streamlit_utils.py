@@ -133,10 +133,13 @@ def french_flag(name, html=False, unicode=False, nspace = 1, pre=False, post=Tru
     
     return name
 
-def vspace(numlines=1, container=None):
+def vspace(numlines=1, container=None, sidebar=False):
     if container is None:
         for _ in range(numlines):
-            st.write('')
+            if sidebar:
+                st.sidebar.write('')
+            else:
+                st.write('')
     else :
         for _ in range(numlines):
             container.write('')
