@@ -149,7 +149,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     dfs = {}
     if byteam:
         for team in teams:
-            dfs[team] = df[df['teamTricode'] == team].reset_index(drop=True)
+            dfs[team] = df[df['Équipe'] == team].reset_index(drop=True)
     else:
         dfs['all'] = df
     
