@@ -15,8 +15,8 @@ from streamlit_interface.sidebar import sidebar
 
 # ---------- Initialize session state ----------
 PAGENAME = 'top_nuit'
-update_all_data()
 init_session_state(page=PAGENAME)
+update_all_data()
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
 sc = get_sc()

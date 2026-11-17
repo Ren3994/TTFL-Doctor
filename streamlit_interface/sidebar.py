@@ -104,25 +104,26 @@ def sidebar(page):
             st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
             st.sidebar.write('Proxy is None' if st.session_state.nba_api_proxy is None 
                              else 'Proxy activated')
-
-            cont = centered(sidebar=True)
-            if cont.button('Switch instance'):
-                st.session_state.local_instance = not st.session_state.local_instance
-                st.session_state.pop('jdp_df', None)
-                st.session_state.pop('JDP', None)
-                st.rerun()
             
-            cont = centered(sidebar=True)
-            if cont.button('Force update'):
-                update_all_data(force_update=True)
+            if st.session_state.get('username', 'no') == 'admin':
+                cont = centered(sidebar=True)
+                if cont.button('Switch instance'):
+                    st.session_state.local_instance = not st.session_state.local_instance
+                    st.session_state.pop('jdp_df', None)
+                    st.session_state.pop('JDP', None)
+                    st.rerun()
                 
-            cont = centered(sidebar=True)
-            if cont.button("🛑 Quitter"):
-                cleanup_db()
-                manage_backups()
+                cont = centered(sidebar=True)
+                if cont.button('Force update'):
+                    update_all_data(force_update=True)
+                    
+                cont = centered(sidebar=True)
+                if cont.button("🛑 Quitter"):
+                    cleanup_db()
+                    manage_backups()
 
-                keyboard.press_and_release('ctrl+w')
-                os.kill(os.getpid(), signal.SIGTERM)
+                    keyboard.press_and_release('ctrl+w')
+                    os.kill(os.getpid(), signal.SIGTERM)
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
         cont = centered(sidebar=True)
