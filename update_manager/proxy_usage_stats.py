@@ -26,6 +26,6 @@ def get_proxy_stats(api_key, price_per_gb=4, breakline='\n'):
     valid_until = datetime.strptime(data['valid_until'], '%Y-%m-%d')    
     days_left = (valid_until.date() - date.today()).days
 
-    return (f'{used_gb:.1f}/{limit_gb:.0f} GB ({pct:.0f}%)' + breakline +
+    return (f'{used_gb:.1f}/{limit_gb:.1f} GB ({pct:.0f}%)' + breakline +
             f'{used_gb * price_per_gb:.1f}/{limit_gb * price_per_gb:.0f} $' + breakline +
             f'Limite : {valid_until.strftime('%b. %d')} ({days_left} days left)')

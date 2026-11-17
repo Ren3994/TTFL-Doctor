@@ -98,20 +98,21 @@ def sidebar(page):
         
         st.sidebar.header('Dev tools')
 
+        st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
+        st.sidebar.write('Proxy is None' if st.session_state.nba_api_proxy is None 
+                            else 'Proxy activated')
+        st.sidebar.markdown(
+            '<div class="centered-text">' + 
+                get_proxy_stats(
+                    api_key=st.session_state.get('proxy_api', None),
+                    breakline='<br>') + 
+            '</div class="centered-text">',
+                unsafe_allow_html=True)
+
         # limit_reached, usage = deepl_api_limit_reached()
         # st.sidebar.write(f'Deepl : {usage} ({limit_reached})')
 
         if st.session_state.local_instance:
-            st.sidebar.write(f"Instance : {'local' if st.session_state.local_instance else 'cloud'}")
-            st.sidebar.write('Proxy is None' if st.session_state.nba_api_proxy is None 
-                             else 'Proxy activated')
-            st.sidebar.markdown(
-                '<div class="centered-text">' + 
-                    get_proxy_stats(
-                        api_key=st.session_state.get('proxy_api', None),
-                        breakline='<br>') + 
-                '</div class="centered-text">',
-                    unsafe_allow_html=True)
             
             vspace(sidebar=True)
 
