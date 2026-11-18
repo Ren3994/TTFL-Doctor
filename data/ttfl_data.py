@@ -389,8 +389,8 @@ def refresh_reference_data(verbose: bool = True, proxy=None) -> None:
         if verbose:
             print(msg)
 
-    if verbose and proxy is not None:
-        print('Proxy is activated')
+    # if verbose and proxy is not None:
+    #     print('Proxy is activated')
 
     for label, fn, saver in (("schedule", get_schedule_json, save_schedule),
                              ("rosters", get_rosters, save_rosters),

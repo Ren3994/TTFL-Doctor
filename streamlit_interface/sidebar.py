@@ -144,21 +144,3 @@ def sidebar(page):
         vspace(container = cont)
         if cont.button('Requêtes/Bugs'):
             requests_form()
-
-        from data.ttfl_data import scan_injuries
-        import polars as pl
-        a = (scan_injuries()
-                .filter(pl.col('player_name') == 'Walker Kessler')
-                .collect()
-        )
-
-        print(a)
-
-        a = (scan_injuries()
-                #  .filter(pl.col('player_name') == 'Walker Kessler')
-                .select('player_name')
-                .collect()
-                .to_series()
-                .to_list()
-                )
-        print(a)

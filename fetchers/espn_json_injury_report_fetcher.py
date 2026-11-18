@@ -3,17 +3,21 @@ import requests
 import time
 
 def get_espn_injury_report_from_json():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
     import pandas as pd
 
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
-    response = requests.get(url)
+    cols = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch']
+    dt_fetch = datetime.now(ZoneInfo("Europe/Paris"))
     
     df_injury_reports = None
     for attempt in range(3):
         try :
+            response = requests.get(url)
             data = response.json()
             if data['status'] != 'success':
-                return pd.DataFrame()  # Return an empty DataFrame if the status is not 'success'
+                return pd.DataFrame(columns=cols)  # Return an empty DataFrame if the status is not 'success'
 
             injury_reports = []
             for team in data['injuries']:
@@ -55,30 +59,35 @@ def get_espn_injury_report_from_json():
                                 "won't be available"]):
                             simplified = "Out"
 
-                    elif "questionable" in short_comment_lower:
-                        simplified = "Questionable"
+                        elif "questionable" in short_comment_lower:
+                            simplified = "Questionable"
 
-                    elif "probable" in short_comment_lower:
-                        simplified = "Probable"
+                        elif "probable" in short_comment_lower:
+                            simplified = "Probable"
 
                     injury_reports.append({
                                 "player_name": playerName,
                                 "simplified_status": simplified,
                                 "injury_status": f'{update_date_fmt}: {simplified} (retour est. : {est_return_fmt})',
-                                "details": short_comment
+                                "details": short_comment,
+                                'dt_fetch' : dt_fetch
                             })
 
-            df_injury_reports = pd.DataFrame(injury_reports)
+            return pd.DataFrame(injury_reports)
     
         except Exception as e:
             tqdm.write(f'Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. Nouvel essai dans {3 * (attempt + 1)}s')
             time.sleep(3 * (attempt + 1))
             
-        if df_injury_reports is None:
-            df_injury_reports = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
+        # if df_injury_reports is None:
+        #     df_injury_reports = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch'])
         
-        return df_injury_reports
+        return pd.DataFrame(columns=cols)
     
 if __name__ == "__main__":
     df = get_espn_injury_report_from_json()
     print(df)
+    print(df['dt_fetch'].iloc[0])
+    # print(df[df['player_name'] == 'Walker Kessler'])
+
+    # print(datetime.now(ZoneInfo("Europe/Paris")).strftime('%d %b. à %Hh%M'))
