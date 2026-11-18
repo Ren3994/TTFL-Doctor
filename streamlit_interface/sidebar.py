@@ -114,14 +114,7 @@ def sidebar(page):
 
         if st.session_state.local_instance:
 
-            from data.ttfl_data import scan_injuries
-            import polars as pl
-            a = (scan_injuries()
-                 .filter(pl.col('player_name') == 'Walker Kessler')
-                 .collect()
-            )
-
-            print(a)
+            
             
             vspace(sidebar=True)
 
@@ -144,17 +137,28 @@ def sidebar(page):
                 keyboard.press_and_release('ctrl+w')
                 os.kill(os.getpid(), signal.SIGTERM)
 
-            a = (scan_injuries()
-                #  .filter(pl.col('player_name') == 'Walker Kessler')
-                .select('player_name')
-                .collect()
-                .to_series()
-                .to_list()
-                )
-            print(a)
+            
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
         cont = centered(sidebar=True)
         vspace(container = cont)
         if cont.button('Requêtes/Bugs'):
             requests_form()
+
+        from data.ttfl_data import scan_injuries
+        import polars as pl
+        a = (scan_injuries()
+                .filter(pl.col('player_name') == 'Walker Kessler')
+                .collect()
+        )
+
+        print(a)
+
+        a = (scan_injuries()
+                #  .filter(pl.col('player_name') == 'Walker Kessler')
+                .select('player_name')
+                .collect()
+                .to_series()
+                .to_list()
+                )
+        print(a)
