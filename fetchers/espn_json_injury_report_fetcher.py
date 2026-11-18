@@ -1,93 +1,120 @@
-from tqdm import tqdm
-import requests
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+import pandas as pd
+import requests
+from tqdm import tqdm
+
+URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
+COLS = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch', 'source']
+MAX_ATTEMPTS = 3
+
+OUT_PHRASES = [
+    "will not suit up",
+    "won't suit up",
+    "isn't warming up",
+    "is not warming up",
+    "not participating",
+    "will be rested",
+    "ruled out",
+    "won't play",
+    "will not play",
+    "will not return",
+    "won't return",
+    "is out",
+    "personal",
+    "is not starting",
+    "is not in the starting",
+    "won't start",
+    "won't be starting",
+    "won't be in the starting",
+    "no timetable",
+    "will not be available",
+    "won't be available",
+]
+
+
+def _fmt_date(value):
+    """Format an ISO date as dd/mm, or '??' if missing."""
+    return pd.to_datetime(value).strftime('%d/%m') if value else '??'
+
+
+def _simplify_status(status, comment_lower):
+    """Refine ESPN's generic 'Day-To-Day' status using the short comment."""
+    if status.lower() != "day-to-day":
+        return status
+    if any(phrase in comment_lower for phrase in OUT_PHRASES):
+        return "Out"
+    if "questionable" in comment_lower:
+        return "Questionable"
+    if "probable" in comment_lower:
+        return "Probable"
+    return status
+
+
+def _parse_injuries(data, dt_fetch):
+    rows = []
+    for team in data.get('injuries') or []:
+        for player in team.get('injuries') or []:
+            short_comment = player.get('shortComment') or ''
+            simplified = _simplify_status(player.get('status') or '', short_comment.lower())
+
+            update_date_fmt = _fmt_date(player.get('date'))
+            est_return_fmt = _fmt_date((player.get('details') or {}).get('returnDate'))
+
+            rows.append({
+                "player_name": (player.get('athlete') or {}).get('displayName'),
+                "simplified_status": simplified,
+                "injury_status": f'{update_date_fmt}: {simplified} (retour est. : {est_return_fmt})',
+                "details": short_comment,
+                "dt_fetch": dt_fetch,
+                "source": 'ESPN'
+            })
+    return pd.DataFrame(rows, columns=COLS)
+
 
 def get_espn_injury_report_from_json():
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-    import pandas as pd
-
-    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
-    cols = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch']
     dt_fetch = datetime.now(ZoneInfo("Europe/Paris"))
-    
-    df_injury_reports = None
-    for attempt in range(3):
-        try :
-            response = requests.get(url)
+
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.get(URL, timeout=10)
+            response.raise_for_status()
             data = response.json()
-            if data['status'] != 'success':
-                return pd.DataFrame(columns=cols)  # Return an empty DataFrame if the status is not 'success'
 
-            injury_reports = []
-            for team in data['injuries']:
-                teamName = team.get('displayName')
-                for player in team.get('injuries'):
-                    playerName = player.get('athlete', {}).get('displayName')
-                    short_comment = player.get('shortComment', '')
-                    short_comment_lower = short_comment.lower()
-                    # long_comment = player.get('longComment', '')
-                    simplified = player.get('status', '')
-                    update_date = player.get('date', '')
-                    est_return = player.get('details', {}).get('returnDate', '')
+            if data.get('status') != 'success':
+                raise ValueError(f"Statut inattendu : {data.get('status')}")
 
-                    update_date_fmt = pd.to_datetime(update_date).strftime('%d/%m') if update_date else '??'
-                    est_return_fmt = pd.to_datetime(est_return).strftime('%d/%m') if est_return else '??'
-                
-                    if simplified.lower() == "day-to-day":
-                        if any(x in short_comment_lower for x in [
-                                "will not suit up", 
-                                "won't suit up", 
-                                "isn't warming up", 
-                                "is not warming up", 
-                                "not participating", 
-                                "will be rested", 
-                                "ruled out", 
-                                "won't play", 
-                                "will not play",
-                                "will not return",
-                                "won't return",
-                                "is out", 
-                                "personal", 
-                                "is not starting", 
-                                "is not in the starting",
-                                "won't start",
-                                "won't be starting",
-                                "won't be in the starting",
-                                "no timetable", 
-                                "will not be available", 
-                                "won't be available"]):
-                            simplified = "Out"
+            return _parse_injuries(data, dt_fetch)
 
-                        elif "questionable" in short_comment_lower:
-                            simplified = "Questionable"
-
-                        elif "probable" in short_comment_lower:
-                            simplified = "Probable"
-
-                    injury_reports.append({
-                                "player_name": playerName,
-                                "simplified_status": simplified,
-                                "injury_status": f'{update_date_fmt}: {simplified} (retour est. : {est_return_fmt})',
-                                "details": short_comment,
-                                'dt_fetch' : dt_fetch
-                            })
-
-            return pd.DataFrame(injury_reports)
-    
         except Exception as e:
-            tqdm.write(f'Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. Nouvel essai dans {3 * (attempt + 1)}s')
-            time.sleep(3 * (attempt + 1))
-            
-        # if df_injury_reports is None:
-        #     df_injury_reports = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch'])
-        
-        return pd.DataFrame(columns=cols)
-    
+            if attempt < MAX_ATTEMPTS - 1:
+                delay = 3 * (attempt + 1)
+                tqdm.write(f"Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. "
+                           f"Nouvel essai dans {delay}s")
+                time.sleep(delay)
+            else:
+                tqdm.write(f"Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. "
+                           f"Abandon après {MAX_ATTEMPTS} tentatives.")
+
+    # All attempts failed
+    return pd.DataFrame(columns=COLS)
+
+
 if __name__ == "__main__":
+    import os
+    import sys
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    
+    from data.ttfl_data import save_injuries, scan_injuries
+
+    # a, b = (scan_injuries().select(['dt_fetch', 'source']).collect().row(0))
+    # print(b)
+
     df = get_espn_injury_report_from_json()
     print(df)
-    print(df['dt_fetch'].iloc[0])
+    if not df.empty:
+        print(df['dt_fetch'].iloc[0])
+        save_injuries(df)
     # print(df[df['player_name'] == 'Walker Kessler'])
-
-    # print(datetime.now(ZoneInfo("Europe/Paris")).strftime('%d %b. à %Hh%M'))

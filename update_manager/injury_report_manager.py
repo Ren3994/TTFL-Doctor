@@ -1,33 +1,35 @@
-import os
-import sys
+# import os
+# import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from fetchers.espn_injury_report_fetcher import get_espn_injury_report
-from fetchers.cbs_injury_report_fetcher import get_cbs_injury_report
+# from fetchers.espn_injury_report_fetcher import get_espn_injury_report
+# from fetchers.cbs_injury_report_fetcher import get_cbs_injury_report
 from fetchers.nbacom_injury_report_fetcher import get_nbacom_injury_report
 from fetchers.espn_json_injury_report_fetcher import get_espn_injury_report_from_json
-# from data.sql_functions import save_to_db
-from data.ttfl_data import save_injuries
+# # from data.sql_functions import save_to_db
+from data.ttfl_data import save_injuries, scan_injuries
 
 def update_injury_report():
-    # import pandas as pd
-    
-    injury_report_df = get_espn_injury_report_from_json()
-    # if injury_report_df.empty:
-    #     injury_report_df = get_cbs_injury_report()
-    #     if injury_report_df.empty:
-    #         injury_report_df = get_nbacom_injury_report()
-    #         if injury_report_df.empty:
-    #             injury_report_df = get_espn_injury_report()
-    # injury_report_df = pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
+    import pandas as pd
+    df = pd.DataFrame()
+    for fetch in (get_espn_injury_report_from_json,          # primary
+                  get_nbacom_injury_report):                  # secondary (fixed, see item C)
+        try:
+            df = fetch() or pd.DataFrame()
+        except Exception as e:
+            print(f"injury fetch failed ({fetch.__name__}): {e}")
+            df = pd.DataFrame()
+        if not df.empty and 'dt_fetch' in df.columns:
+            break
+        df = pd.DataFrame()
 
-    last_update = None
-    if not injury_report_df.empty:
-        # save_to_db(conn, injury_report_df, 'injury_report', if_exists = 'replace')
-        # conn.execute("CREATE INDEX IF NOT EXISTS idx_injury_report_player ON injury_report(player_name);")
-        save_injuries(injury_report_df)
+    if df.empty:                                             # total failure: keep the previous file, never crash
+        print("injury report: all sources failed, keeping previous data")
+        return scan_injuries().select(['dt_fetch', 'source']).collect().row(0)   # last saved fetch time
 
-        last_update = injury_report_df['dt_fetch'].iloc[0]
-    
-    return last_update
+    save_injuries(df)
+    return df.loc[0, ['dt_fetch', 'source']].values
+
+if __name__ == '__main__':
+    update_injury_report()

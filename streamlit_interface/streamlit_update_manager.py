@@ -61,15 +61,15 @@ def need_to_fetch_new_boxscores():
 @st.cache_data(ttl=300, show_spinner=False)
 def cached_update_injury_report():
     # conn=conn_db()
-    ij_last_update = update_injury_report()
+    ij_last_update, source = update_injury_report()
     # ij_last_update = datetime.now(ZoneInfo("Europe/Paris"))
-    return ij_last_update
+    return ij_last_update, source
 
 def update_all_data(force_update=False):
     # conn = conn_db()
     default_ts = datetime(2000, 1, 1, tzinfo=ZoneInfo("Europe/Paris"))
     ij_prev_update = st.session_state.get('last_update', default_ts)
-    st.session_state.last_update = cached_update_injury_report()
+    st.session_state.last_update, st.session_state.last_source = cached_update_injury_report()
 
     ij_updated = ij_prev_update != st.session_state.last_update
     need_to_update = need_to_fetch_new_boxscores()

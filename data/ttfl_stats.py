@@ -203,13 +203,17 @@ def back_to_back(bs: pl.LazyFrame, avgs: pl.LazyFrame) -> pl.LazyFrame:
 
 def rel_avg_opp_ttfl(bs: pl.LazyFrame) -> pl.LazyFrame:
     """Old `rel_avg_opp_TTFL`. QUIRK: averages over player rows (DNPs included), so each game is weighted by
-    how many players are listed. For a true per-game average dedupe on (gameId, teamTricode) first."""
-    t = (bs.group_by("teamTricode").agg(avg_team_TTFL=c("teamTTFL").mean(), avg_opp_TTFL=c("opponentTTFL").mean())
-         .with_columns(overall_avg_team_TTFL=c("avg_team_TTFL").mean(), overall_avg_opp_TTFL=c("avg_opp_TTFL").mean()))
+    how many players are listed. For a true per-game average dedupe on (gameId, teamTricode) first.
+    -> should be fixed now"""
+    per_game = (bs.select("gameId", "teamTricode", "teamTTFL", "opponentTTFL")
+                  .unique(subset=["gameId", "teamTricode"]))          # NEW: one row per team-game
+    t = (per_game.group_by("teamTricode")
+         .agg(avg_team_TTFL=c("teamTTFL").mean(), avg_opp_TTFL=c("opponentTTFL").mean())
+         .with_columns(overall_avg_team_TTFL=c("avg_team_TTFL").mean(),
+                       overall_avg_opp_TTFL=c("avg_opp_TTFL").mean()))
     return (t.with_columns(rel_team_avg_TTFL=rel_pct(c("avg_team_TTFL"), c("overall_avg_team_TTFL")),
                            rel_opp_avg_TTFL=rel_pct(c("avg_opp_TTFL"), c("overall_avg_opp_TTFL")))
              .sort("avg_opp_TTFL"))
-
 
 # =====================================================================================
 # Position-based stats  (update_avg_TTFL_per_pos, update_avg_TTFL_per_pos_per_opp)
@@ -294,8 +298,10 @@ def opp_pos_avg_per_game(bs: pl.LazyFrame, pos_exp: pl.LazyFrame) -> pl.LazyFram
     """For each team-game: average TTFL of the OPPONENT's players at each position.
     QUIRK: the SQL joined the opponent's position rows against *every* position row of the team, so each
     row appears once per team position (9 rows instead of 3). The downstream AVG is mostly unaffected.
-    To get one row per (game, team, opp_pos), add .unique() on the t1 side below."""
+    To get one row per (game, team, opp_pos), add .unique() on the t1 side below.
+    -> Should be fixed now"""
     tpa = (bs.select("gameId", "teamTricode", "opponent", "TTFL", "playerName").join(pos_exp, on="playerName")
+           .unique(subset=["gameId", "pos", "teamTricode"])
            .group_by("gameId", "pos", "teamTricode", "opponent")
            .agg(_avg=c("TTFL").mean(), _n=pl.len()))
     t2 = tpa.select("gameId", c("teamTricode").alias("_t2_team"), c("opponent").alias("_t2_opp"),
@@ -311,11 +317,12 @@ def rel_ttfl_when_missing(missed: pl.LazyFrame, opp_pos: pl.LazyFrame, avg_pos_o
     when a given player did not play.
     QUIRK / probable bug: the baseline is avg_TTFL_per_pos_per_opp(position=opp_pos, opponent=opp_team), i.e.
     how that position scores AGAINST the opponent's own team. The label suggests it should be against the
-    absent player's team: use right_on ['opp_pos', 'teamTricode'] by renaming `opponent` -> `teamTricode`."""
-    base = avg_pos_opp.select(c("position").alias("opp_pos"), c("opponent").alias("opp_team"),
+    absent player's team: use right_on ['opp_pos', 'teamTricode'] by renaming `opponent` -> `teamTricode`.
+    -> Should be fixed now"""
+    base = avg_pos_opp.select(c("position").alias("opp_pos"), c("opponent").alias("team"),
                               c("avg_TTFL").alias("_base"))
     return (missed.join(opp_pos, left_on=["gameId", "team"], right_on=["gameId", "teamTricode"])
-            .join(base, on=["opp_pos", "opp_team"])
+            .join(base, on=["opp_pos", "team"])
             .group_by("did_not_play", "opp_pos")
             .agg(avg_rel_TTFL_per_opp_pos=rel_pct(c("opp_pos_avg_TTFL"), c("_base")).mean()))
 
@@ -431,22 +438,23 @@ def build_derived(stats_season: str | None = None, roster_season: str = SEASON, 
     `rosters` (playerName, teamTricode, position) overrides the roster lookup - used by validate_port.py."""
     stats_season = stats_season or latest_season()
     bs, hist = scan_boxscores([stats_season]), scan_boxscores()
+    reg = regular_played(bs)
     if rosters is None:
         r = current_rosters(scan_rosters(roster_season), scan_positions(), bs)
     else:
         r = to_pl(rosters).lazy().select("playerName", "teamTricode", "position")
     pos_exp = pos_expansion(r)
     overall, avgs = player_overall(bs), player_avg_ttfl(bs)
-    avg_pos_opp = avg_ttfl_per_pos_per_opp(bs, pos_exp)
-    missed, opp_pos = games_missed(bs, r, overall), opp_pos_avg_per_game(bs, pos_exp)
+    avg_pos_opp = avg_ttfl_per_pos_per_opp(reg, pos_exp)
+    missed, opp_pos = games_missed(bs, r, overall), opp_pos_avg_per_game(reg, pos_exp)
     active = bs.select("playerName").unique()
     overall_hist = player_overall(hist)
 
     lazy = {
         "rosters": r, "pos_exp": pos_exp, "overall": overall, "avgs": avgs,
         "home_away": home_away(bs), "btb": back_to_back(bs, avgs), "rel_avg_opp": rel_avg_opp_ttfl(bs),
-        "avg_pos": avg_ttfl_per_pos(bs, pos_exp), "avg_pos_opp": avg_pos_opp,
-        "rel_patop": rel_patop(bs, overall), "team_wins": team_recent_wins(bs),
+        "avg_pos": avg_ttfl_per_pos(reg, pos_exp), "avg_pos_opp": avg_pos_opp,
+        "rel_patop": rel_patop(reg, overall), "team_wins": team_recent_wins(bs),
         "streaks": recent_streaks(bs, overall), "min_restr": min_restrictions(bs),
         "games_missed": missed, "opp_pos": opp_pos,
         "rel_missed": rel_ttfl_when_missing(missed, opp_pos, avg_pos_opp),

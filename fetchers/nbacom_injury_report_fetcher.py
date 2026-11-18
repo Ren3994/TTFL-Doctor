@@ -3,114 +3,114 @@ import pdfplumber
 import pandas as pd
 from bs4 import BeautifulSoup
 from io import BytesIO
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import re
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from data.ttfl_data import scan_rosters
 from misc.misc import SEASON
 
-def splitCap(s):
-    s_all = re.findall(r"[A-Z][a-z]*", s)
-    return ' '.join(s_all)
+def clean_name(name: str) -> str:
+    name = name.strip()
+    # 1. Split lowercase prefixes glued to the next part: deLarrea -> de Larrea
+    name = re.sub(r'\b([a-z]+)(?=[A-Z])', r'\1 ', name)
+    # 2. Split suffixes glued to the last name: PippenJr. -> Pippen Jr.
+    name = re.sub(r'(?<=[a-z])(Jr\.|Sr\.|III|II|IV)$', r' \1', name)
+    return name
 
-def get_player_injury_data(splitline, i):
-    player = f'{splitline[i].split(",")[1]} {splitline[i].split(",")[0]}'
-    status = splitline[i+1]
-
-    if splitline[i+2].endswith(';'):
-        injury_type = splitline[i+3]
-        injury_location = splitCap(splitline[i+2].split('-')[1].split(';')[0])
-
-    elif ';' in splitline[-2]:
-        injury_type = splitline[i+2].split(';')[-1] + ' ' + splitline[i+3]
-        injury_location = splitCap(splitline[i+2].split('-')[1].split(';')[0])
-
-    else:
-        injury_type = splitCap(splitline[i+2].split('-')[1].split(';')[1])
-        injury_location = splitCap(splitline[i+2].split('-')[1].split(';')[0])
-
-    return player, status, injury_type, injury_location
+STATUSES = {"Out", "Questionable", "Doubtful", "Day-To-Day", "GTD", "Probable"}
+KEYWORDS = ['GameDate','GameTime','Matchup','Team','PlayerName','CurrentStatus',
+            'AM','PM','Reason','Page','NOTYETSUBMITTED','Injury','Report:']
 
 def get_nbacom_injury_report():
-    PAGE_URL = f"https://official.nba.com/nba-injury-report-{SEASON}-season/"
-    HEADERS = {"User-Agent": "Mozilla/5.0"}
+    import polars as pl
 
-    html = requests.get(PAGE_URL, headers=HEADERS).text
-    soup = BeautifulSoup(html, "html.parser")
+    rosters = (scan_rosters(SEASON)
+                .with_columns(
+                    nocomma=pl.col('playerName').str.replace(',', '')
+                )
+               .select('nocomma')
+               .collect()
+               .to_series()
+               .to_list())
     
+    cols = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch', 'source']
+    dt_fetch = datetime.now(ZoneInfo("Europe/Paris"))
     try:
-        pdf_link = next(
-            a["href"]
-            for a in soup.find_all("a", href=True)
-            if a["href"].endswith("M.pdf")
-        )
-    except StopIteration:
-        print("No PDF link found on the page.")
-        return pd.DataFrame(columns=['player_name', 'simplified_status', 'injury_status', 'details'])
+        soup = BeautifulSoup(requests.get(
+            f"https://official.nba.com/nba-injury-report-{SEASON}-season/",
+            headers={"User-Agent": "Mozilla/5.0"}, timeout=15).text, "html.parser")
+        links = [a["href"] for a in soup.find_all("a", href=True) if a["href"].endswith("M.pdf")]
+    except Exception:
+        return pd.DataFrame(columns=cols)
 
-    pdf_bytes = requests.get(pdf_link).content
-    all_rows = []
+    pdf_bytes = None
+    for link in reversed(links):                    # newest first, walk back on 404
+        try:
+            r = requests.get(link, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+            if r.status_code == 200 and r.content[:4] == b'%PDF':
+                pdf_bytes = r.content; break
+        except Exception:
+            continue
+    if pdf_bytes is None:
+        return pd.DataFrame(columns=cols)
 
-    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+    rows = []
+    try:
+        with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+            for page in pdf.pages:
+                words = page.extract_words() or []
+                h_lines = sorted([l for l in page.lines if abs(l["y0"]-l["y1"]) < 1], key=lambda l: l["top"])
+                bounds = sorted([page.bbox[3]] + [l["top"] for l in h_lines] + [page.bbox[1]])
+                for i in range(len(bounds) - 1):
+                    row = sorted((w for w in words if bounds[i] <= w["top"] <= bounds[i+1]), key=lambda w: w["x0"])
+                    text = [w["text"] for w in row
+                            if '0' not in w["text"] and '1' not in w["text"]
+                            and ':' not in w["text"] and '@' not in w["text"]]
+                    for kw in KEYWORDS:
+                        if kw in text: text.remove(kw)
+                    pi = next((j for j, w in enumerate(text) if ',' in w), None)
+                    if pi is None or pi + 1 >= len(text) or text[pi+1] not in STATUSES:
+                        continue                     # layout drift: skip row, never crash
+                    last, _, first = text[pi].partition(',')
+                    reason = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ',
+                                    " ".join(text[pi+2:])).lstrip('- ').strip()
+                    
+                    name = f"{first.strip()} {last.strip()}"
+                    if name not in rosters:
+                        name = clean_name(name)
+                        if name not in rosters:
+                            print(f'This name is weird : before strip : {first.strip()} {last.strip()}' +
+                                  f' -> after strip : {name} still not found')
 
-        for page in pdf.pages:
-
-            words = page.extract_words()
-            h_lines = page.lines
-
-            if not words:
-                continue
-
-            row_lines = sorted(
-                [l for l in h_lines if abs(l["y0"] - l["y1"]) < 1],
-                key=lambda l: l["top"]
-            )
-
-            boundaries = [page.bbox[3]] + [l["top"] for l in row_lines] + [page.bbox[1]]
-            boundaries = sorted(boundaries)
-
-            for i in range(len(boundaries) - 1):
-
-                bottom = boundaries[i]
-                top = boundaries[i + 1]
-
-                row_words = [
-                    w for w in words
-                    if bottom <= w["top"] <= top
-                ]
-
-                if not row_words:
-                    continue
-
-                row_words = sorted(row_words, key=lambda w: w["x0"])
-                row_text = [w["text"] for w in row_words 
-                            if '0' not in w["text"] 
-                            and '1' not in w["text"] 
-                            and ':' not in w["text"]
-                            and '@' not in w["text"]
-                            ]
-
-                for keyword in ['GameDate', 'GameTime', 'Matchup', 'Team', 'PlayerName', 'CurrentStatus', 
-                    'AM', 'PM', 'Reason', 'Page', 'NOTYETSUBMITTED', 'Injury', 'Report:']:
-                    if keyword in row_text:
-                        row_text.remove(keyword)
-                
-                for i, word in enumerate(row_text):
-                    if ',' in word:
-                        # print('\n', row_text)
-                        p, s, t, l = get_player_injury_data(row_text, i)
-                        # print(f'{p} | {s} | {t} | {l}')
-                        all_rows.append({
-                            "player_name": p,
-                            "simplified_status": s,
-                            "injury_status": f'{l} {t}',
-                            "details": ''
-                        })
-
-        df = pd.DataFrame(all_rows)
-    return df
+                    rows.append({"player_name": name,
+                                 "simplified_status": text[pi+1],
+                                 "injury_status": f'{dt_fetch:%d/%m}: {text[pi+1]}',
+                                 "details": reason,
+                                 "dt_fetch": dt_fetch,
+                                 "source": "NBA.com"})
+    except Exception as e:
+        print(f"nbacom PDF parse failed: {e}")
+        return pd.DataFrame(columns=cols)
+    df = pd.DataFrame(rows).drop_duplicates(subset=['player_name', 'simplified_status'])
+    return df.reset_index(drop=True) if not df.empty else pd.DataFrame(columns=cols)
 
 if __name__ == '__main__':
-    print(get_nbacom_injury_report())
+#     # rosters = (scan_rosters(SEASON)
+#     #            .select('playerName')
+#     #            .collect()
+#     #            .to_series()
+#     #            .to_list())
+    
+#     # print(rosters)
+
+    a = get_nbacom_injury_report()
+    print(a)
+    from data.ttfl_data import save_injuries
+    save_injuries(a)
+
+#     print('hi')

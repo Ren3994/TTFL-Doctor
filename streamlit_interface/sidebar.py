@@ -44,7 +44,7 @@ def sidebar(page):
         if "last_update" in st.session_state:
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             vspace(container=cont)
-            cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')}")
+            cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')} ({st.session_state.last_source})")
 
         # if not st.session_state.local_instance:
         if st.session_state.get('username', '') == '':
