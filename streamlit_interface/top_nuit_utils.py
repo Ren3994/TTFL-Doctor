@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo, get_idx_pick
 # from streamlit_interface.resource_manager import conn_db
-from streamlit_interface.JDP_utils import match_player
+from streamlit_interface.JDP_utils import match_player, get_cached_avg_TTFL
 # from data.sql_functions import run_sql_query
 from data.ttfl_data import scan_boxscores
 from misc.misc import SEASON
@@ -21,12 +21,11 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     spoiler = st.session_state.get('top_nuit_spoiler', False)
     show_TTFL = st.session_state.get('show_TTFL', False)
 
-    # conn = conn_db()
+    avg_TTFL = get_cached_avg_TTFL(to_pandas=False)
 
     df = (scan_boxscores(SEASON)
          .with_columns(
              gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
-             avg_TTFL=pl.mean('TTFL').over('playerName').round(1),
              minutes=pl.format(
                  '{}:{}',
                  pl.col('seconds') // 60,
@@ -43,12 +42,14 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
              )
          .filter([pl.col('gameDate') == date,
                   pl.col('seconds') > 0])
+         .join(avg_TTFL, on='playerName')
          .select([
-             'playerName', 'teamTricode', 'minutes', 'seconds', 'points', 'avg_TTFL', 'reboundsTotal',
+             'playerName', 'teamTricode', 'minutes', 'seconds', 'points', 'reboundsTotal',
                     'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
                     'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
                     'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
-                    'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win', 'Matchup'
+                    'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win', 'Matchup',
+                    'avg_TTFL'
                     ])
          .collect()
          .to_pandas()
@@ -248,6 +249,8 @@ def clear_boxscore_vars():
             st.session_state[key] = False
 
 # if __name__ == '__main__':
+    # a = get_top_de_la_nuit('17/11/2026', matched_names=[], byteam=False, show_my_pick=False)
+    # print(a)
 #     date = '13/11/2026'
 #     a = run_sql_query(conn_db(),
 #                     table='boxscores b', 

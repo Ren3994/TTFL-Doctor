@@ -38,6 +38,7 @@ def get_cached_upcoming_games():
      .collect())
     return upcoming_games
 
+@st.cache_data(ttl=30, show_spinner=False)
 def need_to_fetch_new_boxscores():
     # import pandas as pd
 

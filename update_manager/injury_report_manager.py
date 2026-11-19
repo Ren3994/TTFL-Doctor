@@ -13,10 +13,11 @@ from data.ttfl_data import save_injuries, scan_injuries
 def update_injury_report():
     import pandas as pd
     df = pd.DataFrame()
-    for fetch in (get_espn_injury_report_from_json,          # primary
-                  get_nbacom_injury_report):                  # secondary (fixed, see item C)
+    for fetch in (get_espn_injury_report_from_json,
+                  get_nbacom_injury_report):
         try:
-            df = fetch() or pd.DataFrame()
+            result = fetch()
+            df = result if result is not None else pd.DataFrame()
         except Exception as e:
             print(f"injury fetch failed ({fetch.__name__}): {e}")
             df = pd.DataFrame()
@@ -24,9 +25,9 @@ def update_injury_report():
             break
         df = pd.DataFrame()
 
-    if df.empty:                                             # total failure: keep the previous file, never crash
+    if df.empty:
         print("injury report: all sources failed, keeping previous data")
-        return scan_injuries().select(['dt_fetch', 'source']).collect().row(0)   # last saved fetch time
+        return scan_injuries().select(['dt_fetch', 'source']).collect().row(0)
 
     save_injuries(df)
     return df.loc[0, ['dt_fetch', 'source']].values

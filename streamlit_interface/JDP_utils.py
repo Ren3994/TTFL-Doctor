@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.resource_manager import conn_supabase, fetch_supabase_users
 from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, FRANCHISE_FILTERS, TRICODE2FULLNAME, SEASON
 # from data.sql_functions import run_sql_query
-from data.ttfl_data import scan_schedule, scan_boxscores, scan_rosters
+from data.ttfl_stats import scan_schedule, scan_boxscores, scan_rosters, regular_played
 
 @st.cache_data(show_spinner=False)
 def get_cached_game_dates_completed():
@@ -60,20 +60,20 @@ def get_cached_scoresTTFL():
     return scores
 
 @st.cache_data(show_spinner=False)
-def get_cached_avg_TTFL(alltime=False):
-    if not alltime:
-        seasons = SEASON
+def get_cached_avg_TTFL(alltime=False, to_pandas=True, include_playoffs=False):
+    boxscores = scan_boxscores(None if alltime else SEASON)
+    if include_playoffs:
+        frame = boxscores
     else:
-        seasons = None
-    avg_TTFL = (scan_boxscores(SEASON)
-         .filter(pl.col('seconds') > 0)
+        frame = regular_played(boxscores)
+    avg_TTFL = (frame
          .group_by('playerName')
          .agg(avg_TTFL=pl.mean('TTFL').round(2))
          .select(['playerName', 'avg_TTFL'])
-         .sort(['avg_TTFL', 'playerName'])
-         .collect()
-         .to_pandas()
+         .sort(['avg_TTFL', 'playerName'], descending=True)
          )
+    if to_pandas:
+        return avg_TTFL.collect().to_pandas()
     return avg_TTFL
 
 @st.cache_data(show_spinner=False)
@@ -425,16 +425,20 @@ def generate_dicts(names_list):
 
     return abbreviations, splits
 
-# if __name__ == '__main__':
-#     gdc = run_sql_query(conn=conn_db(), table='rosters')
+if __name__ == '__main__':
+
+    a = get_cached_avg_TTFL(include_playoffs=False, alltime=True)
+
+    print(a[a['playerName'] == 'LeBron James'])
+    # gdc = run_sql_query(conn=conn_db(), table='rosters')
     
-#     print(gdc)
+    # print(gdc)
 
-#     from data.ttfl_data import scan_table, scan_schedule, scan_boxscores, scan_rosters
+    # from data.ttfl_data import scan_table, scan_schedule, scan_boxscores, scan_rosters
 
-#     a = (scan_rosters(SEASON)
-#          .select(['playerName', 'teamTricode', 'position'])
-#          .collect()
-#          .to_pandas())
-#     print(a)
-#     print(all(a == gdc))
+    # a = (scan_rosters(SEASON)
+    #      .select(['playerName', 'teamTricode', 'position'])
+    #      .collect()
+    #      .to_pandas())
+    # print(a)
+    # print(all(a == gdc))

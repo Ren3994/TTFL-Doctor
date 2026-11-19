@@ -44,7 +44,7 @@ def init_session_state(page, arg=None):
 
     if page == 'classement':
         st.session_state.selected_date = st.session_state.get("selected_date", 
-                                                              datetime.now(ZoneInfo("Europe/Paris")))
+                                                              datetime.now(ZoneInfo("America/Los_Angeles")))
 
         st.session_state.date_text = st.session_state.get("date_text",
             st.session_state.selected_date.strftime("%d/%m/%Y"))
@@ -65,7 +65,7 @@ def init_session_state(page, arg=None):
             st.session_state.games_TBD = False
         
         if 'calculated' not in st.session_state:
-            st.session_state.calculated = []
+            st.session_state.calculated = set()
         
         if 'bool_translate' not in st.session_state:
             st.session_state.bool_translate = False

@@ -234,8 +234,8 @@ def df_to_html(
     col_header_tooltips = {'Joueur' : 'Survoler pour voir le graphe d\'évolution des scores TTFL',
                           'TTFL' : 'Toutes les équipes contre : scores TTFL relatifs des équipes adverses contre cette équipe' + \
                           '<br>Postes contre : scores TTFL relatifs des joueurs de ce poste contre cette équipe',
-                          'Adversaire' : 'Score TTFL relatif des joueurs adverses de ce poste contre cette équipe quand tel joueur est blessé',
-                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé',
+                          'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
+                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs ou le joueur a joué avec ce coéquipier blessé)',
                           'Statut' : 'Survoler pour voir les détails de la blessure'},
     image_tooltips={'Joueur' : 'plots'},
     show_index=True,

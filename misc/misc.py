@@ -93,7 +93,8 @@ FRENCHIES = set(['Nicolas Batum',
                  'Maxime Raynaud', 
                  'Mohamed Diawara', 
                  'Daniel Batcho', 
-                 'Adama Bal'])
+                 'Adama Bal', 
+                 'Alexandre Sarr'])
 
 TEAM_TRICODE2IDS = {
     'ATL': 1610612737,
@@ -172,6 +173,7 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'WEMBY' : 'Victor Wembanyama',
              'ALIEN' : 'Victor Wembanyama',
              'HALI' : 'Tyrese Haliburton',
+             'HALIBAN' : 'Tyrese Haliburton',
              'AR15' : 'Austin Reaves',
              'AR-15' : 'Austin Reaves',
              'FVV' : 'Fred VanVleet',
@@ -180,6 +182,7 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'KLAW' : 'Kawhi Leonard',
              'CLAW' : 'Kawhi Leonard',
              'DOMAS' : 'Domantas Sabonis',
+             'SHAQ' : 'Shaquille O\'Neal'
              }
 
 TEAM_NICKNAMES = {

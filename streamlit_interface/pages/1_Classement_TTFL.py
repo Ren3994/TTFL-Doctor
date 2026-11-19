@@ -173,7 +173,8 @@ else:
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             start = st.session_state.plot_calc_start
-            stop = min(len(st.session_state.topTTFL_df) - 1, st.session_state.plot_calc_stop)
+            # stop = min(len(st.session_state.topTTFL_df) - 1, st.session_state.plot_calc_stop)
+            stop = min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop)
             
             for i in range(start, stop):
                 st.session_state.topTTFL_df.iloc[i] = generate_all_plots(
@@ -206,7 +207,7 @@ else:
                                  highlight_index=idx_pick)
     
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
-    st.session_state.calculated.append(st.session_state.date_text)
+    st.session_state.calculated.add(st.session_state.date_text)
 
     temp_table.empty()
     statusholder.empty()

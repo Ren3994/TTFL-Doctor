@@ -22,6 +22,7 @@ def get_schedule_json(proxy=None):
     })
     
     schedule = None
+    response = None
 
     for attempt in range(5):
         try :

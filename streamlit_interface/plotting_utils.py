@@ -173,8 +173,9 @@ def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends
                                     hover_info['FGM'], hover_info['FGA'],
                                     hover_info['FG3M'], hover_info['FG3A'],
                                     hover_info['FTM'], hover_info['FTA'],
+                                    hover_info['win']
                                 )),
-                                 hovertemplate = ( "          %{customdata[6]} : %{y}<br>"
+                                 hovertemplate = ( "%{customdata[6]} : %{y} (%{customdata[13]})<br>"
                                                    "%{customdata[0]} vs. %{customdata[1]}<br>"
                                                    "  %{customdata[2]}-%{customdata[3]}-%{customdata[4]}" 
                                                    " en %{customdata[5]} min<br>"

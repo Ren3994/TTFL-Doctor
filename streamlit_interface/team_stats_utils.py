@@ -11,7 +11,7 @@ from misc.misc import CONFERENCES, SEASON
 from data.ttfl_stats import query_team_stats, query_opp_team_avgs, scan_boxscores
 
 @st.cache_data(show_spinner=False)
-def query_team_stats_cached():
+def cached_query_team_stats():
     team_stats = query_team_stats()
     # conn = conn_db()
     # team_stats = run_sql_query(conn, table='team_stats ts', joins=[{
@@ -54,7 +54,7 @@ def query_team_stats_cached():
 
 def get_team_stats(selected_teams=[]):
     
-    team_stats = query_team_stats_cached()
+    team_stats = cached_query_team_stats()
     opp_stats = get_cached_opp_team_stats()
 
     if team_stats.empty:

@@ -13,7 +13,6 @@ from streamlit_interface.streamlit_utils import requests_form, centered, vspace,
 # from streamlit_interface.resource_manager import deepl_api_limit_reached
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
-from update_manager.file_manager import cleanup_db, manage_backups
 from update_manager.proxy_usage_stats import get_proxy_stats
 from streamlit_interface.JDP_utils import JoueursDejaPick
 
@@ -131,8 +130,8 @@ def sidebar(page):
                 
             cont = centered(sidebar=True)
             if cont.button("🛑 Quitter"):
-                cleanup_db()
-                manage_backups()
+                # cleanup_db()
+                # manage_backups()
 
                 keyboard.press_and_release('ctrl+w')
                 os.kill(os.getpid(), signal.SIGTERM)

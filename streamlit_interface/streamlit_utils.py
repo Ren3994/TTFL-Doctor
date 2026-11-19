@@ -1,4 +1,5 @@
 import streamlit as st
+import polars as pl
 import subprocess
 import base64
 import sys
@@ -132,6 +133,17 @@ def french_flag(name, html=False, unicode=False, nspace = 1, pre=False, post=Tru
         return f'{pre_str}{name}{post_str}'
     
     return name
+
+def french_flag_expr(col: str = 'playerName') -> pl.Expr:
+    """Vectorised french_flag: appends ' 🇫🇷' to names whose base name (before '(' or '*') is in FRENCHIES."""
+    base = (pl.col(col)
+              .str.split('(').list.first()
+              .str.split('*').list.first()
+              .str.strip_chars())
+    return (pl.when(base.is_in(list(FRENCHIES)))
+              .then(pl.concat_str([pl.col(col), pl.lit(' 🇫🇷')]))
+              .otherwise(pl.col(col))
+              .alias(col))
 
 def vspace(numlines=1, container=None, sidebar=False):
     if container is None:

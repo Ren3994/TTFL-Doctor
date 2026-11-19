@@ -11,7 +11,7 @@ def get_palette(key=None):
     pct_light_red = (246, 176, 176)
     pct_bright_red = (255, 77, 77)
 
-    if st.session_state.dark_mode:
+    if st.session_state.get('dark_mode', True):
         table_hover="#1e2a3b"
         table_text="#C5C5C5"
         table_header_text="#CAC8C8"
