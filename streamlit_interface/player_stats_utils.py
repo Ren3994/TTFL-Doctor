@@ -674,6 +674,7 @@ as the consumers accept polars.
 import os
 import sys
 
+import numpy as np
 import polars as pl
 import polars.selectors as cs
 import streamlit as st
@@ -704,10 +705,27 @@ PER36_COLS = ['TTFL', *COUNTING, 'FGM', 'FGA', 'FG2M', 'FG2A', 'FG3M', 'FG3A', '
 
 # stored as fractions -> displayed as percentages
 PCT_COLS = ['EFG', 'TS', 'FG_PCT', 'FG3_PCT', 'FT_PCT']
-# nulls / NaN / unparsable values -> 0
-ZERO_FILL_COLS = ['ast_to_tov', 'Oreb', 'Dreb', 'PM',
-                  'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 'away_rel_TTFL',
-                  'btbTTFL', 'rel_btb_TTFL', 'n_btb']
+
+# A ratio is UNDEFINED (null, shown blank) when its denominator is zero: never display it as 0.
+# Conditions use the TOT_ columns: exact, and independent of how the source defines each ratio.
+DEFINED_IF = {
+    'FG_PCT': pl.col('TOT_FGA') > 0,
+    'FG3_PCT': pl.col('TOT_FG3A') > 0,
+    'FT_PCT': pl.col('TOT_FTA') > 0,
+    'EFG': pl.col('TOT_FGA') > 0,
+    'TS': (pl.col('TOT_FGA') + pl.col('TOT_FTA')) > 0,
+    'ast_to_tov': pl.col('TOT_Tov') > 0,
+    'btbTTFL': pl.col('n_btb') > 0,
+    'rel_btb_TTFL': pl.col('n_btb') > 0,
+}
+# can legitimately be missing: NaN / inf are turned into null, never into 0
+NULLABLE_COLS = ['Oreb', 'Dreb', 'PM', 'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 'away_rel_TTFL']
+# real counts: a missing value does mean 0
+COUNT_COLS = ['n_btb']
+# totals of columns that are null in some games: without any data there is no total (a sum of nothing is not 0)
+TOTAL_NEEDS_DATA = {'TOT_Oreb': 'Oreb', 'TOT_Dreb': 'Dreb', 'TOT_PM': 'PM'}
+# player-vs-team table: percentage -> attempts column that must be > 0
+VS_TEAM_PCT = {'FG_PCT': 'FGA', 'FG3_PCT': 'FG3A', 'FT_PCT': 'FTA'}
 
 TTFL_COLS = ['playerName', 'TTFL', 'stddev_TTFL', 'median_TTFL', 'max_ttfl', 'min_ttfl',
              'home_avg_TTFL', 'away_avg_TTFL', 'home_rel_TTFL', 'away_rel_TTFL',
@@ -794,14 +812,21 @@ def _fill_zero(df: pl.DataFrame, cols: list[str]) -> pl.DataFrame:
     return df.with_columns(pl.col(cols).fill_null(0))
 
 
-def _pct_points(name: str) -> pl.Expr:
-    """Fraction column (0-1) -> percentage points, with null / NaN -> 0."""
-    return (pl.col(name).cast(pl.Float64) * 100).fill_nan(0).fill_null(0)
+def _nan_to_null(df: pl.DataFrame, cols: list[str]) -> pl.DataFrame:
+    """NaN / inf -> null (float columns only), so 'undefined' is never displayed as a number."""
+    float_cols = df.select(cols).select(cs.float()).columns
+    return df.with_columns([pl.when(pl.col(c).is_finite()).then(pl.col(c)).alias(c) for c in float_cols])
+
+
+def _defined_value(col: str) -> pl.Expr:
+    """Column (x100 if it is a fraction), or null where its denominator is zero."""
+    value = pl.col(col) * 100 if col in PCT_COLS else pl.col(col)
+    return pl.when(DEFINED_IF[col]).then(value).otherwise(None).alias(col)
 
 
 def _pct(made: pl.Expr, att: pl.Expr, digits: int = 1) -> pl.Expr:
-    """100 * made / att, or 0 when there are no attempts (no NaN/inf ever leaks out)."""
-    return pl.when(att > 0).then((100 * made / att).round(digits)).otherwise(0.0)
+    """100 * made / att, or null (undefined) when there are no attempts."""
+    return pl.when(att > 0).then((100 * made / att).round(digits)).otherwise(None)
 
 
 def _mmss(seconds: str) -> pl.Expr:
@@ -852,8 +877,11 @@ def _threshold_filters() -> list[pl.Expr]:
 def _add_derived_columns(df: pl.DataFrame) -> pl.DataFrame:
     fg2m = pl.col('FGM') - pl.col('FG3M')
     fg2a = pl.col('FGA') - pl.col('FG3A')
-    return _fill_zero(df, ZERO_FILL_COLS).with_columns(
-        *[_pct_points(c).alias(c) for c in PCT_COLS],
+    df = _fill_zero(_nan_to_null(df, NULLABLE_COLS), COUNT_COLS)
+    return df.with_columns(
+        *[_defined_value(c) for c in DEFINED_IF],
+        *[pl.when(pl.col(avg).is_not_null()).then(pl.col(tot)).otherwise(None).alias(tot)
+          for tot, avg in TOTAL_NEEDS_DATA.items()],
         MINUTES=_mmss('SECONDS'),
         TOT_MINUTES=_mmss('TOT_SECONDS'),
         FG2M=fg2m,
@@ -957,9 +985,10 @@ def player_v_team(player_list) -> pl.DataFrame:
     if df.is_empty():
         return pl.DataFrame()
 
-    return (_fill_zero(df, ['PM', 'Oreb', 'Dreb'])
+    return (_nan_to_null(df, ['PM', 'Oreb', 'Dreb'])
               .with_columns(MINUTES=_mmss('seconds'),
-                            **{c: _pct_points(c).round(1) for c in ('FG_PCT', 'FG3_PCT', 'FT_PCT')})
+                            **{c: pl.when(pl.col(att) > 0).then((pl.col(c) * 100).round(1)).otherwise(None)
+                               for c, att in VS_TEAM_PCT.items()})
               .select(VS_TEAM_COLS)
               .with_columns(cs.float().round(3)))
 
@@ -1001,7 +1030,7 @@ def historique_des_perfs(player):
     minutes = pl.col('Min').cast(pl.String)
     oreb = pl.col('Oreb').cast(pl.Float64).fill_nan(None)
     dreb = pl.col('Dreb').cast(pl.Float64).fill_nan(None)
-    pm = pl.col('Pm').cast(pl.Float64).fill_nan(0).fill_null(0).cast(pl.Int64)
+    pm = pl.col('Pm').cast(pl.Float64).fill_nan(None).cast(pl.Int64)
 
     df = df.with_columns(
         Date=date_label,
@@ -1009,13 +1038,15 @@ def historique_des_perfs(player):
         FG=pl.concat_str([pl.col('FGM'), pl.lit('/'), pl.col('FGA')]),
         FG3=pl.concat_str([pl.col('FG3M'), pl.lit('/'), pl.col('FG3A')]),
         FT=pl.concat_str([pl.col('FTM'), pl.lit('/'), pl.col('FTA')]),
-        rebSplit=(pl.when(oreb.is_null()).then(pl.lit(''))
+        rebSplit=(pl.when(oreb.is_null() | dreb.is_null()).then(pl.lit(''))
                     .otherwise(pl.concat_str([pl.lit('Off : '), oreb.cast(pl.Int64),
                                               pl.lit(' - Def : '), dreb.cast(pl.Int64)]))),
         FGpct=_pct_label('FGM', 'FGA'),
         FG3pct=_pct_label('FG3M', 'FG3A'),
         FTpct=_pct_label('FTM', 'FTA'),
-        Pm=pl.when(pm < 0).then(pm.cast(pl.String)).otherwise(pl.concat_str([pl.lit('+'), pm])),
+        Pm=(pl.when(pm.is_null()).then(pl.lit(''))                 # no plus/minus recorded: blank, not '+0'
+              .when(pm < 0).then(pm.cast(pl.String))
+              .otherwise(pl.concat_str([pl.lit('+'), pm]))),
         win=pl.concat_str([pl.when(pl.col('win') == 1).then(pl.lit('W')).otherwise(pl.lit('L')),
                            pl.lit(' ('), pl.col('teamPoints'), pl.lit('-'), pl.col('opponentPoints'), pl.lit(')')]),
         isHome=pl.when(pl.col('isHome') == 1).then(pl.lit('Dom.')).otherwise(pl.lit('Ext.')),
@@ -1033,6 +1064,17 @@ def historique_des_perfs(player):
 
 
 # ───────────────────────────── plot ─────────────────────────────
+
+def _lowess_trend(x: np.ndarray, series: pl.Series, frac: float) -> np.ndarray:
+    """LOWESS over the games where the stat exists; NaN (a gap in the line) for the others."""
+    import statsmodels.api as sm     # heavy import, only when needed
+    y = series.cast(pl.Float64).fill_nan(None).to_numpy()      # nulls -> nan
+    ok = ~np.isnan(y)
+    trend = np.full(len(y), np.nan)
+    if ok.sum() >= 3:
+        trend[ok] = sm.nonparametric.lowess(endog=y[ok], exog=x[ok], frac=frac, return_sorted=False).round(2)
+    return trend
+
 
 def _team_stints(df: pl.DataFrame) -> dict:
     """Team labels / label positions / trade dates for the plot. `df` must be sorted by gameDate."""
@@ -1075,8 +1117,6 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg,
 
     stats_to_plot, avgs_to_plot, trends = {}, {}, {}
     x = df['gameDate'].dt.epoch('d').to_numpy() if show_lowess else None
-    if show_lowess:
-        import statsmodels.api as sm     # heavy import, only when needed
 
     for stat in stats:
         series = df[PLOT_STATS[stat]]
@@ -1085,8 +1125,7 @@ def get_plot(player, stats, show_lines, show_scatter, show_avg,
             mean = series.mean()
             avgs_to_plot[stat] = [round(mean, 1) if mean is not None else float('nan')] * df.height
         if show_lowess:
-            trends[stat] = sm.nonparametric.lowess(endog=series.cast(pl.Float64).to_numpy(), exog=x,
-                                                   frac=lambda_lowess, return_sorted=False).round(2)
+            trends[stat] = _lowess_trend(x, series, lambda_lowess)
 
     player_teams = _team_stints(df) if show_teams else {}
     ttfl_details = df.select(**TTFL_DETAILS).to_dict(as_series=False) if show_ttfl_details else {}
