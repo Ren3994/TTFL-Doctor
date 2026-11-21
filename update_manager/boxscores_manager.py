@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from misc.misc import FAILED_LOG_PATH, CHAR_MAP, NAME2TRICODE
 from fetchers.boxscore_fetcher import fetch_boxscores
-from data.ttfl_data import latest_season
+from data.ttfl_data import season_for_date
 
 def get_boxscores(game_date, game_id, visitor_team, home_team, proxy=None):
     import pandas as pd
@@ -81,8 +81,7 @@ def height2cm(height_ft):
 
 def add_columns(df) :
     import numpy as np
-    df['season'] = latest_season()
-
+    df['season'] = df['gameDate_ymd'].map(season_for_date)
     df['playerName'] = df['firstName'] + ' ' + df['familyName']
     df['playerName'] = df['playerName'].apply(normalize_name)
 

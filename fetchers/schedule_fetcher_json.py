@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.ttfl_data import latest_season
+from data.ttfl_data import season_for_date
 
 def get_schedule_json(proxy=None):
     from curl_cffi import requests
@@ -88,7 +88,7 @@ def get_schedule_json(proxy=None):
         "gameSubtype" : "IST"
     }, inplace=True)
 
-    schedule['season'] = latest_season()
+    schedule['season'] = schedule['gameDate_ymd'].map(season_for_date)
     
     return schedule
 

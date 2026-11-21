@@ -349,13 +349,22 @@ def to_date(d) -> dt.date:
             pass
     raise ValueError(f"unrecognised date: {d!r}")
 
+def season_for_date(d) -> str:
+    """NBA season label ('2026-27') of a game played on date d 
+    (August because of preseason and stuff like that)."""
+    d = to_date(d)
+    start = d.year if d.month >= 8 else d.year - 1
+    return f"{start}-{(start + 1) % 100:02d}"
+
+def current_season() -> str:
+    return season_for_date(dt.date.today())
 
 def get_missing_gameids() -> pl.DataFrame:
     c = pl.col
     have = scan_boxscores().select("gameId").unique()
     return (
         scan_schedule()
-        .filter((c('season') == latest_season()) & (c("gameStatus") == 3) & (c("postponed") == 0)
+        .filter((c('season') == current_season()) & (c("gameStatus") == 3) & (c("postponed") == 0)
                 & (c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004")
                 | c("gameId").str.starts_with("006")))
         .join(have, on="gameId", how="anti")

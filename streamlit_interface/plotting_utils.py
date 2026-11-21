@@ -147,11 +147,11 @@ def cached_generate_plot_row(requested_date,
     # plt.show()
     # fig.tight_layout()
     buf = BytesIO()
-    fig.savefig(buf, format="jpg", dpi=120)
+    fig.savefig(buf, format="jpg", dpi=90, pil_kwargs={"quality": 60, "optimize": True})
     plt.close(fig)
     img_base64 = base64.b64encode(buf.getvalue()).decode()
 
-    return f"data:image/png;base64,{img_base64}"
+    return f"data:image/jpeg;base64,{img_base64}"
 
 def interactive_plot(player, dates, data, show_lines, show_scatter, avgs, trends, 
                      player_teams, hover_info, hide_legend, show_ttfl_details, ttfl_details):
