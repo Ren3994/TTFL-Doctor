@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import SEASON
+from data.ttfl_data import latest_season
 
 def get_schedule_json(proxy=None):
     from curl_cffi import requests
@@ -88,7 +88,7 @@ def get_schedule_json(proxy=None):
         "gameSubtype" : "IST"
     }, inplace=True)
 
-    schedule['season'] = SEASON
+    schedule['season'] = latest_season()
     
     return schedule
 
@@ -98,10 +98,3 @@ if __name__ == '__main__':
     t0 = time.time()
     # print()
     a = get_schedule_json()
-    from fetchers.schedule_fetcher import get_schedule
-    
-    b = get_schedule()
-    b['awayTeam'].replace('Lions', 'LON', inplace=True)
-
-    pd.testing.assert_frame_equal(a, b)
-    print(time.time() - t0)

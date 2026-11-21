@@ -11,8 +11,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.ttfl_data import scan_rosters
-from misc.misc import SEASON
+from data.ttfl_data import scan_rosters, latest_season
 
 def clean_name(name: str) -> str:
     name = name.strip()
@@ -28,7 +27,8 @@ KEYWORDS = ['GameDate','GameTime','Matchup','Team','PlayerName','CurrentStatus',
 
 def get_nbacom_injury_report():
     import polars as pl
-
+    
+    SEASON = latest_season()
     rosters = (scan_rosters(SEASON)
                 .with_columns(
                     nocomma=pl.col('playerName').str.replace(',', '')

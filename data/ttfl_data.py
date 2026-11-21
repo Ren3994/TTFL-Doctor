@@ -31,7 +31,7 @@ from pathlib import Path
 import polars as pl
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from misc.misc import BASE_DIR, SEASON, LAST_SEASON  # noqa: E402,F401
+from misc.misc import BASE_DIR
 
 DATA_DIR = Path(BASE_DIR, "..", "data", "parquet").resolve()
 BOX_DIR = DATA_DIR / "boxscores"
@@ -190,7 +190,7 @@ def scan_schedule() -> pl.LazyFrame:
                            IST=pl.col("IST").fill_null(0))
 
 
-def save_rosters(df, season: str = SEASON) -> None:
+def save_rosters(df, season: str = latest_season()) -> None:
     df = to_pl(df)
     if "season" not in df.columns:
         df = df.with_columns(season=pl.lit(season))
@@ -355,8 +355,9 @@ def get_missing_gameids() -> pl.DataFrame:
     have = scan_boxscores().select("gameId").unique()
     return (
         scan_schedule()
-        .filter((c('season') == SEASON) & (c("gameStatus") == 3) & (c("postponed") == 0)
-                & (c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004")))
+        .filter((c('season') == latest_season()) & (c("gameStatus") == 3) & (c("postponed") == 0)
+                & (c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004")
+                | c("gameId").str.starts_with("006")))
         .join(have, on="gameId", how="anti")
         .sort("gameDate_ymd")       # the SQL sorted the dd/mm/yyyy *text*, i.e. not chronologically
         .select("gameId", "gameDate", "homeTeam", "awayTeam")
@@ -405,66 +406,6 @@ def refresh_reference_data(verbose: bool = True, proxy=None) -> None:
             say(f"error fetching {label}: {e}")
     if not (DATA_DIR / "player_positions.parquet").exists():
         save_table("player_positions", fetch_player_positions())
-
-
-# --------------------------------------------------------------------------------------
-# One-off migration from the three SQLite files
-# --------------------------------------------------------------------------------------
-def _sql(conn, query: str) -> pl.DataFrame:
-    return pl.read_database(query, conn, infer_schema_length=None)
-
-
-def _has_table(conn, name: str) -> bool:
-    return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone() is not None
-
-
-def migrate_from_sqlite(hist_db: str, last_season_db: str | None = None, current_db: str | None = None) -> None:
-    """Non-destructive: only reads the .db files.
-
-    * boxscores come from the HISTORICAL db's `boxscores` table (= historical_boxscores + current_boxscores)
-    * schedule from historical (all seasons); the current-season db's schedule replaces its own season
-    * rosters: historical (has `season`), last-season db (no season column -> LAST_SEASON), current db (SEASON)
-    * injury_report / team_stats from the freshest db available
-    """
-    import sqlite3
-
-    with sqlite3.connect(hist_db) as h:
-        bs = _sql(h, "SELECT * FROM boxscores")
-        print(f"boxscores: {bs.height:,} rows, {bs['gameId'].n_unique():,} games")
-
-        if {"gameDate_ymd", "prev_gameDate_ymd"} <= set(bs.columns):
-            d = bs.select(pl.col("gameDate_ymd").str.to_date("%Y-%m-%d", strict=False).alias("d"),
-                          pl.col("prev_gameDate_ymd").str.to_date("%Y-%m-%d", strict=False).alias("p"))
-            bad = d.filter(pl.col("p").is_not_null() & ((pl.col("d") - pl.col("p")).dt.total_days() != 1)).height
-            print(f"check: prev_gameDate_ymd != gameDate_ymd - 1 day on {bad:,} rows "
-                  f"({'safe to drop the column' if bad == 0 else 'NOT always D-1: back-to-back logic assumes it is'})")
-
-        save_boxscores(bs)                                   # writes one file per season
-        print("wrote boxscores/ ->", ", ".join(available_seasons()[-3:]), "...")
-
-        if _has_table(h, "schedule"):
-            save_schedule(_sql(h, "SELECT * FROM schedule"))
-        if _has_table(h, "player_positions"):
-            save_table("player_positions", _sql(h, "SELECT * FROM player_positions"))
-        if _has_table(h, "rosters"):
-            save_rosters(_sql(h, "SELECT * FROM rosters"))
-
-    for path, season in ((last_season_db, LAST_SEASON), (current_db, SEASON)):
-        if not path:
-            continue
-        with sqlite3.connect(path) as conn:
-            if _has_table(conn, "rosters"):
-                r = _sql(conn, "SELECT * FROM rosters")
-                if "season" not in r.columns:
-                    r = r.with_columns(season=pl.lit(season))
-                save_rosters(r, season)
-            if _has_table(conn, "schedule"):
-                save_schedule(_sql(conn, "SELECT * FROM schedule"))
-            if _has_table(conn, "team_stats"):
-                save_table("team_stats", _sql(conn, "SELECT * FROM team_stats"))
-            if _has_table(conn, "injury_report"):
-                save_injuries(_sql(conn, "SELECT * FROM injury_report"))
-    print("done ->", DATA_DIR)
 
 
 if __name__ == "__main__":

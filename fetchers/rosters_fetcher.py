@@ -5,11 +5,14 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import SEASON, LEAGUE_ID
 from update_manager.boxscores_manager import normalize_name
+from data.ttfl_stats import latest_season
+from misc.misc import LEAGUE_ID
 
 def get_rosters(proxy=None):
     from nba_api.stats.endpoints import CommonAllPlayers
+
+    SEASON = latest_season()
 
     rosters_df = None
     for attempt in range(5) :

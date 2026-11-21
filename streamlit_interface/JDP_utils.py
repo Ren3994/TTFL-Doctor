@@ -9,15 +9,15 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.resource_manager import conn_supabase, fetch_supabase_users
-from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, FRANCHISE_FILTERS, TRICODE2FULLNAME, SEASON
-# from data.sql_functions import run_sql_query
+from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, TRICODE2FULLNAME
 from data.ttfl_stats import scan_schedule, scan_boxscores, scan_rosters, regular_played
+from data.ttfl_data import latest_season
 
 @st.cache_data(show_spinner=False)
 def get_cached_game_dates_completed():
     gdc = (scan_schedule()
          .filter([
-             pl.col('season') == SEASON,
+             pl.col('season') == latest_season(),
              pl.col('gameStatus') == 3,
              pl.col('gameId').str.starts_with('002')
              ])
@@ -26,8 +26,6 @@ def get_cached_game_dates_completed():
          .select('gameDate')
          .collect()
          .to_pandas()
-        #  .to_series()
-        #  .to_list()
          )
     return gdc
 
@@ -35,7 +33,7 @@ def get_cached_game_dates_completed():
 def get_cached_all_game_dates():
     gdc  = (scan_schedule()
          .filter([
-             pl.col('season') == SEASON,
+             pl.col('season') == latest_season(),
              pl.col('gameId').str.starts_with('002')
              ])
          .select('gameDate_ymd').unique().sort('gameDate_ymd')
@@ -49,7 +47,7 @@ def get_cached_all_game_dates():
 
 @st.cache_data(show_spinner=False)
 def get_cached_scoresTTFL():
-    scores = (scan_boxscores(SEASON)
+    scores = (scan_boxscores(latest_season())
          .filter(pl.col('seconds') > 0)
          .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
          .select(['playerName', 'gameDate', 'TTFL'])
@@ -61,7 +59,7 @@ def get_cached_scoresTTFL():
 
 @st.cache_data(show_spinner=False)
 def get_cached_avg_TTFL(alltime=False, to_pandas=True, include_playoffs=False):
-    boxscores = scan_boxscores(None if alltime else SEASON)
+    boxscores = scan_boxscores(None if alltime else latest_season())
     if include_playoffs:
         frame = boxscores
     else:
@@ -78,7 +76,7 @@ def get_cached_avg_TTFL(alltime=False, to_pandas=True, include_playoffs=False):
 
 @st.cache_data(show_spinner=False)
 def get_cached_player_list():
-    player_list = (scan_boxscores(SEASON)
+    player_list = (scan_boxscores(latest_season())
                    .select('playerName')
                    .unique()
                    .collect()
@@ -99,7 +97,7 @@ def get_cached_alltime_player_list():
 
 @st.cache_data(show_spinner=False)
 def get_cached_rosters():
-    rosters = (scan_rosters(SEASON)
+    rosters = (scan_rosters(latest_season())
          .select(['playerName', 'teamTricode', 'position'])
          .collect()
          .to_pandas())
@@ -113,23 +111,11 @@ class JoueursDejaPick():
         self._init_db()
             
     def _init_db(self):
-        # if st.session_state.local_instance:
-        #     self.conn.execute("""
-        #         CREATE TABLE IF NOT EXISTS joueurs_deja_pick (
-        #             joueur TEXT,
-        #             datePick TEXT
-        #         )
-        #     """)
-        #     self.conn.commit()
-        # else:
         self.existing_users = fetch_supabase_users(self.supabase)
             
     def loadJDP(self):
         import pandas as pd
 
-        # if st.session_state.local_instance:
-        #     df = pd.read_sql_query("SELECT joueur, datePick FROM joueurs_deja_pick", self.conn)
-        # else:
         df = pd.DataFrame(columns=['joueur', 'datePick'])
         username_clean = re.sub(r'\W+', '', st.session_state.get('username', ''))
         if username_clean in self.existing_users:
@@ -187,9 +173,6 @@ class JoueursDejaPick():
         df_db = df_db[df_db['joueur'] != '']
         
         if save:
-            # if st.session_state.local_instance:
-            #     df_db.to_sql("joueurs_deja_pick", self.conn, if_exists="replace", index=False)
-            # else:
             picks = dict(zip(df_db['datePick'], df_db['joueur']))
             if st.session_state.get('username', '') != '':
                 username_clean = re.sub(r'\W+', '', st.session_state.username)
@@ -333,11 +316,9 @@ def clean_player_names(df, colname, names_list=None):
     df[colname] = clean_names
     return df
 
-def match_player(input_name, names_list=None, multi=False):
+def match_player(input_name, names_list=None, multi=False, alltime=False):
 
     matched_name = None
-    alltime = st.session_state.get('player_alltime_stats', False)
-
     if names_list is None:
         if not alltime:
             names_list = get_cached_player_list()

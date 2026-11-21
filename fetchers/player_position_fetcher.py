@@ -7,7 +7,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.boxscores_manager import normalize_name, normalize_position, height2cm
-from misc.misc import SEASON, LEAGUE_ID
 
 def fetch_player_positions():
     from nba_api.stats.endpoints import commonplayerinfo

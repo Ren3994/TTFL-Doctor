@@ -29,12 +29,12 @@ import polars.selectors as cs
 
 try:                                              # files side by side ...
     from ttfl_data import (
-        DATA_DIR, SEASON, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
+        DATA_DIR, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
         scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
     )
 except ImportError:                               # ... or imported as part of the `data` package
     from data.ttfl_data import (
-        DATA_DIR, SEASON, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
+        DATA_DIR, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
         scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
     )
 
@@ -295,13 +295,8 @@ def games_missed(bs: pl.LazyFrame, rosters: pl.LazyFrame, overall: pl.LazyFrame)
 
 
 def opp_pos_avg_per_game(bs: pl.LazyFrame, pos_exp: pl.LazyFrame) -> pl.LazyFrame:
-    """For each team-game: average TTFL of the OPPONENT's players at each position.
-    QUIRK: the SQL joined the opponent's position rows against *every* position row of the team, so each
-    row appears once per team position (9 rows instead of 3). The downstream AVG is mostly unaffected.
-    To get one row per (game, team, opp_pos), add .unique() on the t1 side below.
-    -> Should be fixed now"""
+    """For each team-game: average TTFL of the OPPONENT's players at each position."""
     tpa = (bs.select("gameId", "teamTricode", "opponent", "TTFL", "playerName").join(pos_exp, on="playerName")
-           .unique(subset=["gameId", "pos", "teamTricode"])
            .group_by("gameId", "pos", "teamTricode", "opponent")
            .agg(_avg=c("TTFL").mean(), _n=pl.len()))
     t2 = tpa.select("gameId", c("teamTricode").alias("_t2_team"), c("opponent").alias("_t2_opp"),
@@ -433,7 +428,7 @@ class Derived:
     graph: pl.DataFrame
 
 
-def build_derived(stats_season: str | None = None, roster_season: str = SEASON, rosters=None) -> Derived:
+def build_derived(stats_season: str | None = None, roster_season: str = latest_season(), rosters=None) -> Derived:
     """Compute every derived table for one season of boxscores (+ the whole history for nemesis).
     `rosters` (playerName, teamTricode, position) overrides the roster lookup - used by validate_port.py."""
     stats_season = stats_season or latest_season()

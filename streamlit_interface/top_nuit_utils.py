@@ -6,24 +6,19 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_joueurs_pas_dispo, get_idx_pick
-# from streamlit_interface.resource_manager import conn_db
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo
 from streamlit_interface.JDP_utils import match_player, get_cached_avg_TTFL
-# from data.sql_functions import run_sql_query
-from data.ttfl_data import scan_boxscores
-from misc.misc import SEASON
+from data.ttfl_data import scan_boxscores, latest_season
 
 @st.cache_data(show_spinner=False)
-def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
+def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler, 
+                       show_TTFL, joueurs_pas_dispo, pick):
     import pandas as pd
     import numpy as np
 
-    spoiler = st.session_state.get('top_nuit_spoiler', False)
-    show_TTFL = st.session_state.get('show_TTFL', False)
-
     avg_TTFL = get_cached_avg_TTFL(to_pandas=False)
 
-    df = (scan_boxscores(SEASON)
+    df = (scan_boxscores(latest_season())
          .with_columns(
              gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
              minutes=pl.format(
@@ -133,7 +128,6 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
                 "plusMinusPoints": "Pm"
             }, inplace=True)
     
-    joueurs_pas_dispo = get_joueurs_pas_dispo(date)
     show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
                                 'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'Matchup', 'Win']
     if len(joueurs_pas_dispo) > 0:
@@ -156,7 +150,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick):
     
     html_dfs = {}
     for team, dfteam in dfs.items():
-        idx_pick = get_idx_pick(dfteam, date, 'Joueur')
+        idx_pick = get_idx_from_pick(dfteam, pick, 'Joueur')
 
         html_df = df_to_html(dfteam, show_cols=show_cols, 
                              tooltips={
@@ -192,10 +186,7 @@ def on_text_change_nuit():
         st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
         st.session_state.text_parse_error_nuit = False
         clear_search()
-        update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                        st.session_state.get('matched_players_nuit', ''),
-                        st.session_state.get('byteam', False),
-                        st.session_state.get('show_my_pick', False))
+        update_top_nuit()
         clear_boxscore_vars()
     except ValueError:
         st.session_state.text_parse_error_nuit = True
@@ -204,24 +195,29 @@ def prev_date_nuit():
     st.session_state.selected_date_nuit -= timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
     clear_search()
-    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                    st.session_state.get('matched_players_nuit', ''),
-                    st.session_state.get('byteam', False),
-                    st.session_state.get('show_my_pick', False))
+    update_top_nuit()
     clear_boxscore_vars()
 
 def next_date_nuit():
     st.session_state.selected_date_nuit += timedelta(days=1)
     st.session_state.date_text_nuit = st.session_state.selected_date_nuit.strftime("%d/%m/%Y")
     clear_search()
-    update_top_nuit(st.session_state.selected_date_nuit.strftime("%d/%m/%Y"), 
-                    st.session_state.get('matched_players_nuit', ''),
-                    st.session_state.get('byteam', False),
-                    st.session_state.get('show_my_pick', False))
+    update_top_nuit()
     clear_boxscore_vars()
 
-def update_top_nuit(date, name, byteam, show_my_pick):
-    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam, show_my_pick)
+def update_top_nuit():
+    
+    date = st.session_state.date_text_nuit
+    name = st.session_state.get('matched_players_nuit', '')
+    byteam = st.session_state.get('byteam', False)
+    show_my_pick = st.session_state.get('show_my_pick', False)
+    spoiler = st.session_state.get('top_nuit_spoiler', False)
+    show_TTFL = st.session_state.get('show_TTFL', False)
+    joueurs_pas_dispo = get_joueurs_pas_dispo(st.session_state.date_text_nuit)
+    pick = get_pick(date=st.session_state.date_text_nuit)
+    
+    st.session_state.top_nuit = get_top_de_la_nuit(date, name, byteam, show_my_pick, spoiler, 
+                                                   show_TTFL, joueurs_pas_dispo, pick)
 
 def show_my_pick(pick):
     st.session_state.search_player_nuit = pick

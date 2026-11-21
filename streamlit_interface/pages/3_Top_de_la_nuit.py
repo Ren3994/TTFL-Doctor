@@ -67,10 +67,7 @@ spoiler = cont_right.toggle('Éviter les spoilers', key='top_nuit_spoiler')
 if spoiler:
     cont_right.toggle('Montrer TTFL', key='show_TTFL')
 
-update_top_nuit(st.session_state.date_text_nuit, 
-                st.session_state.get('matched_players_nuit', ''), 
-                st.session_state.get('byteam', False),
-                st.session_state.get('show_my_pick', False))
+update_top_nuit()
 
 if st.session_state.top_nuit is None:
     st.subheader(f"Pas de matchs NBA le {st.session_state.date_text_nuit}")

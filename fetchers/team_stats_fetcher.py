@@ -5,7 +5,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from misc.misc import SEASON, LEAGUE_ID, FULLNAME2TRICODE
+from misc.misc import LEAGUE_ID, FULLNAME2TRICODE
+from data.ttfl_data import latest_season
 
 def get_team_stats(proxy=None):
     from nba_api.stats.endpoints import leaguedashteamstats
@@ -39,7 +40,7 @@ def get_team_stats(proxy=None):
         for attempt in range(5):
             try :
                 table = leaguedashteamstats.LeagueDashTeamStats(
-                    season=SEASON,
+                    season=latest_season(),
                     measure_type_detailed_defense=table_type,
                     per_mode_detailed="PerGame",
                     league_id_nullable=LEAGUE_ID,

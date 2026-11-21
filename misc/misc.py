@@ -5,16 +5,7 @@ SEASON = "2026-27"
 LAST_SEASON = "2025-26"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "..", "data", f"data_{SEASON}.db")
-DB_PATH_LAST_SEASON = os.path.join(BASE_DIR, "..", "data", f"data_{LAST_SEASON}.db")
-DB_PATH_HISTORICAL = os.path.join(BASE_DIR, "..", "data", f"historical_data.db")
-DB_PATH_HISTORICAL_ZST = os.path.join(BASE_DIR, "..", "data", f"historical_data.db.zst")
-CHECKSUM = '0a037ea8b6aa099a5a0be4d7190420193566292bcc2fed1106a90f32e02b23f3'
-HIST_DB_URL = 'https://github.com/Ren3994/TTFL-Doctor/releases/download/data_v1.5/historical_data.db.zst'
-
-CACHE_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "cache")
-BACKUP_DIR_PATH = os.path.join(BASE_DIR, "..", "data", "backups")
-PLOT_GEN_WORKER_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "plotting_worker.py")
+DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
 
 FAILED_LOG_PATH = os.path.join(BASE_DIR, "..", "data", "failed_games.log")
 OG_TEAM_LOGOS_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos")
@@ -23,9 +14,6 @@ TBD_LOGO_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos_150", 'TBD.png'
 
 STREAMLIT_MAIN_PY_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_main.py")
 STREAMLIT_PAGES_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_pages")
-
-MAX_WORKERS = max(1, os.cpu_count() // 2)
-MAX_BKG_WORKERS = max(1, os.cpu_count() // 3)
 
 TRICODE2NAME = {'ATL': 'Hawks', 'BOS': 'Celtics', 'BKN': 'Nets', 'CHA': 'Hornets', 'CHI': 'Bulls', 'CLE': 'Cavaliers', 'DAL': 'Mavericks', 'DEN': 'Nuggets', 'DET': 'Pistons', 'GSW': 'Warriors', 'HOU': 'Rockets', 'IND': 'Pacers', 'LAC': 'Clippers', 'LAL': 'Lakers', 'MEM': 'Grizzlies', 'MIA': 'Heat', 'MIL': 'Bucks', 'MIN': 'Timberwolves', 'NOP': 'Pelicans', 'NYK': 'Knicks', 'OKC': 'Thunder', 'ORL': 'Magic', 'PHI': '76ers', 'PHX': 'Suns', 'POR': 'Trail Blazers', 'SAC': 'Kings', 'SAS': 'Spurs', 'TOR': 'Raptors', 'UTA': 'Jazz', 'WAS': 'Wizards'}
 NAME2TRICODE = {v: k for k, v in TRICODE2NAME.items()}
@@ -182,7 +170,8 @@ NICKNAMES = {'KD' : 'Kevin Durant',
              'KLAW' : 'Kawhi Leonard',
              'CLAW' : 'Kawhi Leonard',
              'DOMAS' : 'Domantas Sabonis',
-             'SHAQ' : 'Shaquille O\'Neal'
+             'SHAQ' : 'Shaquille O\'Neal',
+             'MJ' : 'Michael Jordan'
              }
 
 TEAM_NICKNAMES = {

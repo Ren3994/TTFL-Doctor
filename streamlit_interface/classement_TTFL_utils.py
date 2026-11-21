@@ -7,15 +7,11 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# from streamlit_interface.resource_manager import conn_deepl, deepl_api_limit_reached
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.color_palette import get_palette
-# from update_manager.topTTFL_manager import get_top_TTFL
-# from data.sql_functions import run_sql_query
-from data.ttfl_data import scan_injuries, scan_schedule, scan_table
+from data.ttfl_data import scan_injuries, scan_schedule, scan_table, latest_season
 from data.new_topTTFL_manager import get_top_TTFL as top2
-from misc.misc import SEASON
 
 def accentuate_pct(text: str) -> str:
     palette = get_palette('pct')
@@ -75,7 +71,6 @@ def accentuate_pct(text: str) -> str:
 
     return text
 
-@st.cache_data(show_spinner=False)
 def get_joueurs_pas_dispo(date) :
     import pandas as pd
     
@@ -118,7 +113,7 @@ def get_low_game_count(date, delta=30, min_games=2) :
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     low_game_count = (scan_schedule()
                       .filter([~pl.col('gameId').str.starts_with('003'),
-                               pl.col('season') == SEASON,
+                               pl.col('season') == latest_season(),
                                pl.col('homeTeam').is_not_null(),
                                pl.col('gameDate_ymd').is_between(date_dt, date_dt + timedelta(days=delta))])
                       .group_by('gameDate_ymd')
@@ -161,7 +156,7 @@ def get_deadline(date):
     date_dt = datetime.strptime(date, '%d/%m/%Y').replace(tzinfo=ZoneInfo('Europe/Paris'), hour=12)
 
     b = (scan_table('schedule')
-        .filter(pl.col('season') == SEASON)
+        .filter(pl.col('season') == latest_season())
         .with_columns(
             paris_time=pl.col('gameDateTimeUTC').str.to_datetime(time_zone="UTC")
             .dt.convert_time_zone('Europe/Paris')
@@ -184,16 +179,6 @@ def get_deadline(date):
         deadline = ''
 
     return deadline
-
-# @st.cache_data(show_spinner=False)
-# def translate_df_column(col_to_translate):
-#     deepl_client = conn_deepl()
-#     try:
-#         translated_col_obj = deepl_client.translate_text(col_to_translate, target_lang='FR')
-#         translated_col = [t.text for t in translated_col_obj]
-#     except:
-#         translated_col = [f'Impossible de traduire : {t}' for t in col_to_translate]
-#     return translated_col
 
 def get_pick(date, team=False):
     pick = None
@@ -222,6 +207,16 @@ def get_idx_pick(df, date, colname):
 
     return idx_pick
 
+def get_idx_from_pick(df, pick, colname):
+    idx_pick = None
+    dfcopy = df.copy()
+    dfcopy[colname] = dfcopy[colname].str.split(r' \((?:IST|B2B)\)').str[0]
+    if (pick is not None and pick != '' and 
+        pick in dfcopy[colname].tolist()):
+        idx_pick = dfcopy.index[dfcopy[colname] == pick] + 1
+    
+    return idx_pick
+
 def df_to_html(
     df,
     show_cols=['Joueur', 'Lieu', 'Équipe', 'Adversaire', 'TTFL', 'Statut'],
@@ -235,7 +230,7 @@ def df_to_html(
                           'TTFL' : 'Toutes les équipes contre : scores TTFL relatifs des équipes adverses contre cette équipe' + \
                           '<br>Postes contre : scores TTFL relatifs des joueurs de ce poste contre cette équipe',
                           'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
-                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs ou le joueur a joué avec ce coéquipier blessé)',
+                          'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs où le joueur a joué avec ce coéquipier blessé)',
                           'Statut' : 'Survoler pour voir les détails de la blessure'},
     image_tooltips={'Joueur' : 'plots'},
     show_index=True,
@@ -248,7 +243,6 @@ def df_to_html(
     highlight_index=None,
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
-    # translate_cols = [],
     best_pick_allowed=False
 ):
     """Render a dark-mode HTML table with centered, custom tooltips."""
@@ -356,15 +350,6 @@ def df_to_html(
     }}
     </style>
     """
-
-    # Translate columns
-    # limit_reached, _ = deepl_api_limit_reached()
-    # if len(translate_cols) > 0 and not limit_reached:
-    #     for col in translate_cols:
-    #         empty_string_mask = df[col] == ''
-    #         to_translate = df.loc[~empty_string_mask, col].tolist()
-    #         translated_text = translate_df_column(to_translate)
-    #         df.loc[~empty_string_mask, col] = translated_text
 
     # Get indices of rows with max TTFL value
     if best_pick_allowed and 'TTFL' in df.columns:
@@ -479,28 +464,27 @@ def update_session_state_df(date_ymd):
     clear_classement_vars()
 
 @st.cache_data(show_spinner=False)
-def apply_df_filters(date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, selected_games):
-    joueurs_pas_dispo = get_joueurs_pas_dispo(date)
+def apply_df_filters(df, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, 
+                     selected_games, joueurs_pas_dispo):
     joueurs_blesses = get_joueurs_blesses()
 
-    filtered_topTTFL_df = st.session_state.topTTFL_df.copy()
     if filter_JDP:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_pas_dispo)]
+        df = df[~df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_pas_dispo)]
     if filter_inj:
-        filtered_topTTFL_df = filtered_topTTFL_df[~filtered_topTTFL_df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_blesses)]
+        df = df[~df['Joueur'].str.split(r' \((?:IST|B2B)\)').str[0].isin(joueurs_blesses)]
     
     if len(selected_games) > 0:
-        filtered_topTTFL_df['team'] = filtered_topTTFL_df['Équipe'].str.split(' ').str[0]
+        df['team'] = df['Équipe'].str.split(' ').str[0]
         selected_teams = []
         for matchup in selected_games:
             selected_teams.append(matchup.split('-')[0])
             selected_teams.append(matchup.split('-')[1])
 
-        filtered_topTTFL_df = filtered_topTTFL_df[filtered_topTTFL_df['team'].isin(selected_teams)]
-        filtered_topTTFL_df = filtered_topTTFL_df.drop(columns='team')
+        df = df[df['team'].isin(selected_teams)]
+        df = df.drop(columns='team')
     
-    filtered_topTTFL_df = filtered_topTTFL_df.reset_index(drop=True)
-    return filtered_topTTFL_df
+    df = df.reset_index(drop=True)
+    return df
 
 def clear_classement_vars():
     for key in list(st.session_state.keys()):

@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.clear_cache_functions import clear_after_JDP_update, clear_after_db_update, clear_after_injury_update
 from streamlit_interface.cookies_manager import check_user_cookies_to_login, remember_user, forget_user
 from streamlit_interface.streamlit_utils import requests_form, centered, vspace, custom_CSS
-# from streamlit_interface.resource_manager import deepl_api_limit_reached
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.streamlit_update_manager import update_all_data
 from update_manager.proxy_usage_stats import get_proxy_stats
@@ -45,7 +44,6 @@ def sidebar(page):
             vspace(container=cont)
             cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')} ({st.session_state.last_source})")
 
-        # if not st.session_state.local_instance:
         if st.session_state.get('username', '') == '':
             if st.session_state.get('auth_token', None) is not None:
                 user_found = check_user_cookies_to_login()
@@ -108,13 +106,8 @@ def sidebar(page):
             '</div class="centered-text">',
                 unsafe_allow_html=True)
 
-        # limit_reached, usage = deepl_api_limit_reached()
-        # st.sidebar.write(f'Deepl : {usage} ({limit_reached})')
-
         if st.session_state.local_instance:
 
-            
-            
             vspace(sidebar=True)
 
             cont = centered(sidebar=True)
@@ -130,9 +123,6 @@ def sidebar(page):
                 
             cont = centered(sidebar=True)
             if cont.button("🛑 Quitter"):
-                # cleanup_db()
-                # manage_backups()
-
                 keyboard.press_and_release('ctrl+w')
                 os.kill(os.getpid(), signal.SIGTERM)
 

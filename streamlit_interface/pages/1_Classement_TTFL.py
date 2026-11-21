@@ -5,13 +5,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_error, st_image_crisp, custom_button_css, custom_CSS
-from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES, SEASON, LAST_SEASON
+from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.plotting_utils import generate_all_plots
-# from streamlit_interface.resource_manager import conn_db
 from streamlit_interface.classement_TTFL_utils import *
-# from data.sql_functions import get_games_for_date
 from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
 
@@ -193,17 +191,17 @@ else:
                 selected_games.append(key[11:])
 
     st.session_state.display_df = apply_df_filters(
+                                           st.session_state.topTTFL_df.copy(),
                                            st.session_state.date_text,
                                            st.session_state.plot_calc_start,
                                            st.session_state.plot_calc_stop,
-                                        #    st.session_state.bool_translate,
                                            filter_JDP,
                                            filter_inj,
-                                           selected_games)
+                                           selected_games,
+                                           get_joueurs_pas_dispo(st.session_state.date_text))
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
     display_df_html = df_to_html(st.session_state.display_df, 
-                                #  translate_cols=translate_col, 
                                  highlight_index=idx_pick)
     
     tableholder.markdown(display_df_html, unsafe_allow_html=True)
