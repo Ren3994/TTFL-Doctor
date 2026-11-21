@@ -24,7 +24,11 @@ def update_injury_report():
 
     if df.empty:
         print("injury report: all sources failed, keeping previous data")
-        return scan_injuries().select(['dt_fetch', 'source']).collect().row(0)
+        try:
+            time, source = scan_injuries().select(['dt_fetch', 'source']).collect().row(0)
+            return time, source
+        except FileNotFoundError:
+            return None, "indisponible"
 
     save_injuries(df)
     return df.loc[0, ['dt_fetch', 'source']].values

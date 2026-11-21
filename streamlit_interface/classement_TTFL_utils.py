@@ -193,7 +193,8 @@ def get_pick(date, team=False):
     pick_team = None
     if pick is not None:
         rosters = get_cached_rosters()
-        pick_team = rosters[rosters['playerName'] == pick]['teamTricode'].iloc[0]
+        match = rosters.loc[rosters['playerName'] == pick, 'teamTricode']
+        pick_team = match.iloc[0] if not match.empty else None
     return pick, pick_team
 
 def get_idx_pick(df, date, colname):

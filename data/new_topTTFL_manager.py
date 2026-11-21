@@ -23,6 +23,7 @@ longer truncated to 24; a value that rounds to zero from below shows '+0.0%' ins
 """
 from __future__ import annotations
 
+from html import escape as _esc
 import math
 
 HOT3, HOT1, COLD3, COLD1 = " 🔥🔥🔥", " 🔥", " ❄️❄️❄️", " ❄️"
@@ -146,7 +147,7 @@ def _injury_block(title_team: str, lines: list[str]) -> str:
 
 def _team_injuries(r: dict) -> str:
     """Injured teammates, highest TTFL first. Injured players with no TTFL this season are not listed."""
-    items = [(n, s, t, rel, k) for n, s, t, rel, k in _lists(
+    items = [(_esc(n), _esc(s), t, rel, k) for n, s, t, rel, k in _lists(
         r, "injured_teammates", "simp_statuses", "inj_teammates_TTFLs",
         "rel_TTFL_inj_teammate_abs", "inj_teammates_abs_count") if t is not None]
     items.sort(key=lambda i: (-i[2], i[0]))
@@ -161,6 +162,7 @@ def _opp_injuries(rows: list[dict], positions: list[str]) -> str:
     for r in rows:
         for n, s, t, rel in _lists(r, "inj_opponents", "inj_opponents_simp_statuses", "inj_opponents_TTFLs",
                                    "pos_rel_TTFL_when_inj_opp"):
+            n, s = _esc(n), _esc(s)
             if t is not None:
                 opp.setdefault(n, [s, t, {}])[2][r["pos"]] = rel
     lines = [f"- {n} ({s}) - TTFL : {f1(t)} : " + " - ".join(f"{p} : {pct(rels[p])}" for p in positions if p in rels)
@@ -182,7 +184,7 @@ def _nemesis(r: dict) -> tuple[str, str]:
 
 def _player_row(rows: list[dict], last_avgs: dict, last_label: str) -> dict:
     r = rows[0]                                             # everything except position-specific data is shared
-    name, team, opp = r["playerName"], r["team"], r["opponent"]
+    name, team, opp = _esc(r["playerName"]), _esc(r["team"]), _esc(r["opponent"])
     home = r["isHome"] == 1
     positions = sorted({x["pos"] for x in rows})
     pos_rel = {x["pos"]: x["pos_rel_TTFL_v_team"] for x in rows}

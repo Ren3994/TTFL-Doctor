@@ -157,7 +157,9 @@ def with_legacy_columns(lf: pl.LazyFrame) -> pl.LazyFrame:
 # --------------------------------------------------------------------------------------
 def scan_table(name: str) -> pl.LazyFrame:
     path = DATA_DIR / f"{name}.parquet"
-    return pl.scan_parquet(str(path)) if path.exists() else pl.LazyFrame()
+    if not path.exists():
+        raise FileNotFoundError(f'File {path.name} does not exist')
+    return pl.scan_parquet(str(path))
 
 
 def save_table(name: str, df) -> None:

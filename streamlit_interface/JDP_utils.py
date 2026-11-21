@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import streamlit as st
+from tqdm import tqdm
 import polars as pl
 import sys
 import os
@@ -105,10 +106,15 @@ def get_cached_rosters():
 
 class JoueursDejaPick():
     def __init__(self):
-        # self.conn = conn_db()
-        self.supabase = conn_supabase()
+        self.supabase = None
         self.existing_users = []
-        self._init_db()
+        self.available = False
+        try:
+            self.supabase = conn_supabase()
+            self._init_db()
+            self.available = True
+        except Exception as e:
+            tqdm.write(f"Supabase indisponible ({e})")
             
     def _init_db(self):
         self.existing_users = fetch_supabase_users(self.supabase)
@@ -172,22 +178,21 @@ class JoueursDejaPick():
         df_db = df_db[['joueur', 'datePick']]
         df_db = df_db[df_db['joueur'] != '']
         
-        if save:
+        if save and self.available and st.session_state.get('username', '') != '':
             picks = dict(zip(df_db['datePick'], df_db['joueur']))
-            if st.session_state.get('username', '') != '':
-                username_clean = re.sub(r'\W+', '', st.session_state.username)
-                if username_clean in self.existing_users:
-                    update = (self.supabase.table("ttfl_doctor_user_picks")
-                                            .update({"picks" : picks})
-                                            .eq("username", username_clean)
-                                            .execute())
-                else:
-                    insert = (self.supabase.table("ttfl_doctor_user_picks")
-                                            .insert({"username" : username_clean, 
-                                                    "picks" : picks})
-                                            .execute())
-                    fetch_supabase_users.clear()
-                    self.existing_users = fetch_supabase_users(self.supabase)
+            username_clean = re.sub(r'\W+', '', st.session_state.username)
+            if username_clean in self.existing_users:
+                update = (self.supabase.table("ttfl_doctor_user_picks")
+                                        .update({"picks" : picks})
+                                        .eq("username", username_clean)
+                                        .execute())
+            else:
+                insert = (self.supabase.table("ttfl_doctor_user_picks")
+                                        .insert({"username" : username_clean, 
+                                                "picks" : picks})
+                                        .execute())
+                fetch_supabase_users.clear()
+                self.existing_users = fetch_supabase_users(self.supabase)
 
         df = self.display_cols(df)
         return df

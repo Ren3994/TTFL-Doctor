@@ -12,6 +12,10 @@ def _create_supabase_client():
     from supabase import create_client
     url = st.secrets.get("SUPABASE_URL", "unknown")
     key = st.secrets.get("SUPABASE_KEY", "unknown")
+    if not url or not str(url).startswith("http"):
+        raise RuntimeError(
+            "SUPABASE_URL / SUPABASE_KEY manquants dans les secrets. "
+            "Ajoutez-les pour activer la sauvegarde des picks (cf. README).")
     return create_client(url, key)
 
 class SafeSupabase:
@@ -50,4 +54,4 @@ def conn_supabase():
 def fetch_supabase_users(_supabase):
     import pandas as pd
     data = _supabase.table("ttfl_doctor_user_picks").select("username").execute().data
-    return pd.DataFrame(data)['username'].tolist()
+    return [row["username"] for row in (data or [])]

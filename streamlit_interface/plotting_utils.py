@@ -72,10 +72,13 @@ def cached_generate_plot_row(requested_date,
         alldates.append(requested_date)
         njours = (alldates[-1] - alldates[0]).days
         opps = graph_opps.split(',')
-        avgTTFL = float(avgTTFL[:4])
         TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
         wins = [int(float(win)) for win in graph_wins.split(',')]
         ishome = [int(float(home)) for home in graph_ishome.split(',')]
+        if isinstance(avgTTFL, str):
+            avgTTFL = None
+        else:
+            avgTTFL = float(avgTTFL[:4])
 
         linew = 1.5
         alpha = 0.7
@@ -85,8 +88,10 @@ def cached_generate_plot_row(requested_date,
         # bkg_color = fig.get_facecolor()
 
         ax.plot(dates, TTFLs, linestyle='--', linewidth=linew, alpha=alpha, color='grey')
-        ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=0.4)
         ax.vlines(requested_date, ymin, ymax, ls='--', color='grey', alpha=alpha)
+
+        if avgTTFL is not None:
+            ax.hlines(avgTTFL, alldates[0], alldates[-1], linestyle = '--', color = 'r', linewidth=linew, alpha=0.4)
 
         # ypos_list = []
         # colors_list = []

@@ -1,6 +1,5 @@
 from datetime import datetime
 import streamlit as st
-import keyboard
 import signal
 import sys
 import os
@@ -42,7 +41,11 @@ def sidebar(page):
         if "last_update" in st.session_state:
             cont = st.sidebar.container(horizontal=True, horizontal_alignment='center')
             vspace(container=cont)
-            cont.write(f"MàJ blessures : {datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')} ({st.session_state.last_source})")
+            if st.session_state.last_update is not None:
+                updated = datetime.strftime(st.session_state.last_update, '%d %b. à %Hh%M')
+            else:
+                updated = '???'
+            cont.write(f"MàJ blessures : {updated} ({st.session_state.last_source})")
 
         if st.session_state.get('username', '') == '':
             if st.session_state.get('auth_token', None) is not None:
@@ -123,9 +126,9 @@ def sidebar(page):
                 
             cont = centered(sidebar=True)
             if cont.button("🛑 Quitter"):
+                import keyboard
                 keyboard.press_and_release('ctrl+w')
                 os.kill(os.getpid(), signal.SIGTERM)
-
             
     else:
         st.sidebar.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)

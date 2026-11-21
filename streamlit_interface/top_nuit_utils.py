@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import streamlit as st
 import polars as pl
 import sys
@@ -51,7 +52,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
          )
         
     if df.empty:
-        current_date = datetime.today()
+        current_date = datetime.now(ZoneInfo("Europe/Paris"))
         if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
             return 'hier'
         return None

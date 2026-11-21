@@ -61,8 +61,12 @@ def get_team_stats(proxy=None):
         table['TEAM_NAME'] = table['TEAM_NAME'].replace(FULLNAME2TRICODE)
         table.rename(columns=rep_cols, inplace=True)
         tables[i] = table
+
+    if tables[0] is None or tables[1] is None:
+        tqdm.write('Stats des équipes : une des deux tables a échoué, on garde les anciennes')
+        return None
     
-    full_stats = tables[0].merge(tables[1], left_on=['teamTricode'], right_on=['teamTricode'])
+    full_stats = tables[0].merge(tables[1], on=['teamTricode'])
     return full_stats
 
 if __name__ == '__main__':
