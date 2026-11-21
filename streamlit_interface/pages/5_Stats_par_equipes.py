@@ -52,7 +52,7 @@ for i in range(0, len(team_list), items_per_row):
                 st.session_state[f"team_stats_button_{team}"], 
                 min_width=60)):
                 st.button(f'![icon](data:image/png;base64,{logo}) {team}', 
-                                          key=f'button_nuit_{team}', 
+                                          key=f'button_team_stats_{team}', 
                                           width=60,
                                           on_click=lambda k=team: st.session_state.update(
                                                    {f"team_stats_button_{k}": 

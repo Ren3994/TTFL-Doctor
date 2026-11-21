@@ -74,7 +74,7 @@ def update_nba_data(proxy=None, update_attempt=1, max_update_attempts=3, init_da
     if not final_missing_gameIds_df.is_empty() and update_attempt < max_update_attempts:
         tqdm.write(f'Retry {update_attempt + 1}/{max_update_attempts} for {len(final_missing_gameIds_df)} missing games...')
         time.sleep(10)
-        update_nba_data(update_attempt=update_attempt + 1, init_database=False, proxy=proxy)
+        update_nba_data(update_attempt=update_attempt + 1, init_database=False, progress=progress, status=status, proxy=proxy)
         return new_games_found
         
     elif not final_missing_gameIds_df.is_empty():
