@@ -11,6 +11,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from update_manager.boxscores_manager import normalize_name
 from data.ttfl_data import scan_rosters, latest_season
 
 def clean_name(name: str) -> str:
@@ -81,6 +82,7 @@ def get_nbacom_injury_report():
                                     " ".join(text[pi+2:])).lstrip('- ').strip()
                     
                     name = f"{first.strip()} {last.strip()}"
+                    name = normalize_name(name)
                     if name not in rosters:
                         name = clean_name(name)
                         if name not in rosters:

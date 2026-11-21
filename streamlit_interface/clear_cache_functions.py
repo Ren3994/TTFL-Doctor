@@ -4,10 +4,10 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from streamlit_interface.JDP_utils import get_cached_rosters, get_cached_game_dates_completed, get_cached_scoresTTFL, get_cached_avg_TTFL, get_cached_player_list
+from streamlit_interface.JDP_utils import get_cached_rosters, get_cached_game_dates_completed, get_cached_scoresTTFL, get_cached_avg_TTFL, get_cached_player_list, get_cached_all_game_dates, get_cached_alltime_player_list
 from streamlit_interface.classement_TTFL_utils import get_low_game_count, get_deadline, get_joueurs_blesses, cached_get_top_TTFL, apply_df_filters, update_session_state_df
 from streamlit_interface.player_stats_utils import cached_player_stats, cached_player_v_team, cached_historique_des_perfs, cached_player_stats_by_season, cached_maximums
-from streamlit_interface.team_stats_utils import cached_query_team_stats, get_cached_opp_team_stats
+from streamlit_interface.team_stats_utils import cached_query_team_stats, get_cached_opp_team_stats, standings_progress_plot
 from streamlit_interface.plotting_utils import cached_generate_plot_row
 from streamlit_interface.top_nuit_utils import get_top_de_la_nuit
 
@@ -31,6 +31,9 @@ def clear_after_db_update():
     from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
     need_to_fetch_new_boxscores.clear()
     cached_maximums.clear()
+    get_cached_all_game_dates.clear()
+    get_cached_alltime_player_list()
+    standings_progress_plot()
 
 def clear_after_injury_update():
     get_joueurs_blesses.clear()

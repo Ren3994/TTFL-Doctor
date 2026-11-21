@@ -5,6 +5,7 @@ __pycache__/
 db_visualizer.py
 historical_data_getter.py
 bdl_hist_boxscores.py
+diagnosis.py
 
 data/team_logos/
 data/cache
@@ -14,11 +15,12 @@ data/sounds
 *.db-wal
 *.db.zst
 *.csv
-!data/data_2026-27.db
+*.lock
 
 player_clustering/
 
 test.py
+test2.py
 
 *.env
 *.venv/

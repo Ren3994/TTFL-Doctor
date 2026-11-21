@@ -79,8 +79,8 @@ def get_cached_opp_team_stats():
     df = query_opp_team_avgs()
     return df
 
+@st.cache_data(show_spinner=False)
 def standings_progress_plot():
-    import pandas as pd
     import polars as pl
     df = (scan_boxscores(latest_season())
          .group_by(['teamTricode', 'gameDate_ymd'])
@@ -102,6 +102,7 @@ def clear_team_stats_vars():
 
     st.session_state.team_stats_color_cells = False
 
+@st.cache_data(show_spinner=False)
 def get_teams_from_conf(df, conf, name):
     if conf != 'Global':
         df = df[df['teamTricode'].isin(CONFERENCES[conf.split(' ')[1]])]

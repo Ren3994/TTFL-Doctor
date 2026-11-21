@@ -44,7 +44,8 @@ def init_session_state(page, arg=None):
 
     if page == 'classement':
         st.session_state.selected_date = st.session_state.get("selected_date", 
-                                                              datetime.now(ZoneInfo("America/Los_Angeles")))
+                                                              datetime.now(ZoneInfo("America/Los_Angeles"))
+                                                              + timedelta(hours=2))
 
         st.session_state.date_text = st.session_state.get("date_text",
             st.session_state.selected_date.strftime("%d/%m/%Y"))

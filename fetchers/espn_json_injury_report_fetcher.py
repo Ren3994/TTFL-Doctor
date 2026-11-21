@@ -1,10 +1,12 @@
-import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
+from tqdm import tqdm
 import pandas as pd
 import requests
-from tqdm import tqdm
+import time
+
+from update_manager.boxscores_manager import normalize_name
+
 
 URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
 COLS = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch', 'source']
@@ -71,7 +73,10 @@ def _parse_injuries(data, dt_fetch):
                 "dt_fetch": dt_fetch,
                 "source": 'ESPN'
             })
-    return pd.DataFrame(rows, columns=COLS)
+
+    df = pd.DataFrame(rows, columns=COLS)
+    df['player_name'] = df['player_name'].apply(normalize_name)
+    return df
 
 
 def get_espn_injury_report_from_json():

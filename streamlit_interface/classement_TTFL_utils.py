@@ -402,7 +402,7 @@ def df_to_html(
                 img_src = getattr(row, img_col)
                 html += (
                     f'<td><div class="tooltip">{cell_value}'
-                    f'<span class="tooltiptext"><img src="{img_src}"></span>'
+                    f'<span class="tooltiptext"><img src="{img_src}" loading="lazy" decoding="async"></span>'
                     "</div></td>"
                 )
 
