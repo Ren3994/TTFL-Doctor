@@ -75,10 +75,10 @@ def cached_generate_plot_row(requested_date,
         TTFLs = [int(stat) for stat in graph_TTFLs.split(',')]
         wins = [int(float(win)) for win in graph_wins.split(',')]
         ishome = [int(float(home)) for home in graph_ishome.split(',')]
-        if isinstance(avgTTFL, str):
-            avgTTFL = None
-        else:
+        try:
             avgTTFL = float(avgTTFL[:4])
+        except:
+            avgTTFL = None
 
         linew = 1.5
         alpha = 0.7
