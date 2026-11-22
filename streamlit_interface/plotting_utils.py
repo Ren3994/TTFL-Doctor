@@ -144,7 +144,7 @@ def cached_generate_plot_row(requested_date,
     # plt.show()
     # fig.tight_layout()
     buf = BytesIO()
-    fig.savefig(buf, format="jpg", dpi=90, pil_kwargs={"quality": 60, "optimize": True})
+    fig.savefig(buf, format="jpg", dpi=120, pil_kwargs={"quality": 60, "optimize": True})
     plt.close(fig)
     img_base64 = base64.b64encode(buf.getvalue()).decode()
 
