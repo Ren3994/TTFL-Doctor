@@ -1,4 +1,7 @@
 from supabase import create_client
+from datetime import datetime
+from zoneinfo import ZoneInfo
+import pandas as pd
 import polars as pl
 import requests
 import sys
@@ -18,9 +21,6 @@ def get_client():
     return create_client(url, key)
 
 def get_user_pick_today(username='admin'):
-    import pandas as pd
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
 
     ajd = datetime.now(ZoneInfo("Europe/Paris"))
     ajd_str = ajd.strftime('%d/%m/%Y')
