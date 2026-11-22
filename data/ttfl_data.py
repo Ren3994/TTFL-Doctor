@@ -23,12 +23,12 @@ Requires polars >= 1.0.
 """
 from __future__ import annotations
 
-import datetime as dt
-import os
-import sys
 from pathlib import Path
-
+import datetime as dt
 import polars as pl
+import uuid
+import sys
+import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from misc.misc import BASE_DIR
@@ -122,7 +122,7 @@ def save_boxscores(df) -> None:
         if path.exists():
             new = pl.concat([pl.read_parquet(path), new]).unique(
                 subset=["gameId", "playerName"], keep="last", maintain_order=True)  # was: remove_duplicates
-        new.sort(["gameDate_ymd", "gameId"]).write_parquet(path, compression="zstd")
+        atomic_write_parquet(new.sort(["gameDate_ymd", "gameId"]), path, compression="zstd")
 
 
 def scan_boxscores(seasons=None) -> pl.LazyFrame:
@@ -162,9 +162,38 @@ def scan_table(name: str) -> pl.LazyFrame:
     return pl.scan_parquet(str(path))
 
 
+def atomic_write_parquet(df: pl.DataFrame, path, **write_kwargs) -> Path:
+    """Write a parquet file atomically: the data goes to a sibling temp file, is
+    flushed to disk, then replaces the target in one os.replace() call.
+
+    A crash (or a Streamlit rerun killing the script) in the middle of a write can
+    no longer leave a truncated/corrupt parquet behind: every reader sees either
+    the complete old file or the complete new one. os.replace is atomic within a
+    filesystem on POSIX and Windows alike. The temp file is cleaned up on failure;
+    on Windows a target held open by another process makes replace raise, and the
+    previous good file survives.
+
+    Used by save_table / save_boxscores - i.e. every parquet the app ever writes.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex[:8]}")
+    try:
+        df.write_parquet(str(tmp), **write_kwargs)
+        try:
+            with open(tmp, "rb+") as f:          # best-effort flush of OS buffers,
+                os.fsync(f.fileno())             # so the rename can't publish a truncated file
+        except OSError:
+            pass                                 # not every filesystem supports fsync
+        os.replace(tmp, path)
+        return path
+    finally:
+        tmp.unlink(missing_ok=True)              # no-op once replace() moved the file
+
+
 def save_table(name: str, df) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    to_pl(df).write_parquet(DATA_DIR / f"{name}.parquet", compression="zstd")
+    atomic_write_parquet(to_pl(df), DATA_DIR / f"{name}.parquet", compression="zstd")
 
 
 def _replace_seasons(name: str, new: pl.DataFrame, schema: dict) -> None:
