@@ -22,26 +22,18 @@ def letter_vlines(ax, letter, x, ymin, ymax, **kwargs):
     ax.text(x, (ymin + ymax) / 2, "\n".join([letter] * 10),
             ha='center', va='center', multialignment='center', **kwargs)
 
-def generate_all_plots(row_nographs, date):
-    row = row_nographs.copy()
-    joueur = row['Joueur']
-    graph_dates = row['graph_dates']
-    graph_opps = row['graph_opps']
-    graph_TTFLs = row['graph_TTFLs']
-    graph_wins = row['graph_wins']
-    graph_ishome = row['graph_ishome']
-    avgTTFL = row['TTFL']
-    row['plots'] = cached_generate_plot_row(date, 
-                                            joueur, 
-                                            graph_dates, 
-                                            graph_opps, 
-                                            graph_TTFLs, 
-                                            graph_wins, 
-                                            graph_ishome,
-                                            avgTTFL)
-    return row
+def plot_for_row(row, date):
+    return cached_generate_plot_row(date,
+                                    row['Joueur'],
+                                    row['graph_dates'],
+                                    row['graph_opps'],
+                                    row['graph_TTFLs'],
+                                    row['graph_wins'],
+                                    row['graph_ishome'],
+                                    row['TTFL'])
+
     
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, persist="disk", max_entries=2000)
 def cached_generate_plot_row(requested_date,
                              joueur, 
                              graph_dates, 

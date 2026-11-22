@@ -8,7 +8,7 @@ from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, cus
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.plotting_utils import generate_all_plots
+from streamlit_interface.plotting_utils import plot_for_row
 from streamlit_interface.classement_TTFL_utils import *
 from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
@@ -171,18 +171,22 @@ else:
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             start = st.session_state.plot_calc_start
-            # stop = min(len(st.session_state.topTTFL_df) - 1, st.session_state.plot_calc_stop)
             stop = min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop)
             
+            new_plots = []
             for i in range(start, stop):
-                st.session_state.topTTFL_df.iloc[i] = generate_all_plots(
-                                                        st.session_state.topTTFL_df.iloc[i],
-                                                        st.session_state.date_text)
-                
+                new_plots.append(plot_for_row(
+                    st.session_state.topTTFL_df.iloc[i],
+                    st.session_state.date_text))
+
                 if (st.session_state.date_text not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):
                     statusholder.progress(min(0.999, 
-                        (i+1)/(st.session_state.plot_calc_stop - st.session_state.plot_calc_start)))
+                        (i + 1 - start)/(max(1, stop-start))))
+                    
+            if new_plots:
+                plots_col = st.session_state.topTTFL_df.columns.get_loc('plots')
+                st.session_state.topTTFL_df.iloc[start:stop, plots_col] = new_plots
 
     selected_games = []
     for key in list(st.session_state.keys()):
