@@ -80,4 +80,5 @@ def send_update():
 if __name__ == '__main__':
     # send_update()
     # print('hi')
-    get_user_pick_today()
+    # get_user_pick_today()
+    get_client()
