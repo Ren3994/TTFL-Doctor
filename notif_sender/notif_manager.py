@@ -9,8 +9,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from update_manager.injury_report_manager import update_injury_report
-from data.ttfl_data import scan_injuries
+# from update_manager.injury_report_manager import update_injury_report
+# from data.ttfl_data import scan_injuries
 
 def get_client():
     url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
