@@ -9,8 +9,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# from update_manager.injury_report_manager import update_injury_report
-# from data.ttfl_data import scan_injuries
+from update_manager.injury_report_manager import update_injury_report
+from data.ttfl_data import scan_injuries
 
 def get_client():
     url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
@@ -58,7 +58,7 @@ def check_pick_injured(pick, msg_if_ok=False):
     return inj.item()
 
 def send_update():
-    # update_injury_report()
+    update_injury_report()
     pick = get_user_pick_today()
     response = check_pick_injured(pick, msg_if_ok=True)
 
@@ -78,7 +78,7 @@ def send_update():
     r.raise_for_status()
 
 if __name__ == '__main__':
-    # send_update()
+    send_update()
     # print('hi')
     # get_user_pick_today()
-    get_client()
+    # get_client()
