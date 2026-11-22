@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
-# from data.ttfl_data import scan_injuries
+from data.ttfl_data import scan_injuries
 
 def get_client():
     url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
@@ -78,7 +78,7 @@ def send_update():
     r.raise_for_status()
 
 if __name__ == '__main__':
-    # send_update()
+    send_update()
     # print('hi')
     # get_user_pick_today()
-    get_client()
+    # get_client()
