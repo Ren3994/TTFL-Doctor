@@ -5,7 +5,7 @@
             "name": "Run Streamlit App",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/run_streamlit.py",
+            "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",

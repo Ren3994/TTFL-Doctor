@@ -1,4 +1,4 @@
-import streamlit as st
+from supabase import create_client
 import polars as pl
 import requests
 import sys
@@ -6,9 +6,16 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.streamlit_update_manager import cached_update_injury_report
-from streamlit_interface.resource_manager import conn_supabase
+from update_manager.injury_report_manager import update_injury_report
 from data.ttfl_data import scan_injuries
+
+def get_client():
+    url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
+
+    if url is None or key is None:
+        raise ValueError('Could not load .env file')
+    
+    return create_client(url, key)
 
 def get_user_pick_today(username='admin'):
     import pandas as pd
@@ -18,7 +25,7 @@ def get_user_pick_today(username='admin'):
     ajd = datetime.now(ZoneInfo("Europe/Paris"))
     ajd_str = ajd.strftime('%d/%m/%Y')
 
-    conn = conn_supabase()
+    conn = get_client()
     admin_picks = pd.DataFrame(list((conn.table('ttfl_doctor_user_picks').select("picks")
                                             .eq("username", username)
                                             .execute()).data[0]['picks'].items()), columns=['datePick', 'joueur'])
@@ -51,22 +58,29 @@ def check_pick_injured(pick, msg_if_ok=False):
     return inj.item()
 
 def send_update():
-    cached_update_injury_report()
+    update_injury_report()
     pick = get_user_pick_today()
     response = check_pick_injured(pick, msg_if_ok=True)
 
     if response is None:
         return
+    
+    TOKEN, CHAT_ID = os.environ.get('TELEGRAM_TOKEN', None), os.environ.get('TELEGRAM_CHAT_ID', None)
 
-    TOKEN = st.secrets.get('TELEGRAM_TOKEN')
-    CHAT_ID = st.secrets.get('TELEGRAM_CHAT_ID')
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={CHAT_ID}&text={response}"
+    if TOKEN is None or CHAT_ID is None:
+        raise ValueError('Could not load values')
 
-    requests.get(url).json()
+    r = requests.post(
+        f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+        json={"chat_id": CHAT_ID, "text": response},
+        timeout=10,
+    )
+    r.raise_for_status()
 
 if __name__ == '__main__':
+    # print(os.getenv('SUPABASE_KEY'))
     # pick = get_user_pick_today()
     # pick = 'Giannis Antetokounmpo'
     # print(check_pick_injured(pick))
-
+    # print(pick)
     send_update()
