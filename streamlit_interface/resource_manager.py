@@ -1,5 +1,4 @@
 import streamlit as st
-import sqlite3
 import httpx
 import time
 import sys
@@ -52,6 +51,5 @@ def conn_supabase():
     
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_supabase_users(_supabase):
-    import pandas as pd
     data = _supabase.table("ttfl_doctor_user_picks").select("username").execute().data
     return [row["username"] for row in (data or [])]

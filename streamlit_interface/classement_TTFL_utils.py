@@ -464,7 +464,6 @@ def update_session_state_df(date_ymd):
     st.session_state.text_parse_error = False
     clear_classement_vars()
 
-@st.cache_data(show_spinner=False)
 def apply_df_filters(df, date, plot_calc_start, plot_calc_stop, filter_JDP, filter_inj, 
                      selected_games, joueurs_pas_dispo):
     joueurs_blesses = get_joueurs_blesses()

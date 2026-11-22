@@ -61,7 +61,7 @@ else:
 filter_inj = cont_checkboxes.checkbox("Masquer les joueurs blessés", value=False)
 
 if cont_left.button('Générer plus de graphes'):
-    st.session_state.plot_calc_start += st.session_state.plot_calc_incr
+    st.session_state.plot_calc_start  = st.session_state.plot_calc_stop
     st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
 
 cont_date_obj.button("◀️", on_click=prev_date)
@@ -153,11 +153,10 @@ else:
     temp_table = st.empty()
     
     if ('plots' not in st.session_state.topTTFL_df or
-        st.session_state.plot_calc_start != 0 or
-        (st.session_state.topTTFL_df.loc[
+        st.session_state.topTTFL_df.loc[
             st.session_state.plot_calc_start:
             st.session_state.plot_calc_stop - 1,
-            'plots'] == IMG_CHARGEMENT).any()
+            'plots'].isin([IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES]).any()
         ):
         with st.spinner('Génération des graphes...'):        
             if st.session_state.plot_calc_start == 0:
@@ -167,7 +166,7 @@ else:
                 st.session_state.plot_calc_start:
                 st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
 
-            topTTFL_html = df_to_html(st.session_state.topTTFL_df)#, translate_cols=translate_col)
+            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
             temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
 
             start = st.session_state.plot_calc_start
@@ -175,9 +174,12 @@ else:
             
             new_plots = []
             for i in range(start, stop):
-                new_plots.append(plot_for_row(
-                    st.session_state.topTTFL_df.iloc[i],
-                    st.session_state.date_text))
+                try:
+                    new_plots.append(plot_for_row(
+                        st.session_state.topTTFL_df.iloc[i],
+                        st.session_state.date_text))
+                except:
+                    new_plots.append(IMG_PLUS_DE_GRAPHES)
 
                 if (st.session_state.date_text not in st.session_state.calculated or
                     st.session_state.plot_calc_start != 0):

@@ -32,17 +32,15 @@ def clear_after_db_update():
     need_to_fetch_new_boxscores.clear()
     cached_maximums.clear()
     get_cached_all_game_dates.clear()
-    get_cached_alltime_player_list()
-    standings_progress_plot()
+    get_cached_alltime_player_list.clear()
+    standings_progress_plot.clear()
 
 def clear_after_injury_update():
     get_joueurs_blesses.clear()
     cached_get_top_TTFL.clear()
-    apply_df_filters.clear()
     if st.session_state.get('date_text_ymd'):
         update_session_state_df(st.session_state.date_text_ymd)
 
 def clear_after_JDP_update():
-    apply_df_filters.clear()
     get_top_de_la_nuit.clear()
     cached_get_top_TTFL.clear()
