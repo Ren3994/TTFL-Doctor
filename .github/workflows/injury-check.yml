@@ -1,9 +1,9 @@
 name: Injury check
 
 on:
-  # schedule:
-  #    cron: '11,46 17-23 * * *'
-  #    timezone: 'Europe/Paris'
+  schedule:
+     cron: '11 17-23 * * *'
+     timezone: 'Europe/Paris'
   workflow_dispatch:
 
 jobs:
