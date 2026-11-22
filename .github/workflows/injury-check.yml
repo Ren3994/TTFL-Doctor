@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt
+      - run: pip install -r notif_sender/requirements.txt
       - run: python notif_sender/notif_manager.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
