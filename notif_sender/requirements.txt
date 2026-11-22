@@ -1,3 +1,4 @@
+polars==2.1.0
 pandas==2.3.3
 requests==2.32.5
 curl_cffi==0.17.0
