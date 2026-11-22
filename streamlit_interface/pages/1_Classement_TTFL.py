@@ -1,3 +1,4 @@
+import streamlit.components.v1 as components
 import streamlit as st
 import sys
 import os
@@ -12,7 +13,7 @@ from streamlit_interface.plotting_utils import plot_for_row#, svg_spark
 from streamlit_interface.classement_TTFL_utils import *
 from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
-# from test_svg_plots import df_to_html2
+from test_svg_plots import df_to_html2
 
 # ---------- Initialize session state ----------
 PAGENAME = 'classement'
@@ -62,9 +63,9 @@ else:
 
 filter_inj = cont_checkboxes.checkbox("Masquer les joueurs blessés", value=False)
 
-if cont_left.button('Générer plus de graphes'):
-    st.session_state.plot_calc_start  = st.session_state.plot_calc_stop
-    st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
+# if cont_left.button('Générer plus de graphes'):
+#     st.session_state.plot_calc_start  = st.session_state.plot_calc_stop
+#     st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
 
 cont_date_obj.button("◀️", on_click=prev_date)
 
@@ -150,55 +151,9 @@ if st.session_state.topTTFL_df.empty:
                      " n'ont pas encore été déterminées")
 
 else:
-    # tableholder = st.empty()
-    # topTTFL_df = st.session_state.topTTFL_df.copy()
-    # st.session_state.topTTFL_df = topTTFL_df
-    # html_df = df_to_html2(st.session_state.topTTFL_df, requested_date=st.session_state.date_text)
-    # import streamlit.components.v1 as components
-    # with tableholder:
-    #     components.html(html_df, height=10000, scrolling=True)
-
-    statusholder = st.empty()
     tableholder = st.empty()
-    temp_table = st.empty()
-    
-    if ('plots' not in st.session_state.topTTFL_df or
-        st.session_state.topTTFL_df.loc[
-            st.session_state.plot_calc_start:
-            st.session_state.plot_calc_stop - 1,
-            'plots'].isin([IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES]).any()
-        ):
-        with st.spinner('Génération des graphes...'):        
-            if st.session_state.plot_calc_start == 0:
-                st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
-                        
-            st.session_state.topTTFL_df.loc[
-                st.session_state.plot_calc_start:
-                st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
-
-            topTTFL_html = df_to_html(st.session_state.topTTFL_df)
-            temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
-
-            start = st.session_state.plot_calc_start
-            stop = min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop)
-            
-            new_plots = []
-            for i in range(start, stop):
-                try:
-                    new_plots.append(plot_for_row(
-                        st.session_state.topTTFL_df.iloc[i],
-                        st.session_state.date_text))
-                except:
-                    new_plots.append(IMG_PLUS_DE_GRAPHES)
-
-                if (st.session_state.date_text not in st.session_state.calculated or
-                    st.session_state.plot_calc_start != 0):
-                    statusholder.progress(min(0.999, 
-                        (i + 1 - start)/(max(1, stop-start))))
-                    
-            if new_plots:
-                plots_col = st.session_state.topTTFL_df.columns.get_loc('plots')
-                st.session_state.topTTFL_df.iloc[start:stop, plots_col] = new_plots
+    topTTFL_df = st.session_state.topTTFL_df.copy()
+    st.session_state.topTTFL_df = topTTFL_df
 
     selected_games = []
     for key in list(st.session_state.keys()):
@@ -217,13 +172,78 @@ else:
                                            get_joueurs_pas_dispo(st.session_state.date_text))
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
-    display_df_html = df_to_html(st.session_state.display_df, 
+    display_df_html = df_to_html2(st.session_state.display_df, 
                                  highlight_index=idx_pick)
     
-    tableholder.markdown(display_df_html, unsafe_allow_html=True)
-    st.session_state.calculated.add(st.session_state.date_text)
+    # html_df = df_to_html2(st.session_state.topTTFL_df, requested_date=st.session_state.date_text)
+    components.html(display_df_html, height=10000, scrolling=True)
 
-    temp_table.empty()
-    statusholder.empty()
+    # statusholder = st.empty()
+    # tableholder = st.empty()
+    # temp_table = st.empty()
+    
+    # if ('plots' not in st.session_state.topTTFL_df or
+    #     st.session_state.topTTFL_df.loc[
+    #         st.session_state.plot_calc_start:
+    #         st.session_state.plot_calc_stop - 1,
+    #         'plots'].isin([IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES]).any()
+    #     ):
+    #     with st.spinner('Génération des graphes...'):        
+    #         if st.session_state.plot_calc_start == 0:
+    #             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
+                        
+    #         st.session_state.topTTFL_df.loc[
+    #             st.session_state.plot_calc_start:
+    #             st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
+
+    #         topTTFL_html = df_to_html(st.session_state.topTTFL_df)
+    #         temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
+
+    #         start = st.session_state.plot_calc_start
+    #         stop = min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop)
+            
+    #         new_plots = []
+    #         for i in range(start, stop):
+    #             try:
+    #                 new_plots.append(plot_for_row(
+    #                     st.session_state.topTTFL_df.iloc[i],
+    #                     st.session_state.date_text))
+    #             except:
+    #                 new_plots.append(IMG_PLUS_DE_GRAPHES)
+
+    #             if (st.session_state.date_text not in st.session_state.calculated or
+    #                 st.session_state.plot_calc_start != 0):
+    #                 statusholder.progress(min(0.999, 
+    #                     (i + 1 - start)/(max(1, stop-start))))
+                    
+    #         if new_plots:
+    #             plots_col = st.session_state.topTTFL_df.columns.get_loc('plots')
+    #             st.session_state.topTTFL_df.iloc[start:stop, plots_col] = new_plots
+
+    # selected_games = []
+    # for key in list(st.session_state.keys()):
+    #     if key.startswith('classement_'):
+    #         if st.session_state[key]:
+    #             selected_games.append(key[11:])
+
+    # st.session_state.display_df = apply_df_filters(
+    #                                        st.session_state.topTTFL_df.copy(),
+    #                                        st.session_state.date_text,
+    #                                        st.session_state.plot_calc_start,
+    #                                        st.session_state.plot_calc_stop,
+    #                                        filter_JDP,
+    #                                        filter_inj,
+    #                                        selected_games,
+    #                                        get_joueurs_pas_dispo(st.session_state.date_text))
+    
+    # idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
+    # display_df_html = df_to_html(st.session_state.display_df, 
+    #                              highlight_index=idx_pick)
+    
+    # tableholder.markdown(display_df_html, unsafe_allow_html=True)
+    # st.session_state.calculated.add(st.session_state.date_text)
+
+    # temp_table.empty()
+    # statusholder.empty()
 
 SEO('footer')

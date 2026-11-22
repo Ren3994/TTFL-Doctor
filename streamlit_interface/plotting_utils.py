@@ -1,7 +1,6 @@
 from datetime import datetime
 from io import BytesIO
 import streamlit as st
-import numpy as np
 import base64
 import sys
 import os
