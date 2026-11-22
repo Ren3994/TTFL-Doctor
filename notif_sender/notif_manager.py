@@ -2,7 +2,6 @@ from supabase import create_client
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
-import polars as pl
 import requests
 import sys
 import os
@@ -10,7 +9,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
-from data.ttfl_data import scan_injuries
 
 def get_client():
     url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
@@ -35,35 +33,20 @@ def get_user_pick_today(username='admin'):
         return None
     return pick_ajd.iloc[0]
 
-def check_pick_injured(pick, msg_if_ok=False):
-    inj = (scan_injuries()
-           .filter(pl.col('player_name') == pick)
-           .with_columns(pl.format(
-               '{} is {} (MàJ {} chez {}). Détails : {}',
-               pl.col('player_name'),
-               pl.col('simplified_status').str.to_lowercase(),
-               pl.col('dt_fetch').dt.strftime('%d %b. à %Hh%M'),
-               pl.col('source'),
-               pl.col('details')
-           ).alias('response'))
-           .select('response')
-           .collect()
-           )
-    
-    if inj.is_empty():
-        if msg_if_ok:
-            return f'{pick} is fine.'
-        return None
-    
-    return inj.item()
-
-def send_update():
-    update_injury_report()
+def send_update(msg_if_ok=False):
+    df_inj = update_injury_report(return_df=True)
     pick = get_user_pick_today()
-    response = check_pick_injured(pick, msg_if_ok=True)
 
-    if response is None:
-        return
+    df_pick = df_inj.loc[df_inj['player_name'] == pick]
+
+    if df_pick.empty:
+        if not msg_if_ok:
+            return
+        response = f"{pick} n\'est pas blessé (MàJ le {df_inj.loc[0, 'dt_fetch'].strftime('%d %b. à %Hh%M')} chez {df_inj.loc[0, 'source']})."
+    else:
+        response = (df_pick['player_name'] + ' est ' + df_pick['simplified_status'].str.lower() + 
+                    ' (MàJ le ' + df_pick['dt_fetch'].dt.strftime('%d %b. à %Hh%M') + ' chez ' + 
+                    df_pick['source'] + ').\n\nDétails : ' + df_pick['details']).iloc[0]
     
     TOKEN, CHAT_ID = os.environ.get('TELEGRAM_TOKEN', None), os.environ.get('TELEGRAM_CHAT_ID', None)
 
@@ -78,7 +61,4 @@ def send_update():
     r.raise_for_status()
 
 if __name__ == '__main__':
-    send_update()
-    # print('hi')
-    # get_user_pick_today()
-    # get_client()
+    send_update(msg_if_ok=True)

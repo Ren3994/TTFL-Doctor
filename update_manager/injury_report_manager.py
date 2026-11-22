@@ -7,7 +7,7 @@ from fetchers.espn_json_injury_report_fetcher import get_espn_injury_report_from
 from fetchers.nbacom_injury_report_fetcher import get_nbacom_injury_report
 from data.ttfl_data import save_injuries, scan_injuries
 
-def update_injury_report():
+def update_injury_report(return_df=False):
     import pandas as pd
     df = pd.DataFrame()
     for fetch in (get_espn_injury_report_from_json,
@@ -23,13 +23,18 @@ def update_injury_report():
         df = pd.DataFrame()
 
     if df.empty:
+        if return_df:
+            return df
         print("injury report: all sources failed, keeping previous data")
         try:
             time, source = scan_injuries().select(['dt_fetch', 'source']).collect().row(0)
             return time, source
         except FileNotFoundError:
             return None, "indisponible"
-
+    
+    if return_df:
+        return df
+    
     save_injuries(df)
     return df.loc[0, ['dt_fetch', 'source']].values
 
