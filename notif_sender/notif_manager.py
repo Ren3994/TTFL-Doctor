@@ -78,7 +78,7 @@ def send_update():
     r.raise_for_status()
 
 if __name__ == '__main__':
-    send_update()
+    # send_update()
     # print('hi')
     # get_user_pick_today()
-    # get_client()
+    get_client()
