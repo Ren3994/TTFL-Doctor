@@ -2,7 +2,7 @@ name: Injury check
 
 on:
   schedule:
-    - cron: "*/2 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,6 @@ jobs:
           python-version: "3.13"
           cache: pip
       - run: pip install -r requirements.txt
-      # - run: pip install supabase pandas polars pyarrow requests
       - run: python notif_sender/notif_manager.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
