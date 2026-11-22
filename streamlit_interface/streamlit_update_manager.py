@@ -9,9 +9,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_db_update, clear_after_injury_update
-from update_manager.injury_report_manager import update_injury_report
-from update_manager.nba_api_manager import update_nba_data
 from data.ttfl_data import scan_table, get_missing_gameids, latest_season
+from update_manager.injury_report_manager import update_injury_report
+from fetchers.boxscore_fetcher import update_nba_data
 from misc.misc import DATA_DIR
 
 @st.cache_data(show_spinner=False)

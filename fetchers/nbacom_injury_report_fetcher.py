@@ -1,18 +1,19 @@
-import requests
-import pdfplumber
-import pandas as pd
 from bs4 import BeautifulSoup
-from io import BytesIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from io import BytesIO
+from tqdm import tqdm
+import pandas as pd
+import pdfplumber
 import re
 import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from update_manager.boxscores_manager import normalize_name
 from data.ttfl_data import scan_rosters, latest_season
+from fetchers.net_utils import http_get, WEB
+from fetchers.helpers import normalize_name
 
 def clean_name(name: str) -> str:
     name = name.strip()
@@ -26,61 +27,74 @@ STATUSES = {"Out", "Questionable", "Doubtful", "Day-To-Day", "GTD", "Probable"}
 KEYWORDS = ['GameDate','GameTime','Matchup','Team','PlayerName','CurrentStatus',
             'AM','PM','Reason','Page','NOTYETSUBMITTED','Injury','Report:']
 
+_UA = {"User-Agent": "Mozilla/5.0"}
+
+
 def get_nbacom_injury_report():
     import polars as pl
-    
+
     SEASON = latest_season()
     rosters = (scan_rosters(SEASON)
-                .with_columns(
-                    nocomma=pl.col('playerName').str.replace(',', '')
-                )
+               .with_columns(nocomma=pl.col('playerName').str.replace(',', ''))
                .select('nocomma')
                .collect()
                .to_series()
                .to_list())
-    
+
     cols = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch', 'source']
     dt_fetch = datetime.now(ZoneInfo("Europe/Paris"))
+
+    page = http_get(f"https://official.nba.com/nba-injury-report-{SEASON}-season/",
+                    headers=_UA, timeout=15, policy=WEB, label="page injury report NBA.com")
+    if page is None:
+        return pd.DataFrame(columns=cols)
     try:
-        soup = BeautifulSoup(requests.get(
-            f"https://official.nba.com/nba-injury-report-{SEASON}-season/",
-            headers={"User-Agent": "Mozilla/5.0"}, timeout=15).text, "html.parser")
+        soup = BeautifulSoup(page.text, "html.parser")
         links = [a["href"] for a in soup.find_all("a", href=True) if a["href"].endswith("M.pdf")]
-    except Exception:
+    except Exception:                                   # noqa: BLE001
         return pd.DataFrame(columns=cols)
 
+    # Newest first, walk back on 404. Each link now gets a short retry for timeouts/5xx
+    # BEFORE falling back to an older PDF (previously one timeout silently meant stale
+    # data). 404/403 are permanent -> immediate next link. log=None: walking back over
+    # missing PDFs is normal, not worth a warning per link.
+    pdf_policy = WEB.replace(max_attempts=2, wait_base=2)
     pdf_bytes = None
-    for link in reversed(links):                    # newest first, walk back on 404
-        try:
-            r = requests.get(link, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
-            if r.status_code == 200 and r.content[:4] == b'%PDF':
-                pdf_bytes = r.content; break
-        except Exception:
-            continue
+    for link in reversed(links):
+        r = http_get(link, headers=_UA, timeout=15, policy=pdf_policy, log=None,
+                     validate=lambda resp: resp.content[:4] == b'%PDF')
+        if r is not None:
+            pdf_bytes = r.content
+            break
     if pdf_bytes is None:
+        tqdm.write("Injury report NBA.com : aucun PDF téléchargeable")
         return pd.DataFrame(columns=cols)
 
+    # ---- parsing: unchanged from your version ------------------------------
     rows = []
     try:
         with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
-            for page in pdf.pages:
-                words = page.extract_words() or []
-                h_lines = sorted([l for l in page.lines if abs(l["y0"]-l["y1"]) < 1], key=lambda l: l["top"])
-                bounds = sorted([page.bbox[3]] + [l["top"] for l in h_lines] + [page.bbox[1]])
+            for page_ in pdf.pages:
+                words = page_.extract_words() or []
+                h_lines = sorted([l for l in page_.lines if abs(l["y0"]-l["y1"]) < 1],
+                                 key=lambda l: l["top"])
+                bounds = sorted([page_.bbox[3]] + [l["top"] for l in h_lines] + [page_.bbox[1]])
                 for i in range(len(bounds) - 1):
-                    row = sorted((w for w in words if bounds[i] <= w["top"] <= bounds[i+1]), key=lambda w: w["x0"])
+                    row = sorted((w for w in words if bounds[i] <= w["top"] <= bounds[i+1]),
+                                 key=lambda w: w["x0"])
                     text = [w["text"] for w in row
                             if '0' not in w["text"] and '1' not in w["text"]
                             and ':' not in w["text"] and '@' not in w["text"]]
                     for kw in KEYWORDS:
-                        if kw in text: text.remove(kw)
+                        if kw in text:
+                            text.remove(kw)
                     pi = next((j for j, w in enumerate(text) if ',' in w), None)
                     if pi is None or pi + 1 >= len(text) or text[pi+1] not in STATUSES:
                         continue                     # layout drift: skip row, never crash
                     last, _, first = text[pi].partition(',')
                     reason = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ',
                                     " ".join(text[pi+2:])).lstrip('- ').strip()
-                    
+
                     name = f"{first.strip()} {last.strip()}"
                     name = normalize_name(name)
                     if name not in rosters:
@@ -95,7 +109,7 @@ def get_nbacom_injury_report():
                                  "details": reason,
                                  "dt_fetch": dt_fetch,
                                  "source": "NBA.com"})
-    except Exception as e:
+    except Exception as e:                              # noqa: BLE001
         print(f"nbacom PDF parse failed: {e}")
         return pd.DataFrame(columns=cols)
     df = pd.DataFrame(rows).drop_duplicates(subset=['player_name', 'simplified_status'])

@@ -5,7 +5,12 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from fetchers.net_utils import http_json, NBA_CDN
 from data.ttfl_data import season_for_date
+
+def _has_games(data):
+    return isinstance(data, dict) and bool((data.get('leagueSchedule') or {}).get('gameDates'))
+
 
 def get_schedule_json(proxy=None):
     from curl_cffi import requests
@@ -20,28 +25,22 @@ def get_schedule_json(proxy=None):
         "Origin": "https://www.nba.com",
         "Referer": "https://www.nba.com/",
     })
-    
-    schedule = None
-    response = None
 
-    for attempt in range(5):
-        try :
-            r = session.get(url, timeout=5)
-            r.raise_for_status()
-            response = r
-            break
-        except Exception as e:
-            tqdm.write(f'Error while downloading schedule JSON : {e}')
-            if attempt < 4:
-                time.sleep(3 * (attempt + 1))
-    
-    if response is None:
+    try:
+        # 5 attempts, waits 3, 6, 12, 15s. The JSON is parsed inside the retry, so a
+        # truncated body is retried; a 403/404 is not.
+        data = http_json(url, session=session, timeout=5, label="calendrier (JSON)",
+                         policy=NBA_CDN.replace(max_attempts=5, wait_base=3),
+                         validate=_has_games)
+    finally:
+        session.close()
+
+    if data is None:
         tqdm.write('Impossible de télécharger le calendrier')
         return None
 
     schedule_parts = []
-    
-    for date_dict in response.json()['leagueSchedule']['gameDates']:
+    for date_dict in data['leagueSchedule']['gameDates']:
         frame = pd.json_normalize(date_dict['games'], )
         frame['gameDate'] = date_dict['gameDate']
         schedule_parts.append(frame)
@@ -49,25 +48,16 @@ def get_schedule_json(proxy=None):
     schedule = pd.concat(schedule_parts, ignore_index=True)
 
     columns_needed = [
-                "gameDate",
-                "gameId",
-                "gameStatus",
-                "homeTeam.teamTricode",
-                "awayTeam.teamTricode",
-                "awayTeam.wins",
-                "awayTeam.losses",
-                "homeTeam.wins",
-                "homeTeam.losses",
-                "gameDateTimeUTC",
-                "postponedStatus",
-                "gameSubtype"
-            ]
-
+        "gameDate", "gameId", "gameStatus",
+        "homeTeam.teamTricode", "awayTeam.teamTricode",
+        "awayTeam.wins", "awayTeam.losses", "homeTeam.wins", "homeTeam.losses",
+        "gameDateTimeUTC", "postponedStatus", "gameSubtype",
+    ]
     schedule = schedule[columns_needed]
 
     schedule['gameDate'] = pd.to_datetime(schedule['gameDate'], errors='coerce')
     schedule['gameDateTimeUTC'] = pd.to_datetime(schedule['gameDateTimeUTC'], utc=True, errors='coerce')
-    
+
     schedule['gameDate_ymd'] = schedule['gameDate'].dt.strftime('%Y-%m-%d')
     schedule['gameDate'] = schedule['gameDate'].dt.strftime('%d/%m/%Y')
     schedule['gameDateTime'] = schedule['gameDateTimeUTC'].dt.tz_convert('Europe/Paris')
@@ -84,12 +74,11 @@ def get_schedule_json(proxy=None):
         "homeTeam.losses": "homeTeam_losses",
         "awayTeam.wins": "awayTeam_wins",
         "awayTeam.losses": "awayTeam_losses",
-        "postponedStatus" : "postponed",
-        "gameSubtype" : "IST"
+        "postponedStatus": "postponed",
+        "gameSubtype": "IST",
     }, inplace=True)
 
     schedule['season'] = schedule['gameDate_ymd'].map(season_for_date)
-    
     return schedule
 
 if __name__ == '__main__':

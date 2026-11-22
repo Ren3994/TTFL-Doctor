@@ -2,11 +2,13 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from tqdm import tqdm
 import pandas as pd
-import requests
-import time
+import sys
+import os
 
-from update_manager.boxscores_manager import normalize_name
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from fetchers.net_utils import http_json, InvalidResultError, WEB
+from fetchers.helpers import normalize_name
 
 URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
 COLS = ['player_name', 'simplified_status', 'injury_status', 'details', 'dt_fetch', 'source']
@@ -79,32 +81,29 @@ def _parse_injuries(data, dt_fetch):
     return df
 
 
+def _check_espn(data):
+    if not isinstance(data, dict) or data.get('status') != 'success':
+        status = data.get('status') if isinstance(data, dict) else type(data).__name__
+        raise InvalidResultError(f"Statut inattendu : {status}")   # retried, with this message
+    return True
+
+
 def get_espn_injury_report_from_json():
     dt_fetch = datetime.now(ZoneInfo("Europe/Paris"))
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.get(URL, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+    data = http_json(
+        URL, timeout=10, label="injury report (ESPN JSON)",
+        policy=WEB.replace(max_attempts=MAX_ATTEMPTS, wait_base=3),
+        validate=_check_espn)
 
-            if data.get('status') != 'success':
-                raise ValueError(f"Statut inattendu : {data.get('status')}")
+    if data is None:                                   # all attempts failed
+        return pd.DataFrame(columns=COLS)
 
-            return _parse_injuries(data, dt_fetch)
-
-        except Exception as e:
-            if attempt < MAX_ATTEMPTS - 1:
-                delay = 3 * (attempt + 1)
-                tqdm.write(f"Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. "
-                           f"Nouvel essai dans {delay}s")
-                time.sleep(delay)
-            else:
-                tqdm.write(f"Erreur lors du téléchargement du injury report (ESPN JSON) : {e}. "
-                           f"Abandon après {MAX_ATTEMPTS} tentatives.")
-
-    # All attempts failed
-    return pd.DataFrame(columns=COLS)
+    try:                                               # parsing is not a network error:
+        return _parse_injuries(data, dt_fetch)         # one try, degrade gracefully
+    except Exception as e:                             # noqa: BLE001
+        tqdm.write(f"Injury report (ESPN JSON) : parsing impossible : {type(e).__name__}: {e}")
+        return pd.DataFrame(columns=COLS)
 
 
 if __name__ == "__main__":

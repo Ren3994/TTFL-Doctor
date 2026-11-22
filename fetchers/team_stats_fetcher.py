@@ -5,8 +5,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from fetchers.net_utils import nba_frames, NBA_API, not_empty, RateLimiter
 from misc.misc import LEAGUE_ID, FULLNAME2TRICODE
 from data.ttfl_data import latest_season
+
+STATS_LIMITER = RateLimiter(0.5)
 
 def get_team_stats(proxy=None):
     from nba_api.stats.endpoints import leaguedashteamstats
@@ -14,60 +17,41 @@ def get_team_stats(proxy=None):
     table_types = ['Advanced', 'Base']
     cols_needed = [
         ['TEAM_NAME', 'GP', 'W', 'L', 'W_PCT',
-            'OFF_RATING', 'DEF_RATING',
-            'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT',
-            'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'PACE', 'POSS',
-            ], 
+         'OFF_RATING', 'DEF_RATING',
+         'NET_RATING', 'AST_PCT', 'AST_TO', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT',
+         'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'PACE', 'POSS'],
         ['TEAM_NAME', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA',
-            'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'PTS', 'BLKA', 'PFD'
-            ]
+         'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'TOV', 'STL', 'BLK', 'PTS', 'BLKA', 'PFD'],
     ]
     replace_cols = [{
-                "TEAM_NAME": "teamTricode",
-                "OFF_RATING": "ORtg",
-                "DEF_RATING": "DRtg",
-                "NET_RATING": "NRtg",
-                "PACE": "Pace",
-                "POSS": "n_poss",
-            }, {"TEAM_NAME": "teamTricode"}]
+        "TEAM_NAME": "teamTricode", "OFF_RATING": "ORtg", "DEF_RATING": "DRtg",
+        "NET_RATING": "NRtg", "PACE": "Pace", "POSS": "n_poss",
+    }, {"TEAM_NAME": "teamTricode"}]
 
-    tables = [None, None]
-    idx = [0, 1]
-    t0 = time.time()
-    for i, table, table_type, cols, rep_cols in zip(idx, tables, table_types, cols_needed, replace_cols):
-        while i == 1 and time.time() - t0 < 0.1:
-            time.sleep(0.1)
-        for attempt in range(5):
-            try :
-                table = leaguedashteamstats.LeagueDashTeamStats(
-                    season=latest_season(),
-                    measure_type_detailed_defense=table_type,
-                    per_mode_detailed="PerGame",
-                    league_id_nullable=LEAGUE_ID,
-                    proxy=proxy
-                ).get_data_frames()[0]
-                break
+    season = latest_season()                 # once, not once per attempt
+    tables = []
+    for table_type, cols, rep_cols in zip(table_types, cols_needed, replace_cols):
+        table = nba_frames(
+            leaguedashteamstats.LeagueDashTeamStats,
+            label=f"stats des équipes ({table_type})",
+            policy=NBA_API, validate=not_empty,
+            limiter=STATS_LIMITER,           # replaces the `while time.time() - t0 < 0.1` hack
+            season=season,
+            measure_type_detailed_defense=table_type,
+            per_mode_detailed="PerGame",
+            league_id_nullable=LEAGUE_ID,
+            proxy=proxy)
 
-            except Exception as e:
-                tqdm.write(f'Erreur lors du téléchargement des stats des équipes ({table_type}) : {e}. Nouvel essai dans {30 * (attempt + 1)}s')
-                time.sleep(30 * (attempt + 1))
-                continue
-            
-        if table is None:
-            tqdm.write(f'Impossible de télécharger les stats des équipes : {table_type}')
-            continue
+        if table is None:                    # fail fast: no point downloading the 2nd table
+            tqdm.write('Stats des équipes : une des deux tables a échoué, on garde les anciennes')
+            return None
 
         table = table[cols].copy()
         table['TEAM_NAME'] = table['TEAM_NAME'].replace(FULLNAME2TRICODE)
         table.rename(columns=rep_cols, inplace=True)
-        tables[i] = table
+        tables.append(table)
 
-    if tables[0] is None or tables[1] is None:
-        tqdm.write('Stats des équipes : une des deux tables a échoué, on garde les anciennes')
-        return None
-    
-    full_stats = tables[0].merge(tables[1], on=['teamTricode'])
-    return full_stats
+    return tables[0].merge(tables[1], on=['teamTricode'])
 
 if __name__ == '__main__':
     team_stats = get_team_stats()
