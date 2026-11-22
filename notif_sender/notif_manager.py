@@ -37,16 +37,21 @@ def send_update(msg_if_ok=False):
     df_inj = update_injury_report(return_df=True)
     pick = get_user_pick_today()
 
-    df_pick = df_inj.loc[df_inj['player_name'] == pick]
-
-    if df_pick.empty:
-        if not msg_if_ok:
-            return
-        response = f"{pick} n\'est pas blessé (MàJ le {df_inj.loc[0, 'dt_fetch'].strftime('%d %b. à %Hh%M')} chez {df_inj.loc[0, 'source']})."
+    if pick is None:
+        response = f'Aucun joueur n\'a été pick aujourd\'hui.'
     else:
-        response = (df_pick['player_name'] + ' est ' + df_pick['simplified_status'].str.lower() + 
-                    ' (MàJ le ' + df_pick['dt_fetch'].dt.strftime('%d %b. à %Hh%M') + ' chez ' + 
-                    df_pick['source'] + ').\n\nDétails : ' + df_pick['details']).iloc[0]
+        df_pick = df_inj.loc[df_inj['player_name'] == pick]
+
+        if df_pick.empty:
+            if not msg_if_ok:
+                return
+            first = df_inj.iloc[0]
+            response = (f"{pick} n'est pas blessé (MàJ le {first['dt_fetch'].strftime('%d %b. à %Hh%M')} "
+                        f"chez {first['source']}).")
+        else:
+            response = (df_pick['player_name'] + ' est ' + df_pick['simplified_status'].str.lower() + 
+                        ' (MàJ le ' + df_pick['dt_fetch'].dt.strftime('%d %b. à %Hh%M') + ' chez ' + 
+                        df_pick['source'] + ').\n\nDétails : ' + df_pick['details']).iloc[0]
     
     TOKEN, CHAT_ID = os.environ.get('TELEGRAM_TOKEN', None), os.environ.get('TELEGRAM_CHAT_ID', None)
 

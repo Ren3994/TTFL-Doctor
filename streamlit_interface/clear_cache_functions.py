@@ -12,6 +12,7 @@ from streamlit_interface.plotting_utils import cached_generate_plot_row
 from streamlit_interface.top_nuit_utils import get_top_de_la_nuit
 
 def clear_after_db_update():
+    cached_get_top_TTFL.clear()
     get_low_game_count.clear()
     get_deadline.clear()
     cached_generate_plot_row.clear()

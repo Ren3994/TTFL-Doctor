@@ -5,7 +5,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.streamlit_utils import config, SEO, vspace, custom_CSS
-from notif_sender.notif_manager import send_update
 
 # ---------- Initialize session state ----------
 PAGENAME = 'main'
@@ -19,8 +18,6 @@ col_spacer1, col_text, col_spacer2 = st.columns([2, 5, 2])
 with col_text:
     SEO('header')
     vspace(5)
-
-send_update()
 
 # from curl_cffi import requests
 

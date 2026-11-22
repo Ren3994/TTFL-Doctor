@@ -8,10 +8,11 @@ from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, cus
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.plotting_utils import plot_for_row
+from streamlit_interface.plotting_utils import plot_for_row#, svg_spark
 from streamlit_interface.classement_TTFL_utils import *
 from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
+# from test_svg_plots import df_to_html2
 
 # ---------- Initialize session state ----------
 PAGENAME = 'classement'
@@ -30,6 +31,7 @@ if st.session_state.mobile_layout:
     cont = st.container(horizontal_alignment='center', gap='medium')
     cont_date_obj = cont.container(horizontal=True, horizontal_alignment='center')
     cont_left = cont.container(horizontal_alignment='center')
+    cont_center = cont.container(horizontal_alignment='center')
     cont_checkboxes = cont_left.container(horizontal_alignment='center')
     cont_right = cont.container(horizontal_alignment='center')
     games_per_row = 2
@@ -148,6 +150,14 @@ if st.session_state.topTTFL_df.empty:
                      " n'ont pas encore été déterminées")
 
 else:
+    # tableholder = st.empty()
+    # topTTFL_df = st.session_state.topTTFL_df.copy()
+    # st.session_state.topTTFL_df = topTTFL_df
+    # html_df = df_to_html2(st.session_state.topTTFL_df, requested_date=st.session_state.date_text)
+    # import streamlit.components.v1 as components
+    # with tableholder:
+    #     components.html(html_df, height=10000, scrolling=True)
+
     statusholder = st.empty()
     tableholder = st.empty()
     temp_table = st.empty()

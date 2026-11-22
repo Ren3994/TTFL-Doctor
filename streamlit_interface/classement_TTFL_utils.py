@@ -326,7 +326,7 @@ def df_to_html(
         opacity: 1;
     }}
     .tooltip .tooltiptext img {{
-        max-width: 700;
+        max-width: 700px;
         max-height: 466px;
         border-radius: 4px;
         z-index: 0;

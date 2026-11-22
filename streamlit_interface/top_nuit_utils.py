@@ -53,7 +53,8 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
         
     if df.empty:
         current_date = datetime.now(ZoneInfo("Europe/Paris"))
-        if current_date - datetime.strptime(date, '%d/%m/%Y') < timedelta(days=2):
+        query_date = datetime.strptime(date, '%d/%m/%Y').replace(tzinfo=current_date.tzinfo)
+        if current_date - query_date < timedelta(days=2):
             return 'hier'
         return None
     

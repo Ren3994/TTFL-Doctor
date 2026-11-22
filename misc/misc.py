@@ -1,8 +1,6 @@
 import os
 
 LEAGUE_ID = "00"
-SEASON = "2026-27"
-LAST_SEASON = "2025-26"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
