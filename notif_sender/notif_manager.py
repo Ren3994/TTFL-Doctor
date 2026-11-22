@@ -78,9 +78,4 @@ def send_update():
     r.raise_for_status()
 
 if __name__ == '__main__':
-    # print(os.getenv('SUPABASE_KEY'))
-    # pick = get_user_pick_today()
-    # pick = 'Giannis Antetokounmpo'
-    # print(check_pick_injured(pick))
-    # print(pick)
     send_update()
