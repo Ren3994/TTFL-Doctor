@@ -1,8 +1,8 @@
 name: Injury check
 
 on:
-  # schedule:
-  #    cron: '11 17-23 * * *'
+  schedule:
+    - cron: "11 17-23 * * *"
   workflow_dispatch:
 
 jobs:
