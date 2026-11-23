@@ -390,7 +390,7 @@ def historique_des_perfs(player):
                       tooltips={'FG': 'FGpct', 'FG3': 'FG3pct', 'FT': 'FTpct', 'Reb': 'rebSplit'},
                       show_index=False,
                       col_header_tooltips=[],
-                      image_tooltips=[],
+                      plot_tooltips=[],
                       color_tooltip_pct=False,
                       highlight_index=None,
                       col_header_labels={'FG3': '3FG', 'Pm': '±', 'win': 'W/L', 'isHome': 'Dom/Ext',

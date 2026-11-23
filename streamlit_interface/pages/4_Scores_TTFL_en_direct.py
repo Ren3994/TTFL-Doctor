@@ -186,7 +186,7 @@ else:
                                         },
                                         col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
                                         col_header_tooltips=[],
-                                        image_tooltips=[],
+                                        plot_tooltips=[],
                                         color_tooltip_pct=False,
                                         highlight_index=idx_pick,
                                         best_pick_allowed=True)
@@ -218,7 +218,7 @@ else:
                                                 },
                                                 col_header_labels={'Equipe' : 'Équipe', 'Pm' : '±'}, 
                                                 col_header_tooltips=[],
-                                                image_tooltips=[],
+                                                plot_tooltips=[],
                                                 color_tooltip_pct=False,
                                                 highlight_index=idx_pick)
                 tableholders[idx].markdown(html_df, unsafe_allow_html=True)
