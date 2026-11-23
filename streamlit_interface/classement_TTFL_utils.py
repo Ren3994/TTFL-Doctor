@@ -246,7 +246,7 @@ def df_to_html(
                           'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
                           'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs où le joueur a joué avec ce coéquipier blessé)',
                           'Statut' : 'Survoler pour voir les détails de la blessure'},
-    plot_tooltips={'Joueur' : 'plots'},   # {column showing the plot : column holding its key}
+    plot_tooltips={'Joueur' : 'plots', 'index' : 'plots'},   # {column showing the plot : column holding its key}
     show_index=True,
     zebra_stripes=True,
     hover_highlight=True,
@@ -376,7 +376,13 @@ def df_to_html(
         else:
             html += "<tr>"
         if show_index:
-            html += f"<td>{i}</td>"
+            if plot_tooltips and 'index' in plot_tooltips:
+                plot_key = escape(str(getattr(row, plot_tooltips['index'])), quote=True)
+                html += f'<td><div class="tooltip" data-plot="{plot_key}">{i}</div></td>'
+            else:
+                html += f"<td>{i}</td>"
+
+
         for col in show_cols:
             cell_value = getattr(row, col)
 
