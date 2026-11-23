@@ -6,10 +6,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_pick, get_pick, load_tooltip_engine
 from streamlit_interface.streamlit_update_manager import need_to_fetch_new_boxscores
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
+from streamlit_interface.plotting_utils import tooltip_assets
 from streamlit_interface.sidebar import sidebar
 from misc.misc import RESIZED_LOGOS_PATH
 
@@ -168,6 +169,7 @@ else:
 
     vspace()
     tableholders = [st.empty() for _ in live_data['games_info']]
+    load_tooltip_engine(tooltip_assets({}))
 
     if st.session_state.global_boxscores:
         all_boxscores_df = (live_data['global'].sort_values(

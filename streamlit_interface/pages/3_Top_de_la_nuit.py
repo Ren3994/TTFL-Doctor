@@ -5,10 +5,10 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, custom_error, st_image_crisp, custom_button_css, custom_CSS, custom_mobile_CSS
+from streamlit_interface.classement_TTFL_utils import get_pick, render_table, load_tooltip_engine
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
 from streamlit_interface.live_scores_utils import get_live_games
-from streamlit_interface.classement_TTFL_utils import get_pick
 from misc.misc import RESIZED_LOGOS_PATH, FRENCHIES
 from streamlit_interface.top_nuit_utils import *
 from streamlit_interface.sidebar import sidebar
@@ -106,8 +106,12 @@ else:
                      f'le {st.session_state.date_text_nuit}')
         vspace(50)
     else:
+        html_tables, assets = st.session_state.top_nuit
+        load_tooltip_engine(assets) 
+
         if not st.session_state.byteam:
-            st.markdown(st.session_state.top_nuit, unsafe_allow_html=True)
+            render_table(html_tables)
+
         else:
             teams = list(st.session_state.top_nuit.keys())
             for i in range(0, len(teams), buttons_per_row):
@@ -132,6 +136,6 @@ else:
                                 
             for team, top in st.session_state.top_nuit.items():
                 if st.session_state[f'boxscore_nuit_{team}']:
-                    st.markdown(top, unsafe_allow_html=True)
+                    render_table(html_tables)
 
 SEO('footer')

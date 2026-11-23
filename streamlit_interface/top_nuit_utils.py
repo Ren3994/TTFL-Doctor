@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo, build_plots
 from streamlit_interface.JDP_utils import match_player, get_cached_avg_TTFL
 from data.ttfl_data import scan_boxscores, latest_season
+from data.ttfl_stats import graph_data, regular_played
 
 @st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler, 
@@ -17,7 +18,19 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
     import pandas as pd
     import numpy as np
 
+    date_dt = datetime.strptime(date, '%d/%m/%Y')
+
     avg_TTFL = get_cached_avg_TTFL(to_pandas=False)
+    graph_stats = (scan_boxscores(latest_season())
+            .filter([pl.col('seconds') > 0,
+                     pl.col('gameDate_ymd') <= date_dt])
+            .sort('gameDate_ymd')
+            .group_by('playerName', maintain_order=True)
+            .agg(graph_dates=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
+                 graph_opps=pl.col('opponent'),
+                 graph_TTFLs=pl.col('TTFL'),
+                 graph_wins=pl.col('win'),
+                 graph_ishome=pl.col('isHome')))
 
     df = (scan_boxscores(latest_season())
          .with_columns(
@@ -34,16 +47,12 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                    .then(pl.lit('@'))
                    .otherwise(pl.lit('v.')),
                  pl.col('opponent')
-                ),
-             graph_dates=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
-             graph_TTFLs=pl.col('TTFL'),
-             graph_opps=pl.col('opponent'),
-             graph_wins=pl.col('win'),
-             graph_ishome=pl.col('isHome')
+                )
              )
          .filter([pl.col('gameDate') == date,
                   pl.col('seconds') > 0])
          .join(avg_TTFL, on='playerName')
+         .join(graph_stats, on='playerName', how='left')
          .select([
              'playerName', 'teamTricode', 'minutes', 'seconds', 'points', 'reboundsTotal',
                     'assists', 'reboundsOffensive', 'reboundsDefensive', 'steals', 
@@ -137,9 +146,12 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
     
     show_cols = ['Joueur', 'TTFL', 'Mins', 'Pts', 'Ast', 'Reb', 'Stl', 
                                 'Blk', 'Tov', 'FG', 'FG3', 'FT', 'Pm', 'Matchup', 'Win']
+    
     if len(joueurs_pas_dispo) > 0:
         df['Dispo'] = np.where(df['Joueur'].isin(joueurs_pas_dispo), '❌', '✅')
         show_cols.append('Dispo')
+
+    plot_keys, plot_assets = build_plots(df, date, avg_col='avg_TTFL')
 
     if spoiler:
         cols_shown = ['Joueur', 'Dispo']
@@ -148,6 +160,9 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
             cols_hidden.remove('TTFL')
         df[cols_hidden] = '-'
     
+    # spoiler mode hides the plots too (they would reveal the scores)
+    df = df.assign(plots=plot_keys if not spoiler else '')
+
     dfs = {}
     if byteam:
         for team in teams:
@@ -159,10 +174,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
     for team, dfteam in dfs.items():
         idx_pick = get_idx_from_pick(dfteam, pick, 'Joueur')
 
-        keys, assets = build_plots(dfteam, date)
-        df_with_plots = dfteam.assign(plots=keys)
-
-        html_df = df_to_html(df_with_plots, show_cols=show_cols, 
+        html_df = df_to_html(dfteam, show_cols=show_cols, 
                              tooltips={
                                         'FG' : 'FGpct',
                                         'FG3' : 'FG3pct',
@@ -177,15 +189,14 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'},
                              best_pick_allowed = not byteam and not show_my_pick,
-                             js_assets=assets
                              )
             
         html_dfs[team] = html_df
         
     if 'all' in html_dfs.keys():
-        return html_dfs['all']
+        return html_dfs['all'], plot_assets
     else:
-        return html_dfs
+        return html_dfs, plot_assets
 
 def on_text_change_nuit():
     """Parse text input into a date object."""

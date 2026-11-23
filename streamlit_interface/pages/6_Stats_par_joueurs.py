@@ -6,8 +6,10 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.streamlit_utils import SEO, config, vspace, custom_CSS
+from streamlit_interface.classement_TTFL_utils import load_tooltip_engine
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
+from streamlit_interface.plotting_utils import tooltip_assets
 from misc.misc import FRENCHIES, PLAYER_STATS_COLUMN_DEF
 from streamlit_interface.player_stats_utils import *
 from streamlit_interface.sidebar import sidebar
@@ -167,7 +169,7 @@ if onlyone:
                                 st.session_state.get('show_ttfl_details', False))
             if fig is not None:
                 st.plotly_chart(fig)
-        
+
 # Display stats tables
 for table in st.session_state.player_stats:
     df = st.session_state.player_stats[table]
@@ -217,6 +219,7 @@ for table in st.session_state.player_stats:
                             help = PLAYER_STATS_COLUMN_DEF[stat]['help']))
                             for stat in df})
 
+load_tooltip_engine(tooltip_assets({}))     # engine only; no plots on this page
 expander_hist_title = 'Choisissez un joueur pour voir ses stats par match, par adversaire et créer des graphiques interactifs' if not onlyone else f'Lignes de stats de {players_to_show[0]}'
 with st.expander(expander_hist_title, expanded=onlyone):
     if len(players_to_show) == 1:

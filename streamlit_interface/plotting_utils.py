@@ -1,8 +1,9 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from math import floor, ceil, log10
 from html import escape
 import streamlit as st
 from pathlib import Path
+import numpy as np
 import base64
 import json
 import sys
@@ -17,16 +18,18 @@ def load_logo(path):
     import matplotlib.image as mpimg
     return mpimg.imread(path)
 
-# def prep_svg_plots(df, date):
-W, H = 500, 350                # canvas size of every plot (SVG viewBox)
-MARGIN = dict(left=60, right=30, top=50, bottom=40)   # space around the plotting area
-X_PAD = 22                     # horizontal padding inside the area so edge logos aren't cut
-SHORT_RANGE_DAYS = 40          # below this many days: one x tick per game
-LONG_RANGE_TICKS = 6           # otherwise: this many evenly spaced x ticks
-N_Y_TICKS = 6                  # approximate number of horizontal grid lines
+# ---------------------------------------------------------------------------
+# SVG plot specs — geometry matches the old matplotlib plots
+# (seaborn-v0_8-dark, figsize 6x4 @ dpi 120, displayed ~700px wide)
+# ---------------------------------------------------------------------------
+W, H = 500, 350                                  # canvas (SVG viewBox); displayed at 700px
+MARGIN = dict(left=60, right=50, top=42, bottom=40)   # matplotlib default axes margins (12.5/10/12/11 %)
+X_PAD = 22                                       # horizontal padding so edge logos aren't cut
+SHORT_RANGE_DAYS = 40                            # below: one x tick per game (old set_xticks(alldates))
 
 MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin",
-        "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+          "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+
 
 def _fmt_req(requested_date):
     """Anything date-like -> 'dd/mm/YYYY' (None = today)."""
@@ -36,11 +39,12 @@ def _fmt_req(requested_date):
         return requested_date.strftime("%d/%m/%Y")
     return str(requested_date)
 
+
 def _s(v):
     """Cell -> clean string: '' for None/NaN, comma-join lists."""
     if v is None:
         return ""
-    if isinstance(v, (list, tuple)):
+    if isinstance(v, (list, tuple, np.ndarray)):
         return ",".join(map(str, v))
     try:
         if v != v:  # NaN
@@ -49,23 +53,60 @@ def _s(v):
         pass
     return str(v)
 
+
 def _label(d):
     """datetime -> '05 nov.'"""
     return f"{d.day:02d} {MONTHS[d.month - 1]}"
- 
-def _nice_y_ticks(lo, hi, n=N_Y_TICKS):
-    """'Nice' tick values (1, 2, 5 x 10^k) between lo and hi."""
+
+
+def _nice_y_ticks(lo, hi, n=9):
+    """Matplotlib MaxNLocator-ish: steps 1, 2, 2.5, 5 x 10^k, at most n+1 ticks."""
     raw = (hi - lo) / n
     mag = 10 ** floor(log10(raw))
-    step = next(m * mag for m in (1, 2, 5, 10) if m * mag >= raw)
-    ticks, v = [], ceil(lo / step) * step
-    while v <= hi + 1e-9:
-        ticks.append(round(v, 6))
-        v += step
+    for m in (1, 2, 2.5, 5, 10):
+        step = m * mag
+        ticks, v = [], ceil(lo / step) * step
+        while v <= hi + 1e-9:
+            ticks.append(round(v, 6))
+            v += step
+        if len(ticks) <= n + 1:
+            return ticks
     return ticks
- 
+
+
+def _next_month(d, k=1):
+    """First day of the month k months after d's month."""
+    y, m = d.year + (d.month - 1 + k) // 12, (d.month - 1 + k) % 12 + 1
+    return d.replace(year=y, month=m, day=1)
+
+
+def _month_ticks(start, end, max_ticks=9):
+    """AutoDateLocator-ish x ticks: 1st/15th for short spans, 1st of month for long."""
+    def gen(step_months):                    # 0 = semi-monthly, 1..12 = months
+        out = []
+        d = start.replace(day=1)
+        if step_months == 0:
+            if d < start:
+                d = start.replace(day=15)
+                if d < start:
+                    d = _next_month(start)
+        elif d < start:
+            d = _next_month(start)
+        while d <= end:
+            out.append(d)
+            d = (d.replace(day=15) if d.day == 1 else _next_month(d)) if step_months == 0 \
+                else _next_month(d, step_months)
+        return out
+
+    for step in (0, 1, 2, 3, 6, 12):
+        ticks = gen(step)
+        if len(ticks) <= max_ticks:
+            return ticks
+    return [start, end]
+
+
 def _avg_from_cell(value):
-    """'34.2 ...' -> 34.2 (first 4 chars, like the old matplotlib code). None if not a number."""
+    """'34.2 ±5' -> 34.2 (first 4 chars, like the old matplotlib code). None if not a number."""
     try:
         return float(_s(value)[:4])
     except ValueError:
@@ -79,7 +120,7 @@ def _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
     dates_str = _s(graph_dates)
     if not dates_str:
         return {"w": W, "h": H, "title": title, "empty": True}
- 
+
     # --- parse -----------------------------------------------------------------
     dates = [datetime.strptime(d, "%d/%m/%Y") for d in dates_str.split(",")]
     req = datetime.strptime(req_str, "%d/%m/%Y")
@@ -87,12 +128,18 @@ def _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
     ttfls = [int(float(x)) for x in _s(graph_TTFLs).split(",")]
     wins = [int(float(x)) for x in _s(graph_wins).split(",")]
     homes = [int(float(x)) for x in _s(graph_ishome).split(",")]
- 
+
     start = dates[0]
-    njours = (req - start).days          # width of the time axis in days
-    span = max(njours, 1)                # avoid dividing by zero
- 
-    # --- y range (same rules as the old matplotlib version) ------------------------
+    end = max(req, dates[-1])        # games AFTER the requested date stay inside the plot
+                                     # (the old matplotlib autoscale did the same)
+    njours = (req - start).days
+    # single date (top_nuit): matplotlib autoscale centers a lone point
+    map_start, map_end = start, end
+    if (map_end - map_start).days == 0:
+        map_start, map_end = start - timedelta(days=1), end + timedelta(days=1)
+    span = max((map_end - map_start).days, 1)
+
+    # --- y range (same rules as the old matplotlib version) --------------------
     ymin = min(0, min(ttfls) * 1.2)
     ymax = max(ttfls) * 1.1
     if ymin == 0:
@@ -101,26 +148,26 @@ def _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
         ymax = 2
     if ymin == ymax:
         ymin, ymax = ymin - 1, ymax + 1
- 
-    # --- data -> pixels --------------------------------------------------------
+
     left, right = MARGIN["left"], W - MARGIN["right"]
     top, bottom = MARGIN["top"], H - MARGIN["bottom"]
- 
+
     def x_of(d):
-        days = (d - start).total_seconds() / 86400
+        days = (d - map_start).total_seconds() / 86400
         return left + X_PAD + days / span * ((right - left) - 2 * X_PAD)
- 
+
     def y_of(v):
         return top + (ymax - v) / (ymax - ymin) * (bottom - top)
- 
-    r = lambda v: round(v, 1)  # 0.1 px is plenty and keeps the JSON small
- 
+
+    r = lambda v: round(v, 1)
+
     if njours < SHORT_RANGE_DAYS:
-        tick_dates = dates + [req]
+        tick_dates = sorted(set(dates + [req]))   # matplotlib sorts & dedupes ticks
+        rot = 30 + njours * 3 / 4                 # old dynamic rotation (30..60 deg)
     else:
-        tick_dates = [start + (req - start) * (i / (LONG_RANGE_TICKS - 1))
-                      for i in range(LONG_RANGE_TICKS)]
- 
+        tick_dates = _month_ticks(start, end)     # calendar ticks, like AutoDateLocator
+        rot = 30
+
     return {
         "w": W, "h": H,
         "title": title,
@@ -132,36 +179,36 @@ def _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
                   for d, v, w, h, o in zip(dates, ttfls, wins, homes, opps)],
         "reqX": r(x_of(req)),
         "avgY": r(y_of(avg_ttfl)) if avg_ttfl is not None else None,
-        "logo": round(max(24, 46 - njours * 0.16) if njours < 173 else 32),
+        # old OffsetImage zoom (0.23 - njours*0.08/173) converted to canvas px:
+        "logo": round(max(8, 40 - njours * 0.08)),
+        "rot": round(-rot, 1),                    # SVG rotate(): negative = counter-clockwise
+        "solidReq": njours >= SHORT_RANGE_DAYS,   # old long-range plots drew the req line solid
     }
 
-@st.cache_data(show_spinner=False)
+
 def build_plot_spec(joueur, requested_date, graph_dates, graph_opps, graph_TTFLs,
                     graph_wins, graph_ishome, avg_ttfl=None):
-    """Spec for ONE player, cached on (joueur string, requested date).
- 
-    The cache lives as long as the Python process (so it survives Streamlit reruns).
-    Only the key is checked: if the data for an already-cached (player, date)
-    changes, call clear_plot_cache() or pass use_cache=False.
-    """
+    """Spec for ONE player. A row that can't be parsed yields an *empty* spec
+    ('Pas de données disponibles') instead of killing the whole table."""
     req_str = _fmt_req(requested_date)
     try:
-        spec = _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
+        return _compute_spec(joueur, req_str, graph_dates, graph_opps, graph_TTFLs,
                              graph_wins, graph_ishome, avg_ttfl)
     except Exception:
-        raise ValueError('Not this row')
-    return spec
+        import traceback
+        traceback.print_exc()                     # real cause -> server log
+        return {"w": W, "h": H, "title": _s(joueur).split(" (")[0], "empty": True}
 
-def build_plots(df, requested_date):
+def build_plots(df, requested_date, avg_col='TTFL'):
     """Build the plots for every row of `df`.
- 
-    Returns (keys, specs):
-        keys   list with one key per row  -> store it in a column, e.g. df.assign(plots=keys)
-        specs  {key: spec}                -> pass it to tooltip_assets()
- 
+
+    Returns (keys, assets):
+        keys   list with one key per row  -> df.assign(plots=keys)
+        assets string                    -> load_tooltip_engine(assets)
+
     Rows with the same player/date share one spec, so duplicates cost nothing.
-    Needs columns: Joueur, graph_dates, graph_opps, graph_TTFLs, graph_wins,
-    graph_ishome, and `avg_col` (its first 4 chars give the red average line).
+    avg_col: column whose first 4 chars give the red average line
+             ('TTFL' on the classement page, 'avg_TTFL' on top_nuit).
     """
     req_str = _fmt_req(requested_date)
     keys, specs = [], {}
@@ -174,7 +221,7 @@ def build_plots(df, requested_date):
                 getattr(row, "graph_dates"), getattr(row, "graph_opps"),
                 getattr(row, "graph_TTFLs"), getattr(row, "graph_wins"),
                 getattr(row, "graph_ishome"),
-                avg_ttfl=_avg_from_cell(getattr(row, 'TTFL')),
+                avg_ttfl=_avg_from_cell(getattr(row, avg_col)),
             )
         keys.append(key)
 
@@ -195,22 +242,23 @@ def _logo_symbol(opp):
 
 @st.cache_data(show_spinner=False)
 def tooltip_assets(specs):
-    """Logo sprite + specs + plots.js."""
+    """Logo sprite + specs + tooltip engine, ready for a 0-height component.
+    js_src is part of the cache key on purpose (see build_plots)."""
+
+    js_src = Path(JS_SVG_PLOTS_PATH).read_text(encoding="utf-8")
 
     def build_logo_sprite(opps):
         return ('<svg width="0" height="0" style="position:absolute" aria-hidden="true">'
                 + "".join(_logo_symbol(o) for o in sorted(opps)) + "</svg>")
-    
+
     opps = {g[4] for s in specs.values() for g in s.get("games", [])}
- 
+
     # "</" inside a <script> could end it early, so escape it.
     data = json.dumps(specs, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
-    js = Path(JS_SVG_PLOTS_PATH).read_text(encoding="utf-8")   # re-read each time: edit plots.js and just rerun
- 
+
     return (f"{build_logo_sprite(opps)}"
-            '<div id="tip"></div>'
             f"<script>const PLOTS = {data};</script>"
-            f"<script>{js}</script>")
+            f"<script>{js_src}</script>")
 
 # def letter_vlines(ax, letter, x, ymin, ymax, **kwargs):
 #     """Same visual (10 stacked letters) in ONE artist instead of ten:

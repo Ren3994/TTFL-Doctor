@@ -247,7 +247,6 @@ def df_to_html(
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
     best_pick_allowed=False,
-    js_assets=None
 ):
     """Render a dark-mode HTML table. Returns <style> + <table> + optional JS assets."""
  
@@ -271,11 +270,6 @@ def df_to_html(
 
     css = f"""
     <style>
-    body {{
-        margin: 10px;
-        font-family: Source Sans, sans-serif;
-        font-size: 15px;
-    }}
     .custom-table-dark {{
         border-collapse: collapse;
         text-align: center;
@@ -303,8 +297,8 @@ def df_to_html(
     {" .custom-table-dark tr:nth-child(odd)  { background-color: " + zebra_odd_color + "; }" if zebra_stripes else ""}
     {(".custom-table-dark tr:hover { background-color: " + hover_color + " !important; }") if hover_highlight else ""}
  
-    /* Tooltip triggers. The popup itself is the floating #tip (see plots.tooltip_assets);
-       .tooltiptext spans only hold the text that plots.js copies into it. */
+    /* Tooltip triggers. The popup itself is the floating #tip;  .tooltiptext spans only
+       hold the text that the engine (js_svg_plot.js) copies into it. */
     .tooltip {{ position: relative; display: inline-block; cursor: help; }}
     .tooltip .tooltiptext {{ display: none; }}
 
@@ -314,12 +308,10 @@ def df_to_html(
         background-color: {tooltip_bkg}; color: {tooltip_text};
         text-align: center; font-weight: normal; font-size: 13px; white-space: normal;
         border-radius: 6px; padding: 6px 10px; box-shadow: 0 0 5px rgba(0,0,0,0.4);
+        transition: opacity 0.2s ease;
     }}
-    #tip.plot {{
-        max-width: none; padding: 4px;
-        background-color: {svg_plot_bkg}; color: {svg_plot_text_color};
-    }}
-    #tip svg {{ display: block; width: 500px; height: auto; fill: currentColor; }}
+    #tip.plot {{ max-width: none; }}
+    #tip svg {{ display: block; width: min(450px, calc(100vw - 24px)); height: auto; }}
  
     .custom-table-dark tr.best-pick-row {{ background-color: {best_pick_color} !important; }}
     .custom-table-dark tr.best-pick-row:hover {{ background-color: {hover_best_pick_color} !important; }}
@@ -393,16 +385,23 @@ def df_to_html(
     html += "</tbody></table>"
     html = html.replace("\n", "").replace("\r", "")
 
-    if js_assets is not None:
-        html += js_assets
-
     return html
 
 def build_display_df_html(df, date, highlight_index):
     keys, assets = build_plots(df, date)
     df_with_plots = df.assign(plots=keys)
-    html_df = df_to_html(df_with_plots, highlight_index=highlight_index, js_assets=assets)
-    return html_df
+    html_df = df_to_html(df_with_plots, highlight_index=highlight_index)
+    return html_df, assets
+
+def render_table(html):
+    """Table in the main page: same fonts/layout as the old st.markdown version."""
+    st.markdown(html, unsafe_allow_html=True)
+
+def load_tooltip_engine(assets):
+    """0-height component that runs the tooltip engine on the main page.
+    Call once per page (or per table, it's idempotent)."""
+    import streamlit.components.v1 as components
+    components.html(assets, height=0)
 
 @st.cache_data(show_spinner=False)
 def cached_get_top_TTFL(date_ymd):

@@ -155,10 +155,11 @@ else:
                                            get_joueurs_pas_dispo(st.session_state.date_text))
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
-    display_df_html = build_display_df_html(st.session_state.display_df,
-                                            st.session_state.date_text,
-                                            idx_pick)
+    display_df_html, assets = build_display_df_html(st.session_state.display_df,
+                                                    st.session_state.date_text,
+                                                    idx_pick)
     
-    components.html(display_df_html, height=10000, scrolling=False)
+    render_table(display_df_html)
+    load_tooltip_engine(assets)
 
 SEO('footer')
