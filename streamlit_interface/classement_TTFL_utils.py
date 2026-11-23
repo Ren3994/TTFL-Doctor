@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from html import escape
 import streamlit as st
 import polars as pl
 import sys
@@ -7,10 +8,11 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from data.ttfl_data import scan_injuries, scan_schedule, scan_table, latest_season
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.streamlit_utils import french_flag
+from streamlit_interface.plotting_utils import build_plots
 from streamlit_interface.color_palette import get_palette
-from data.ttfl_data import scan_injuries, scan_schedule, scan_table, latest_season
 from data.new_topTTFL_manager import get_top_TTFL as top2
 
 def accentuate_pct(text: str) -> str:
@@ -233,7 +235,7 @@ def df_to_html(
                           'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
                           'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs où le joueur a joué avec ce coéquipier blessé)',
                           'Statut' : 'Survoler pour voir les détails de la blessure'},
-    image_tooltips={'Joueur' : 'plots'},
+    plot_tooltips={'Joueur' : 'plots'},   # {column showing the plot : column holding its key}
     show_index=True,
     zebra_stripes=True,
     hover_highlight=True,
@@ -244,10 +246,11 @@ def df_to_html(
     highlight_index=None,
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
-    best_pick_allowed=False
+    best_pick_allowed=False,
+    js_assets=None
 ):
-    """Render a dark-mode HTML table with centered, custom tooltips."""
-
+    """Render a dark-mode HTML table. Returns <style> + <table> + optional JS assets."""
+ 
     palette = get_palette('table')
 
     hover_color = palette['hover']
@@ -259,13 +262,20 @@ def df_to_html(
     hover_highlight_color = palette['pick_hover']
     best_pick_color = palette['best_pick'] if best_pick_allowed else highlight_color
     hover_best_pick_color = palette['best_pick_hover'] if best_pick_allowed else hover_highlight_color
-    tooltip_bkg_color = palette['tooltip_bkg']
-    tooltip_text_color = palette['tooltip_text']
+    tooltip_bkg = palette['tooltip_bkg']
+    tooltip_text = palette['tooltip_text']
+    svg_plot_bkg = palette['svg_plot_bkg']
+    svg_plot_text_color = palette['svg_plot_text_color']
     injured_warning_color = palette['injured']
     injured_warning_color_hover = palette['injured_hover']
 
     css = f"""
     <style>
+    body {{
+        margin: 10px;
+        font-family: Source Sans, sans-serif;
+        font-size: 15px;
+    }}
     .custom-table-dark {{
         border-collapse: collapse;
         text-align: center;
@@ -273,7 +283,6 @@ def df_to_html(
         margin: {'0 auto' if center_table else '0'};
     }}
     .custom-table-dark th {{
-        
         {'background-color: ' + header_bkg_color + ';' if bold_headers else ''}
         color: {header_text_color} !important;
         padding: {padding}px;
@@ -293,62 +302,31 @@ def df_to_html(
     {" .custom-table-dark tr:nth-child(even) { background-color: " + zebra_even_color + "; }" if zebra_stripes else ""}
     {" .custom-table-dark tr:nth-child(odd)  { background-color: " + zebra_odd_color + "; }" if zebra_stripes else ""}
     {(".custom-table-dark tr:hover { background-color: " + hover_color + " !important; }") if hover_highlight else ""}
+ 
+    /* Tooltip triggers. The popup itself is the floating #tip (see plots.tooltip_assets);
+       .tooltiptext spans only hold the text that plots.js copies into it. */
+    .tooltip {{ position: relative; display: inline-block; cursor: help; }}
+    .tooltip .tooltiptext {{ display: none; }}
 
-    /* Custom tooltip styling */
-    .tooltip {{
-        position: relative;
-        display: inline-block;
-        cursor: help;
+    #tip {{
+        display: none; position: fixed; z-index: 1000; pointer-events: none;
+        width: max-content; max-width: 500px;
+        background-color: {tooltip_bkg}; color: {tooltip_text};
+        text-align: center; font-weight: normal; font-size: 13px; white-space: normal;
+        border-radius: 6px; padding: 6px 10px; box-shadow: 0 0 5px rgba(0,0,0,0.4);
     }}
-    .tooltip .tooltiptext {{
-        visibility: hidden;
-        width: max-content;
-        max-width: 500px;
-        background-color: {tooltip_bkg_color};
-        color: {tooltip_text_color};
-        text-align: center;
-        font-weight: normal !important;
-        border-radius: 6px;
-        padding: 6px 10px;
-        position: absolute;
-        z-index: 1;
-        bottom: 120%;
-        left: 50%;
-        transform: translateX(-50%);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        font-size: 13px;
-        box-shadow: 0 0 5px rgba(0,0,0,0.4);
-        white-space: normal;
+    #tip.plot {{
+        max-width: none; padding: 4px;
+        background-color: {svg_plot_bkg}; color: {svg_plot_text_color};
     }}
-    .tooltip:hover .tooltiptext {{
-        visibility: visible;
-        opacity: 1;
-    }}
-    .tooltip .tooltiptext img {{
-        max-width: 700px;
-        max-height: 466px;
-        border-radius: 4px;
-        z-index: 0;
-    }}
-    .custom-table-dark tr.best-pick-row {{
-        background-color: {best_pick_color} !important;
-    }}
-    .custom-table-dark tr.best-pick-row:hover {{
-        background-color: {hover_best_pick_color} !important;
-    }}
-    .custom-table-dark tr.highlight-row {{
-        background-color: {highlight_color} !important;
-    }}
-    .custom-table-dark tr.highlight-row:hover {{
-        background-color: {hover_highlight_color} !important;
-    }}
-    .custom-table-dark tr.injured-pick-row {{
-        background-color: {injured_warning_color} !important;
-    }}
-    .custom-table-dark tr.injured-pick-row:hover {{
-        background-color: {injured_warning_color_hover} !important;
-    }}
+    #tip svg {{ display: block; width: 500px; height: auto; fill: currentColor; }}
+ 
+    .custom-table-dark tr.best-pick-row {{ background-color: {best_pick_color} !important; }}
+    .custom-table-dark tr.best-pick-row:hover {{ background-color: {hover_best_pick_color} !important; }}
+    .custom-table-dark tr.highlight-row {{ background-color: {highlight_color} !important; }}
+    .custom-table-dark tr.highlight-row:hover {{ background-color: {hover_highlight_color} !important; }}
+    .custom-table-dark tr.injured-pick-row {{ background-color: {injured_warning_color} !important; }}
+    .custom-table-dark tr.injured-pick-row:hover {{ background-color: {injured_warning_color_hover} !important; }}
     </style>
     """
 
@@ -363,9 +341,7 @@ def df_to_html(
         html += "<th>Rang</th>"
 
     for col in show_cols:
-        col_label = col
-        if col in col_header_labels:
-            col_label = col_header_labels[col]
+        col_label = col_header_labels.get(col, col)
         if col in col_header_tooltips:
             html += (
                 '<th>'
@@ -382,11 +358,10 @@ def df_to_html(
         if highlight_index is not None and i == highlight_index:
             if 'Statut' in show_cols and getattr(row, 'Statut') != '':
                 row_class = "injured-pick-row"
+            elif best_pick_allowed and (i - 1) in best_pick_indices:
+                row_class = "best-pick-row"
             else:
-                if best_pick_allowed and (i - 1) in best_pick_indices:
-                    row_class = "best-pick-row"
-                else:
-                    row_class = "highlight-row"
+                row_class = "highlight-row"
             html += f'<tr class="{row_class}">'
         else:
             html += "<tr>"
@@ -398,14 +373,9 @@ def df_to_html(
             if highlight_frenchies:
                 cell_value = french_flag(cell_value, html=True)
 
-            if image_tooltips and col in image_tooltips:
-                img_col = image_tooltips[col]
-                img_src = getattr(row, img_col)
-                html += (
-                    f'<td><div class="tooltip">{cell_value}'
-                    f'<span class="tooltiptext"><img src="{img_src}" loading="lazy" decoding="async"></span>'
-                    "</div></td>"
-                )
+            if plot_tooltips and col in plot_tooltips:
+                plot_key = escape(str(getattr(row, plot_tooltips[col])), quote=True)
+                html += f'<td><div class="tooltip" data-plot="{plot_key}">{cell_value}</div></td>'
 
             elif tooltips and col in tooltips:
                 tooltip_value = getattr(row, tooltips[col])
@@ -422,7 +392,17 @@ def df_to_html(
         html += "</tr>"
     html += "</tbody></table>"
     html = html.replace("\n", "").replace("\r", "")
+
+    if js_assets is not None:
+        html += js_assets
+
     return html
+
+def build_display_df_html(df, date, highlight_index):
+    keys, assets = build_plots(df, date)
+    df_with_plots = df.assign(plots=keys)
+    html_df = df_to_html(df_with_plots, highlight_index=highlight_index, js_assets=assets)
+    return html_df
 
 @st.cache_data(show_spinner=False)
 def cached_get_top_TTFL(date_ymd):

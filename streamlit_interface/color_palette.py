@@ -39,6 +39,9 @@ def get_palette(key=None):
         button_pick_hover_selected = "#C16C2F"
         button_pick_text = "#C5C5C5"
 
+        svg_plot_bkg = "#F0F0F0"
+        svg_plot_text_color = "#2A2A2A"
+
     else:
         table_hover="#CACACA"
         table_text="#434343"
@@ -66,6 +69,9 @@ def get_palette(key=None):
         button_pick_hover_selected = table_pick_hover
         button_pick_text = "#434343"
 
+        svg_plot_bkg = "#F0F0F0"
+        svg_plot_text_color = "#2A2A2A"
+
     palette['table'] = {'hover' : table_hover,
                         'text' : table_text,
                         'header_text' : table_header_text,
@@ -79,7 +85,9 @@ def get_palette(key=None):
                         'tooltip_bkg' : table_tooltip_bkg,
                         'tooltip_text' : table_tooltip_text,
                         'injured' : table_injured,
-                        'injured_hover' : table_injured_hover
+                        'injured_hover' : table_injured_hover,
+                        'svg_plot_bkg' : svg_plot_bkg,
+                        'svg_plot_text_color' :  svg_plot_text_color
     }
 
     palette['button'] = {'text' : button_text,

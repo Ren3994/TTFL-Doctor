@@ -9,11 +9,9 @@ from streamlit_interface.streamlit_utils import SEO, config, vspace, get_sc, cus
 from misc.misc import RESIZED_LOGOS_PATH, IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES
 from streamlit_interface.streamlit_update_manager import update_all_data
 from streamlit_interface.session_state_manager import init_session_state
-from streamlit_interface.plotting_utils import plot_for_row#, svg_spark
 from streamlit_interface.classement_TTFL_utils import *
 from data.ttfl_data import get_games_for_date
 from streamlit_interface.sidebar import sidebar
-from test_svg_plots import df_to_html2
 
 # ---------- Initialize session state ----------
 PAGENAME = 'classement'
@@ -21,7 +19,6 @@ init_session_state(page=PAGENAME)
 update_all_data()
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
-# conn = conn_db()
 sc = get_sc()
 
 # ---------- UI ----------
@@ -63,10 +60,6 @@ else:
 
 filter_inj = cont_checkboxes.checkbox("Masquer les joueurs blessés", value=False)
 
-# if cont_left.button('Générer plus de graphes'):
-#     st.session_state.plot_calc_start  = st.session_state.plot_calc_stop
-#     st.session_state.plot_calc_stop += st.session_state.plot_calc_incr
-
 cont_date_obj.button("◀️", on_click=prev_date)
 
 cont_date_obj.text_input(
@@ -83,16 +76,6 @@ cont_date_obj.button("▶️", on_click=next_date)
 cont_right.markdown(get_low_game_count(st.session_state.date_text), unsafe_allow_html=True)
 deadline = get_deadline(st.session_state.date_text)
 cont_right.markdown(deadline, unsafe_allow_html=True)
-
-# cont_right.segmented_control(label='Données de la saison', options=[f'{LAST_SEASON}', f'{SEASON}'],
-#                             key='season_select', on_change=on_season_data_source_change, default=f'{SEASON}')
-
-# cont_right.toggle('Traduire les détails des blessures', key='bool_translate')
-# limit_reached, _ = deepl_api_limit_reached()
-# translate_col = []
-# if not limit_reached:
-#     if st.session_state.bool_translate:
-#         translate_col = ['details']
 
 st.markdown("<hr style='width:100%;margin:auto;margin-top:0.2rem;'>", unsafe_allow_html=True)
 vspace()
@@ -172,78 +155,10 @@ else:
                                            get_joueurs_pas_dispo(st.session_state.date_text))
     
     idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
-    display_df_html = df_to_html2(st.session_state.display_df, 
-                                 highlight_index=idx_pick)
+    display_df_html = build_display_df_html(st.session_state.display_df,
+                                            st.session_state.date_text,
+                                            idx_pick)
     
-    # html_df = df_to_html2(st.session_state.topTTFL_df, requested_date=st.session_state.date_text)
-    components.html(display_df_html, height=10000, scrolling=True)
-
-    # statusholder = st.empty()
-    # tableholder = st.empty()
-    # temp_table = st.empty()
-    
-    # if ('plots' not in st.session_state.topTTFL_df or
-    #     st.session_state.topTTFL_df.loc[
-    #         st.session_state.plot_calc_start:
-    #         st.session_state.plot_calc_stop - 1,
-    #         'plots'].isin([IMG_CHARGEMENT, IMG_PLUS_DE_GRAPHES]).any()
-    #     ):
-    #     with st.spinner('Génération des graphes...'):        
-    #         if st.session_state.plot_calc_start == 0:
-    #             st.session_state.topTTFL_df['plots'] = IMG_PLUS_DE_GRAPHES
-                        
-    #         st.session_state.topTTFL_df.loc[
-    #             st.session_state.plot_calc_start:
-    #             st.session_state.plot_calc_stop - 1, 'plots'] = IMG_CHARGEMENT
-
-    #         topTTFL_html = df_to_html(st.session_state.topTTFL_df)
-    #         temp_table.markdown(topTTFL_html, unsafe_allow_html=True)
-
-    #         start = st.session_state.plot_calc_start
-    #         stop = min(len(st.session_state.topTTFL_df), st.session_state.plot_calc_stop)
-            
-    #         new_plots = []
-    #         for i in range(start, stop):
-    #             try:
-    #                 new_plots.append(plot_for_row(
-    #                     st.session_state.topTTFL_df.iloc[i],
-    #                     st.session_state.date_text))
-    #             except:
-    #                 new_plots.append(IMG_PLUS_DE_GRAPHES)
-
-    #             if (st.session_state.date_text not in st.session_state.calculated or
-    #                 st.session_state.plot_calc_start != 0):
-    #                 statusholder.progress(min(0.999, 
-    #                     (i + 1 - start)/(max(1, stop-start))))
-                    
-    #         if new_plots:
-    #             plots_col = st.session_state.topTTFL_df.columns.get_loc('plots')
-    #             st.session_state.topTTFL_df.iloc[start:stop, plots_col] = new_plots
-
-    # selected_games = []
-    # for key in list(st.session_state.keys()):
-    #     if key.startswith('classement_'):
-    #         if st.session_state[key]:
-    #             selected_games.append(key[11:])
-
-    # st.session_state.display_df = apply_df_filters(
-    #                                        st.session_state.topTTFL_df.copy(),
-    #                                        st.session_state.date_text,
-    #                                        st.session_state.plot_calc_start,
-    #                                        st.session_state.plot_calc_stop,
-    #                                        filter_JDP,
-    #                                        filter_inj,
-    #                                        selected_games,
-    #                                        get_joueurs_pas_dispo(st.session_state.date_text))
-    
-    # idx_pick = get_idx_pick(st.session_state.display_df, st.session_state.date_text, 'Joueur')
-    # display_df_html = df_to_html(st.session_state.display_df, 
-    #                              highlight_index=idx_pick)
-    
-    # tableholder.markdown(display_df_html, unsafe_allow_html=True)
-    # st.session_state.calculated.add(st.session_state.date_text)
-
-    # temp_table.empty()
-    # statusholder.empty()
+    components.html(display_df_html, height=10000, scrolling=False)
 
 SEO('footer')

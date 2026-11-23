@@ -8,14 +8,13 @@ from streamlit_interface.JDP_utils import get_cached_rosters, get_cached_game_da
 from streamlit_interface.classement_TTFL_utils import get_low_game_count, get_deadline, get_joueurs_blesses, cached_get_top_TTFL, apply_df_filters, update_session_state_df
 from streamlit_interface.player_stats_utils import cached_player_stats, cached_player_v_team, cached_historique_des_perfs, cached_player_stats_by_season, cached_maximums
 from streamlit_interface.team_stats_utils import cached_query_team_stats, get_cached_opp_team_stats, standings_progress_plot
-from streamlit_interface.plotting_utils import cached_generate_plot_row
+from streamlit_interface.plotting_utils import _compute_spec, build_plot_spec, tooltip_assets
 from streamlit_interface.top_nuit_utils import get_top_de_la_nuit
 
 def clear_after_db_update():
     cached_get_top_TTFL.clear()
     get_low_game_count.clear()
     get_deadline.clear()
-    cached_generate_plot_row.clear()
     get_top_de_la_nuit.clear()
     cached_query_team_stats.clear()
     get_cached_opp_team_stats.clear()
@@ -35,6 +34,9 @@ def clear_after_db_update():
     get_cached_all_game_dates.clear()
     get_cached_alltime_player_list.clear()
     standings_progress_plot.clear()
+    tooltip_assets.clear()
+    build_plot_spec.clear()
+    _compute_spec.clear()
 
 def clear_after_injury_update():
     get_joueurs_blesses.clear()

@@ -7,7 +7,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo, build_plots
 from streamlit_interface.JDP_utils import match_player, get_cached_avg_TTFL
 from data.ttfl_data import scan_boxscores, latest_season
 
@@ -34,7 +34,12 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                    .then(pl.lit('@'))
                    .otherwise(pl.lit('v.')),
                  pl.col('opponent')
-                )
+                ),
+             graph_dates=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'),
+             graph_TTFLs=pl.col('TTFL'),
+             graph_opps=pl.col('opponent'),
+             graph_wins=pl.col('win'),
+             graph_ishome=pl.col('isHome')
              )
          .filter([pl.col('gameDate') == date,
                   pl.col('seconds') > 0])
@@ -45,7 +50,7 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                     'blocks', 'turnovers', 'fieldGoalsMade', 'fieldGoalsAttempted', 
                     'threePointersMade', 'threePointersAttempted', 'freeThrowsMade', 
                     'freeThrowsAttempted', 'plusMinusPoints',  'TTFL', 'win', 'Matchup',
-                    'avg_TTFL'
+                    'avg_TTFL', 'graph_dates', 'graph_TTFLs', 'graph_opps', 'graph_wins', 'graph_ishome'
                     ])
          .collect()
          .to_pandas()
@@ -154,7 +159,10 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
     for team, dfteam in dfs.items():
         idx_pick = get_idx_from_pick(dfteam, pick, 'Joueur')
 
-        html_df = df_to_html(dfteam, show_cols=show_cols, 
+        keys, assets = build_plots(dfteam, date)
+        df_with_plots = dfteam.assign(plots=keys)
+
+        html_df = df_to_html(df_with_plots, show_cols=show_cols, 
                              tooltips={
                                         'FG' : 'FGpct',
                                         'FG3' : 'FG3pct',
@@ -165,11 +173,11 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                                     },
                              show_index = len(dfteam) > 10,
                              col_header_tooltips=[],
-                             image_tooltips=[],
                              color_tooltip_pct=False,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'},
-                             best_pick_allowed = not byteam and not show_my_pick
+                             best_pick_allowed = not byteam and not show_my_pick,
+                             js_assets=assets
                              )
             
         html_dfs[team] = html_df

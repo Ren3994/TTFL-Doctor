@@ -12,6 +12,7 @@ TBD_LOGO_PATH = os.path.join(BASE_DIR, "..", "data", "team_logos_150", 'TBD.png'
 
 STREAMLIT_MAIN_PY_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_main.py")
 STREAMLIT_PAGES_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "streamlit_pages")
+JS_SVG_PLOTS_PATH = os.path.join(BASE_DIR, "..", "streamlit_interface", "js_svg_plot.js")
 
 TRICODE2NAME = {'ATL': 'Hawks', 'BOS': 'Celtics', 'BKN': 'Nets', 'CHA': 'Hornets', 'CHI': 'Bulls', 'CLE': 'Cavaliers', 'DAL': 'Mavericks', 'DEN': 'Nuggets', 'DET': 'Pistons', 'GSW': 'Warriors', 'HOU': 'Rockets', 'IND': 'Pacers', 'LAC': 'Clippers', 'LAL': 'Lakers', 'MEM': 'Grizzlies', 'MIA': 'Heat', 'MIL': 'Bucks', 'MIN': 'Timberwolves', 'NOP': 'Pelicans', 'NYK': 'Knicks', 'OKC': 'Thunder', 'ORL': 'Magic', 'PHI': '76ers', 'PHX': 'Suns', 'POR': 'Trail Blazers', 'SAC': 'Kings', 'SAS': 'Spurs', 'TOR': 'Raptors', 'UTA': 'Jazz', 'WAS': 'Wizards'}
 NAME2TRICODE = {v: k for k, v in TRICODE2NAME.items()}
