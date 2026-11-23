@@ -7,10 +7,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo, build_plots
+from streamlit_interface.classement_TTFL_utils import df_to_html, get_idx_from_pick, get_pick, get_joueurs_pas_dispo, build_plots, _clean_player_name
 from streamlit_interface.JDP_utils import match_player, get_cached_avg_TTFL
 from data.ttfl_data import scan_boxscores, latest_season
-from data.ttfl_stats import graph_data, regular_played
 
 @st.cache_data(show_spinner=False)
 def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler, 
@@ -189,6 +188,9 @@ def get_top_de_la_nuit(date, matched_names, byteam, show_my_pick, spoiler,
                              highlight_index=idx_pick,
                              col_header_labels = {'FG3' : '3FG', 'Pm' : '±', 'Win' : 'W/L'},
                              best_pick_allowed = not byteam and not show_my_pick,
+                             cell_links={'Joueur': {'page': '/Stats_par_joueurs',
+                                                'param': 'joueur',
+                                                'clean': _clean_player_name}}
                              )
             
         html_dfs[team] = html_df
