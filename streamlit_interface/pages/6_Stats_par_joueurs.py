@@ -21,6 +21,20 @@ update_all_data()
 sidebar(page=PAGENAME)
 config(page=PAGENAME)
 
+# ---------- Deep links ----------
+# Other pages link here as /Stats_par_joueurs?joueur=<name> (e.g. the Classement
+# TTFL table: clicking a player's name). Consume the parameter once, then delete
+# it from the URL so a later rerun cannot clobber what the user types in the
+# search box afterwards.
+if 'joueur' in st.query_params:
+    linked_player = st.query_params['joueur']
+    del st.query_params['joueur']
+    if linked_player:
+        st.session_state.compare_players = []        # a deep link shows THIS player, not the comparator
+        st.session_state.search_player_indiv_stats = linked_player
+        st.session_state.player_alltime_stats = False
+        on_search_player_stats()                     # same matching as typing the name manually
+
 if 'slider_gp' not in st.session_state:
     set_filters_default()
     reset_filters()

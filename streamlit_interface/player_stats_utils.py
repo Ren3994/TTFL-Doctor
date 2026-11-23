@@ -592,6 +592,7 @@ def filter_expander_vars():
     parts = ['Stats historiques' if ss.player_alltime_stats else 'Saison actuelle',
              ss.player_stats_agg,
              *[f'{name} {uspace(1)} ≥ {uspace(1)} {ss[key]}' for name, key in FILTER_LABELS]]
+
     label = 'Filtres' + ''.join(sep + p for p in parts)
 
     agg_changed = ss.player_stats_agg != ss.player_stats_agg_default

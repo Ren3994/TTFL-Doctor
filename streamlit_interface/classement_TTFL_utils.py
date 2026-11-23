@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from urllib.parse import quote
 from html import escape
 import streamlit as st
 import polars as pl
@@ -14,6 +15,16 @@ from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.plotting_utils import build_plots
 from streamlit_interface.color_palette import get_palette
 from data.new_topTTFL_manager import get_top_TTFL as top2
+
+def _clean_player_name(name):
+    """Cell value -> plain player name for deep links and player matching.
+
+    Strips everything the ranking table appends to names: the ' (IST)' / ' (B2B)'
+    schedule tags, the '*' all-time marker, and any whitespace. Mirrors the
+    split used by french_flag_expr() so the result matches playerName in the
+    boxscores, which is what match_player() compares against.
+    """
+    return str(name).split('(')[0].split('*')[0].strip()
 
 def accentuate_pct(text: str) -> str:
     palette = get_palette('pct')
@@ -229,7 +240,7 @@ def df_to_html(
             'Adversaire' : 'opp_info',
             'TTFL' : 'allrel'
             },
-    col_header_tooltips = {'Joueur' : 'Survoler pour voir le graphe d\'évolution des scores TTFL',
+    col_header_tooltips = {'Joueur' : 'Survoler pour voir le graphe d\'évolution des scores TTFL<br>Cliquer sur le nom pour ouvrir ses stats complètes',
                           'TTFL' : 'Toutes les équipes contre : scores TTFL relatifs des équipes adverses contre cette équipe' + \
                           '<br>Postes contre : scores TTFL relatifs des joueurs de ce poste contre cette équipe',
                           'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
@@ -247,6 +258,7 @@ def df_to_html(
     col_header_labels={'TTFL' : '<span style="text-decoration:overline">TTFL</span>'},
     highlight_frenchies=True,
     best_pick_allowed=False,
+    cell_links=None
 ):
     """Render a dark-mode HTML table. Returns <style> + <table> + optional JS assets."""
  
@@ -312,6 +324,12 @@ def df_to_html(
     }}
     #tip.plot {{ max-width: none; }}
     #tip svg {{ display: block; width: min(450px, calc(100vw - 24px)); height: auto; }}
+
+    /* Clickable cells (see cell_links in df_to_html). No underline at rest:
+    the cell looks exactly like before; hovering underlines + pointer
+    cursor together with the plot tooltip. */
+    a.cell-link {{ color: inherit; text-decoration: none; cursor: pointer; }}
+    a.cell-link:hover {{ text-decoration: underline; text-underline-offset: 3px; }}
  
     .custom-table-dark tr.best-pick-row {{ background-color: {best_pick_color} !important; }}
     .custom-table-dark tr.best-pick-row:hover {{ background-color: {hover_best_pick_color} !important; }}
@@ -362,8 +380,18 @@ def df_to_html(
         for col in show_cols:
             cell_value = getattr(row, col)
 
+            link_open, link_close = '', ''
+            if cell_links and col in cell_links:
+                cfg = cell_links[col]
+                link_name = cfg['clean'](cell_value) if cfg.get('clean') else cell_value
+                href = f"{cfg['page']}?{cfg['param']}={quote(str(link_name))}"
+                link_open = f'<a class="cell-link" href="{escape(href, quote=True)}" target="_blank">'
+                link_close = '</a>'
+
             if highlight_frenchies:
                 cell_value = french_flag(cell_value, html=True)
+
+            cell_value = f"{link_open}{cell_value}{link_close}"
 
             if plot_tooltips and col in plot_tooltips:
                 plot_key = escape(str(getattr(row, plot_tooltips[col])), quote=True)
@@ -390,7 +418,11 @@ def df_to_html(
 def build_display_df_html(df, date, highlight_index):
     keys, assets = build_plots(df, date)
     df_with_plots = df.assign(plots=keys)
-    html_df = df_to_html(df_with_plots, highlight_index=highlight_index)
+    html_df = df_to_html(df_with_plots, 
+                         highlight_index=highlight_index,
+                         cell_links={'Joueur': {'page': '/Stats_par_joueurs',
+                                                'param': 'joueur',
+                                                'clean': _clean_player_name}})
     return html_df, assets
 
 def render_table(html):
