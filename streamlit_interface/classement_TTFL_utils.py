@@ -246,7 +246,7 @@ def df_to_html(
                           'Adversaire' : 'Score TTFL relatif des joueurs de ce poste contre l\'équipe du joueur blessé, pendant ses absences.',
                           'Équipe' : 'Score TTFL relatif du joueur quand ce coéquipier est blessé (N : nombre de matchs où le joueur a joué avec ce coéquipier blessé)',
                           'Statut' : 'Survoler pour voir les détails de la blessure'},
-    plot_tooltips={'Joueur' : 'plots', 'index' : 'plots'},   # {column showing the plot : column holding its key}
+    plot_tooltips={'Joueur' : 'plots', 'index' : 'plots', 'Lieu' : 'plots'},   # {column showing the plot : column holding its key}
     show_index=True,
     zebra_stripes=True,
     hover_highlight=True,
