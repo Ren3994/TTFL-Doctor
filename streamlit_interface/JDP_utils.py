@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 from tqdm import tqdm
 import polars as pl
+import pandas as pd
 import sys
 import os
 import re
@@ -104,6 +105,31 @@ def get_cached_rosters():
          .to_pandas())
     return rosters
 
+@st.cache_data(show_spinner=False)
+def get_cached_future_dates(date, ndays=14):
+    df = (scan_schedule()
+         .filter(
+             pl.col('gameDate_ymd').is_between(date, date + timedelta(days=ndays)),
+             pl.col('gameStatus') != 3,
+             (pl.col('gameId').str.starts_with('002') |  # Regular season
+              pl.col('gameId').str.starts_with('004') |  # Playoffs
+              pl.col('gameId').str.starts_with('005'))   # Playin 
+             )
+         .unique(subset='gameDate_ymd')
+         .sort('gameDate_ymd')
+         .with_columns(
+             pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y').alias('Date du pick'),
+             pl.lit('').alias('Joueur'),
+             pl.lit('').alias('TTFL'),
+             pl.lit('').alias('Moyenne TTFL'),
+             pl.lit('').alias('Date de retour')
+         )
+         .select(['Joueur', 'Date du pick', 'TTFL', 'Moyenne TTFL', 'Date de retour'])
+         .collect()
+         .to_pandas()
+         )
+    return df
+
 class JoueursDejaPick():
     def __init__(self):
         self.supabase = None
@@ -166,8 +192,14 @@ class JoueursDejaPick():
         good_df = self.dt_cols2str(good_df)
         good_df = self.completeCols(good_df)
         good_df = self.display_cols(good_df)
+        good_df = self.addFutureDates(good_df)
         
         return good_df
+    
+    def addFutureDates(self, df):
+        ajd = datetime.now(ZoneInfo("Europe/Paris"))
+        future_dates = get_cached_future_dates(ajd)
+        return pd.concat([df, future_dates], ignore_index=True)
     
     def saveJDP(self, df, save=True):
 
@@ -412,10 +444,53 @@ def generate_dicts(names_list):
     return abbreviations, splits
 
 if __name__ == '__main__':
+    import pandas as pd
 
-    a = get_cached_avg_TTFL(include_playoffs=False, alltime=True)
+    ajd = datetime.now(ZoneInfo("Europe/Paris"))
+    # a = [(ajd + timedelta(days=i+1)).strftime('%d/%m/%Y') for i in range(14)]
 
-    print(a[a['playerName'] == 'LeBron James'])
+    a = (scan_schedule()
+         .filter(
+             pl.col('gameDate_ymd').is_between(ajd, ajd + timedelta(days=14)),
+             pl.col('season') == latest_season(),
+             pl.col('gameStatus') != 3,
+             pl.col('gameId').str.starts_with('002')
+             )
+         .unique(subset='gameDate_ymd')
+         .sort('gameDate_ymd')
+         .with_columns(
+             pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y').alias('Date du pick'),
+             pl.lit('').alias('Joueur'),
+             pl.lit('').alias('TTFL'),
+             pl.lit('').alias('Moyenne TTFL'),
+             pl.lit('').alias('Date de retour')
+
+         )
+         .select(['Joueur', 'Date du pick', 'TTFL', 'Moyenne TTFL', 'Date de retour'])
+         .collect()
+         .to_pandas()
+         )
+
+    print(a, type(a))
+
+    # 'joueur': 'Joueur',
+    #         'datePick': 'Date du pick',
+    #         'TTFL': 'TTFL',
+    #         'avg_TTFL': 'Moyenne TTFL',
+    #         'dateRetour': 'Date de retour'
+
+    # c = conn_supabase()
+    # df = pd.DataFrame(list((c.table("ttfl_doctor_user_picks")
+    #                                         .select("picks")
+    #                                         .eq("username", 'admin')
+    #                                         .execute()
+    #                                 ).data[0]['picks'].items()), columns=['datePick', 'joueur'])
+    
+    # print(df)
+
+    # a = get_cached_avg_TTFL(include_playoffs=False, alltime=True)
+
+    # print(a[a['playerName'] == 'LeBron James'])
     # gdc = run_sql_query(conn=conn_db(), table='rosters')
     
     # print(gdc)
