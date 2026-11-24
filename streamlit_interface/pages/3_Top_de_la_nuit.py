@@ -113,7 +113,7 @@ else:
             render_table(html_tables)
 
         else:
-            teams = list(st.session_state.top_nuit.keys())
+            teams = list(html_tables.keys())
             for i in range(0, len(teams), buttons_per_row):
                 cols = st.columns(buttons_per_row, gap="small")
                 vspace()
