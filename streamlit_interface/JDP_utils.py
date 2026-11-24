@@ -118,13 +118,12 @@ def get_cached_future_dates(date, ndays=14):
          .unique(subset='gameDate_ymd')
          .sort('gameDate_ymd')
          .with_columns(
-             pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y').alias('Date du pick'),
-             pl.lit('').alias('Joueur'),
+             pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y').alias('datePick'),
              pl.lit('').alias('TTFL'),
-             pl.lit('').alias('Moyenne TTFL'),
-             pl.lit('').alias('Date de retour')
+             pl.lit('').alias('avg_TTFL'),
+             pl.lit('').alias('dateRetour')
          )
-         .select(['Joueur', 'Date du pick', 'TTFL', 'Moyenne TTFL', 'Date de retour'])
+         .select(['datePick', 'TTFL', 'avg_TTFL', 'dateRetour'])
          .collect()
          .to_pandas()
          )
@@ -174,6 +173,8 @@ class JoueursDejaPick():
             if new_date not in game_dates_completed['gameDate'].tolist():
                 game_dates_completed.loc[len(game_dates_completed)] = new_date
 
+        full_sb_picks = good_df.copy()
+
         good_df = (game_dates_completed
                    .merge(good_df, 
                           left_on='gameDate', 
@@ -191,15 +192,20 @@ class JoueursDejaPick():
         
         good_df = self.dt_cols2str(good_df)
         good_df = self.completeCols(good_df)
+        good_df = self.addFutureDates(good_df, full_sb_picks)
         good_df = self.display_cols(good_df)
-        good_df = self.addFutureDates(good_df)
         
         return good_df
     
-    def addFutureDates(self, df):
+    def addFutureDates(self, df, full_sb_picks):
         ajd = datetime.now(ZoneInfo("Europe/Paris"))
         future_dates = get_cached_future_dates(ajd)
-        return pd.concat([df, future_dates], ignore_index=True)
+        
+        future_full = future_dates.merge(full_sb_picks,
+                                         on='datePick',
+                                         how='left')
+        
+        return pd.concat([df, future_full], ignore_index=True)
     
     def saveJDP(self, df, save=True):
 
