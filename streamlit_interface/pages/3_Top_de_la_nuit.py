@@ -113,7 +113,7 @@ else:
             render_table(html_tables)
 
         else:
-            teams = list(st.session_state.top_nuit.keys())
+            teams = list(html_tables.keys())
             for i in range(0, len(teams), buttons_per_row):
                 cols = st.columns(buttons_per_row, gap="small")
                 vspace()
@@ -121,7 +121,7 @@ else:
                 for col, team in zip(cols, row_items):
                     logo = st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw = True)
                     st.session_state.setdefault(f"boxscore_nuit_{team}", False)
-                    if i < len(st.session_state.top_nuit):
+                    if i < len(html_tables):
                         with col:
                             with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
                                 st.session_state[f'boxscore_nuit_{team}'], 
@@ -134,8 +134,8 @@ else:
                                                    {f"boxscore_nuit_{k}": 
                                                     not st.session_state[f"boxscore_nuit_{k}"]}))
                                 
-            for team, top in st.session_state.top_nuit.items():
+            for team, top in html_tables.items():
                 if st.session_state[f'boxscore_nuit_{team}']:
-                    render_table(html_tables)
+                    render_table(html_tables[team])
 
 SEO('footer')
