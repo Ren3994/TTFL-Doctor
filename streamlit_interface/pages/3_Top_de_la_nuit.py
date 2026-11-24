@@ -134,8 +134,8 @@ else:
                                                    {f"boxscore_nuit_{k}": 
                                                     not st.session_state[f"boxscore_nuit_{k}"]}))
                                 
-            for team, top in st.session_state.top_nuit.items():
+            for team, top in html_tables.items():
                 if st.session_state[f'boxscore_nuit_{team}']:
-                    render_table(html_tables)
+                    render_table(html_tables[team])
 
 SEO('footer')
