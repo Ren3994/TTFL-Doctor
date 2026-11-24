@@ -1,5 +1,5 @@
 from supabase import create_client
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import pandas as pd
 import polars as pl
@@ -66,7 +66,11 @@ def get_next_game():
         )
     
     tot_min = next_game_ts.total_seconds() // 60
-    is_soon = tot_min // 60 < 1
+
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0)
+
+    dt_to_midnight = midnight - now
+    is_soon = (tot_min // 60 < 1) or dt_to_midnight
     
     next_game = 'Le prochain match est dans {:.0f}h et {:.0f}m.'.format(*divmod(tot_min, 60))
     return is_soon, next_game
@@ -112,6 +116,12 @@ def send_update(msg_if_ok=False):
         message += f"\n{str_soon}" if soon else ""
     
     send_telegram_message(message)
+    # print(message)
 
 if __name__ == '__main__':
     send_update(msg_if_ok=False)
+
+    # now = datetime.now(ZoneInfo('Europe/Paris'))
+    # midnight = (now + timedelta(days=1)).replace(hour=0, minute=0)
+
+    # print(midnight - now)
