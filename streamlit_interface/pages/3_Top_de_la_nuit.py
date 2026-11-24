@@ -121,7 +121,7 @@ else:
                 for col, team in zip(cols, row_items):
                     logo = st_image_crisp(os.path.join(RESIZED_LOGOS_PATH, f"{team}.png"), raw = True)
                     st.session_state.setdefault(f"boxscore_nuit_{team}", False)
-                    if i < len(st.session_state.top_nuit):
+                    if i < len(html_tables):
                         with col:
                             with sc(key=f"custom_button_css_{team}", css_styles=custom_button_css(
                                 st.session_state[f'boxscore_nuit_{team}'], 
