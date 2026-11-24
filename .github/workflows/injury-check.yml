@@ -1,14 +1,16 @@
 name: Injury check
 
 on:
-  schedule:
-    - cron: "11 12-23 * * *"
-      timezone: "Europe/Paris"
   workflow_dispatch:
+
+concurrency:
+  group: injury-check
+  cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
