@@ -54,7 +54,7 @@ def get_next_game():
              )
          .filter(
              pl.col('season') == latest_season(),
-             pl.col('gameStatus') != 3,
+             pl.col('paris_time') > now,
              (pl.col('gameId').str.starts_with('002') |  # Regular season
               pl.col('gameId').str.starts_with('004') |  # Playoffs
               pl.col('gameId').str.starts_with('005')),   # Playin
