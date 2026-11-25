@@ -191,8 +191,8 @@ class JoueursDejaPick():
         good_df = good_df.sort_values(by='datePick', ascending=False)
         
         good_df = self.dt_cols2str(good_df)
-        good_df = self.completeCols(good_df)
         good_df = self.addFutureDates(good_df, full_sb_picks)
+        good_df = self.completeCols(good_df)
         good_df = self.display_cols(good_df)
         
         return good_df
@@ -204,8 +204,14 @@ class JoueursDejaPick():
         future_full = future_dates.merge(full_sb_picks,
                                          on='datePick',
                                          how='left')
+
+        interc = pd.DataFrame({'datePick' : [''],
+                               'TTFL' : [''], 
+                               'avg_TTFL' : [''], 
+                               'dateRetour' : [''], 
+                               })
         
-        return pd.concat([df, future_full], ignore_index=True)
+        return pd.concat([df, interc, future_full], ignore_index=True)
     
     def saveJDP(self, df, save=True):
 
@@ -275,6 +281,13 @@ class JoueursDejaPick():
 
         df_completed[['TTFL', 'avg_TTFL']] = df_completed[['TTFL', 'avg_TTFL']].astype('string')
         df_completed.loc[df_completed['joueur'] == '', ['TTFL', 'avg_TTFL']] = ''
+        
+        now = datetime.now(ZoneInfo('Europe/Paris'))
+        df_completed['dt'] = (pd.to_datetime(df_completed['datePick'], dayfirst=True)
+                              .dt.tz_localize('Europe/Paris'))
+        msk = (now - df_completed['dt'] < timedelta(days=1)) & (df['joueur'] != '')
+        df_completed.loc[msk, 'TTFL'] = 'TBD'
+        df_completed.drop(columns='dt', inplace=True)
 
         return df_completed
     
@@ -348,7 +361,7 @@ def clean_player_names(df, colname, names_list=None):
 
     clean_names = []
     for name in df[colname] :
-        if name == '':
+        if name == '' or pd.isna(name):
             clean_names.append('')
         else:
             if name[-1] == '*':
