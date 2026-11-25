@@ -64,15 +64,16 @@ def get_next_game():
          .collect()
          .item(0, 0)
         )
-    
-    tot_min = next_game_ts.total_seconds() // 60
 
     midnight = (now + timedelta(days=1)).replace(hour=0, minute=0)
-
     dt_to_midnight = midnight - now
-    is_soon = (tot_min // 60 < 1) or dt_to_midnight
+
+    is_soon = (next_game_ts < timedelta(hours=1)
+          or dt_to_midnight < timedelta(hours=1))
     
+    tot_min = next_game_ts.total_seconds() // 60
     next_game = 'Le prochain match est dans {:.0f}h et {:.0f}m.'.format(*divmod(tot_min, 60))
+    
     return is_soon, next_game
 
 def send_telegram_message(message):
