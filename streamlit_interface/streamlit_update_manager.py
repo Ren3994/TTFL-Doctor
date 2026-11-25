@@ -51,8 +51,8 @@ def cached_update_injury_report():
     return ij_last_update, source
 
 def update_all_data(force_update=False):
-    try:
-        with FileLock(os.path.join(DATA_DIR, ".update.lock"), timeout=1):
+    #try:
+        #with FileLock(os.path.join(DATA_DIR, ".update.lock"), timeout=1):
 
             default_ts = datetime(2000, 1, 1, tzinfo=ZoneInfo("Europe/Paris"))
             ij_prev_update = st.session_state.get('last_update', default_ts)
@@ -76,8 +76,8 @@ def update_all_data(force_update=False):
             if ij_updated or need_to_update or force_update:
                 clear_after_injury_update()
                 
-    except Timeout:
-        pass
+    #except Timeout:
+        #pass
 
 # if __name__ == '__main__':
     # a = run_sql_query(conn=conn_db(), 
