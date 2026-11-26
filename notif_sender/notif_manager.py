@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from update_manager.injury_report_manager import update_injury_report
-from data.ttfl_stats import scan_table, latest_season, scan_schedule
+from data.ttfl_stats import is_game_type, latest_season, scan_schedule
 
 def get_client():
     url, key = os.environ.get('SUPABASE_URL', None), os.environ.get('SUPABASE_KEY', None)
@@ -20,18 +20,26 @@ def get_client():
     
     return create_client(url, key)
 
-def get_user_pick_today(username='admin'):
+def get_user_pick(date=None, username='admin'):
+    
+    if date is None:
+        date = datetime.now(ZoneInfo("Europe/Paris"))
+    elif isinstance(date, str):
+        try:
+            datetime.strptime(date, dayfirst=True)
+        except:
+            raise ValueError('Wrong date format. Try datetime object or %d/%m/%Y')
 
-    ajd = datetime.now(ZoneInfo("Europe/Paris"))
-    ajd_str = ajd.strftime('%d/%m/%Y')
+    date_str = date.strftime('%d/%m/%Y')
 
     conn = get_client()
     try:
         admin_picks = pd.DataFrame(list((conn.table('ttfl_doctor_user_picks').select("picks")
                                                 .eq("username", username)
-                                                .execute()).data[0]['picks'].items()), columns=['datePick', 'joueur'])
+                                                .execute()).data[0]['picks'].items()), 
+                                                columns=['datePick', 'joueur'])
         
-        pick_ajd = admin_picks.loc[admin_picks['datePick'] == ajd_str, 'joueur']
+        pick_ajd = admin_picks.loc[admin_picks['datePick'] == date_str, 'joueur']
 
         if pick_ajd.empty:
             return None
@@ -39,6 +47,8 @@ def get_user_pick_today(username='admin'):
         pick = pick_ajd.iloc[0]
         return pick
     
+    except IndexError:
+        raise IndexError('Some wrong parameters')
     except:
         return 'SB error'
     
@@ -55,15 +65,16 @@ def get_next_game():
          .filter(
              pl.col('season') == latest_season(),
              pl.col('paris_time') > now,
-             (pl.col('gameId').str.starts_with('002') |  # Regular season
-              pl.col('gameId').str.starts_with('004') |  # Playoffs
-              pl.col('gameId').str.starts_with('005')),   # Playin
+             is_game_type()
             )
          .sort('diff_dt')
          .select('diff_dt')
          .collect()
          .item(0, 0)
         )
+    
+    if next_game_ts > timedelta(days=1):
+        return 'Not today', 'Pas de match aujourd\'hui'
 
     midnight = (now + timedelta(days=1)).replace(hour=0, minute=0)
     dt_to_midnight = midnight - now
@@ -90,12 +101,16 @@ def send_telegram_message(message):
     r.raise_for_status()
 
 def send_update(msg_if_ok=False):
-    df_inj = update_injury_report(return_df=True)
-    pick = get_user_pick_today()
+
     soon, str_soon = get_next_game()
+    if soon == 'Not today':
+        return
+    
+    df_inj = update_injury_report(return_df=True)
+    pick = get_user_pick()
 
     if pick is None:
-        message = 'Aucun joueur n\'a été pick aujourd\'hui.' + f"\n{str_soon}" if soon else ""
+        message = 'Aucun joueur n\'a été pick aujourd\'hui.' + (f"\n{str_soon}" if soon else "")
     elif pick == 'SB error':
         message = 'Impossible de charger le pick de supabase'
     elif df_inj.empty:
@@ -116,8 +131,8 @@ def send_update(msg_if_ok=False):
             
         message += f"\n{str_soon}" if soon else ""
     
-    send_telegram_message(message)
-    # print(message)
+    # send_telegram_message(message)
+    print(message)
 
 if __name__ == '__main__':
     send_update(msg_if_ok=False)

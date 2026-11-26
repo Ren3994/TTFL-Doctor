@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from streamlit_interface.clear_cache_functions import clear_after_db_update, clear_after_injury_update
-from data.ttfl_data import scan_table, get_missing_gameids, latest_season
+from data.ttfl_data import scan_table, get_missing_gameids, latest_season, is_game_type
 from update_manager.injury_report_manager import update_injury_report
 from fetchers.boxscore_fetcher import update_nba_data
 from misc.misc import DATA_DIR
@@ -20,7 +20,7 @@ def get_cached_upcoming_games():
      .filter([
          pl.col('season') == latest_season(),
          pl.col('gameStatus') != 3,
-         (pl.col('gameId').str.starts_with('002')) | (pl.col('gameId').str.starts_with('004')) | (pl.col('gameId').str.starts_with('006')),
+         is_game_type(),
          pl.col('postponed') == 0
          ])
      .with_columns(gdt_utc_dt=pl.col('gameDateTimeUTC').str.to_datetime(time_zone="UTC"))
@@ -51,6 +51,7 @@ def cached_update_injury_report():
     return ij_last_update, source
 
 def update_all_data(force_update=False):
+            st.session_state.updates_checked = False
     #try:
         #with FileLock(os.path.join(DATA_DIR, ".update.lock"), timeout=1):
 
@@ -75,6 +76,8 @@ def update_all_data(force_update=False):
 
             if ij_updated or need_to_update or force_update:
                 clear_after_injury_update()
+
+            st.session_state.updates_checked = True
                 
     #except Timeout:
         #pass

@@ -30,12 +30,14 @@ import polars.selectors as cs
 try:                                              # files side by side ...
     from ttfl_data import (
         DATA_DIR, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
-        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
+        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, 
+        TEAM_STATS_SOURCE_COLUMNS, is_game_type
     )
 except ImportError:                               # ... or imported as part of the `data` package
     from data.ttfl_data import (
         DATA_DIR, franchise_expr, latest_season, scan_boxscores, scan_injuries, scan_positions,
-        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, TEAM_STATS_SOURCE_COLUMNS
+        scan_rosters, scan_schedule, scan_table, to_date, to_pl, with_legacy_columns, 
+        TEAM_STATS_SOURCE_COLUMNS, is_game_type
     )
 
 c = pl.col
@@ -43,14 +45,6 @@ c = pl.col
 # =====================================================================================
 # Small helpers
 # =====================================================================================
-GAME_TYPE = {
-    "Saison régulière": c("gameId").str.starts_with("002"),
-    "Playoffs": c("gameId").str.starts_with("004"),
-    "Les deux": c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004"),
-}
-REGULAR = GAME_TYPE["Saison régulière"]
-
-
 def rel_pct(x: pl.Expr, base: pl.Expr, require_x: bool = False) -> pl.Expr:
     """100 * (x - base) / base, null if base is null/0 (and x too if require_x). Replaces ~10 CASE WHEN blocks."""
     ok = base.is_not_null() & (base != 0)
@@ -80,16 +74,16 @@ def played(bs: pl.LazyFrame) -> pl.LazyFrame:
 
 
 def regular_played(bs: pl.LazyFrame) -> pl.LazyFrame:
-    return bs.filter((c("seconds") > 0) & REGULAR)
-
+    return bs.filter((c("seconds") > 0) & is_game_type(playoffs=False, playins=False))
 
 def _has_team() -> pl.Expr:
     return c("teamTricode").is_not_null() & (c("teamTricode") != "")
 
-
-def select_games(bs: pl.LazyFrame, playoffs: str = "Saison régulière", seasons=(), team: str = "") -> pl.LazyFrame:
+def select_games(bs: pl.LazyFrame, playoffs: str = "Saison régulière", 
+                 seasons=(), team: str = "") -> pl.LazyFrame:
     """The 'selector' CTE that was rebuilt with f-strings in five functions."""
-    lf = bs.filter((c("seconds") > 0) & GAME_TYPE[playoffs])
+
+    lf = bs.filter((c("seconds") > 0) & is_game_type(playoffs))
     if seasons:
         lf = lf.filter(c("season").is_in(list(seasons)))
     if team:
@@ -351,7 +345,7 @@ def absent_teammate_impact(bs: pl.LazyFrame, rosters: pl.LazyFrame, overall: pl.
 # Nemesis  (calc_nemesis). Heavy part: pairs of current players over the whole history.
 # =====================================================================================
 def _nemesis_base(hist: pl.LazyFrame, active: pl.LazyFrame) -> pl.LazyFrame:
-    return (hist.filter((c("seconds") > 600) & REGULAR)
+    return (hist.filter((c("seconds") > 600) & is_game_type(playoffs=False, playins=False))
             .select("gameId", "teamTricode", "opponent", "playerName", "TTFL")
             .join(active.select("playerName"), on="playerName", how="semi"))
 
@@ -810,14 +804,15 @@ def query_team_stats() -> pl.DataFrame:
               .to_pandas())
 
 
-if __name__ == "__main__":
-    import sys
-    import time
-    day = sys.argv[1] if len(sys.argv) > 1 else "2026-01-01"
-    t0 = time.perf_counter()
-    d = get_derived()
-    t1 = time.perf_counter()
-    df = top_ttfl(day, d)
-    t2 = time.perf_counter()
-    print(f"build_derived({d.stats_season}): {t1 - t0:.2f}s | top_ttfl({day}): {t2 - t1:.3f}s | {df.height} rows")
-    print(df.select("playerName", "pos", "team", "opponent", "avg_TTFL", "rel_recent", "is_b2b").head(10))
+# if __name__ == "__main__":
+    # import sys
+    # import time
+    # day = sys.argv[1] if len(sys.argv) > 1 else "2026-01-01"
+    # t0 = time.perf_counter()
+    # d = get_derived()
+    # t1 = time.perf_counter()
+    # df = top_ttfl(day, d)
+    # t2 = time.perf_counter()
+    # print(f"build_derived({d.stats_season}): {t1 - t0:.2f}s | top_ttfl({day}): {t2 - t1:.3f}s | {df.height} rows")
+    # print(df.select("playerName", "pos", "team", "opponent", "avg_TTFL", "rel_recent", "is_b2b").head(10))
+    # print(is_game_type())

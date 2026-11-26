@@ -396,8 +396,7 @@ def get_missing_gameids() -> pl.DataFrame:
     return (
         scan_schedule()
         .filter((c('season') == current_season()) & (c("gameStatus") == 3) & (c("postponed") == 0)
-                & (c("gameId").str.starts_with("002") | c("gameId").str.starts_with("004")
-                | c("gameId").str.starts_with("006")))
+                & is_game_type())
         .join(have, on="gameId", how="anti")
         .sort("gameDate_ymd")       # the SQL sorted the dd/mm/yyyy *text*, i.e. not chronologically
         .select("gameId", "gameDate", "homeTeam", "awayTeam")
@@ -413,6 +412,26 @@ def get_games_for_date(game_date) -> pl.DataFrame:
     pair = pl.when(h <= a).then(pl.concat_str([h, a], separator="|")).otherwise(pl.concat_str([a, h], separator="|"))
     return df.with_columns(_pair=pair).unique(subset="_pair", keep="first", maintain_order=True).drop("_pair").to_pandas()
 
+def is_game_type(*, regular_season:bool=True, playoffs:bool=True, playins:bool=True,
+                 all_star:bool=False, nba_cup_finals:bool=False, preseason:bool=False,
+                 game_type=None):
+    '''
+    Returns a polars filter condition to select a certain type of game.
+    By default, returns regular season (002) + playoffs (004) + playins (005)
+    '''
+
+    if game_type == 'Saison régulière':
+        playoffs = False
+        playins = False
+    elif game_type == 'Playoffs':
+        regular_season = False
+        
+    filters = []
+    for i, game_type in enumerate([preseason, regular_season, all_star, playoffs, playins, nba_cup_finals]):
+        if game_type:
+            filters.append(f'00{i+1}')
+
+    return pl.col('gameId').str.slice(0, 3).is_in(filters)
 
 # --------------------------------------------------------------------------------------
 # Refresh of reference data (replaces init_db / check_table_exists)

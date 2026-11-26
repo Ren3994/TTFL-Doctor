@@ -12,8 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_interface.resource_manager import conn_supabase, fetch_supabase_users
 from misc.misc import NICKNAMES, NAME2TRICODE, TEAM_NICKNAMES, TRICODE2FULLNAME
-from data.ttfl_stats import scan_schedule, scan_boxscores, scan_rosters, regular_played
-from data.ttfl_data import latest_season
+from data.ttfl_stats import latest_season, scan_schedule, scan_boxscores, scan_rosters, regular_played, is_game_type
 
 @st.cache_data(show_spinner=False)
 def get_cached_game_dates_completed():
@@ -21,7 +20,7 @@ def get_cached_game_dates_completed():
          .filter([
              pl.col('season') == latest_season(),
              pl.col('gameStatus') == 3,
-             pl.col('gameId').str.starts_with('002')
+             is_game_type()
              ])
          .select('gameDate_ymd').unique().sort('gameDate_ymd')
          .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
@@ -36,7 +35,7 @@ def get_cached_all_game_dates():
     gdc  = (scan_schedule()
          .filter([
              pl.col('season') == latest_season(),
-             pl.col('gameId').str.starts_with('002')
+             is_game_type()
              ])
          .select('gameDate_ymd').unique().sort('gameDate_ymd')
          .with_columns(gameDate=pl.col('gameDate_ymd').dt.strftime('%d/%m/%Y'))
@@ -111,9 +110,7 @@ def get_cached_future_dates(date, ndays=14):
          .filter(
              pl.col('gameDate_ymd').is_between(date, date + timedelta(days=ndays)),
              pl.col('gameStatus') != 3,
-             (pl.col('gameId').str.starts_with('002') |  # Regular season
-              pl.col('gameId').str.starts_with('004') |  # Playoffs
-              pl.col('gameId').str.starts_with('005'))   # Playin 
+             is_game_type()
              )
          .unique(subset='gameDate_ymd')
          .sort('gameDate_ymd')
@@ -473,7 +470,7 @@ if __name__ == '__main__':
              pl.col('gameDate_ymd').is_between(ajd, ajd + timedelta(days=14)),
              pl.col('season') == latest_season(),
              pl.col('gameStatus') != 3,
-             pl.col('gameId').str.starts_with('002')
+             is_game_type()
              )
          .unique(subset='gameDate_ymd')
          .sort('gameDate_ymd')
