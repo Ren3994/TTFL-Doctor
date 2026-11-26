@@ -83,7 +83,7 @@ def select_games(bs: pl.LazyFrame, playoffs: str = "Saison régulière",
                  seasons=(), team: str = "") -> pl.LazyFrame:
     """The 'selector' CTE that was rebuilt with f-strings in five functions."""
 
-    lf = bs.filter((c("seconds") > 0) & is_game_type(playoffs))
+    lf = bs.filter((c("seconds") > 0) & is_game_type(game_type=playoffs))
     if seasons:
         lf = lf.filter(c("season").is_in(list(seasons)))
     if team:

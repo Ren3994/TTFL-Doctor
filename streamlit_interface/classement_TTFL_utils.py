@@ -9,7 +9,7 @@ import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from data.ttfl_data import scan_injuries, scan_schedule, scan_table, latest_season
+from data.ttfl_data import scan_injuries, scan_schedule, scan_table, latest_season, is_game_type
 from streamlit_interface.JDP_utils import get_cached_rosters
 from streamlit_interface.streamlit_utils import french_flag
 from streamlit_interface.plotting_utils import build_plots
@@ -125,7 +125,7 @@ def get_low_game_count(date, delta=30, min_games=2) :
 
     date_dt = datetime.strptime(date, '%d/%m/%Y')
     low_game_count = (scan_schedule()
-                      .filter([~pl.col('gameId').str.starts_with('003'),
+                      .filter([is_game_type(),
                                pl.col('season') == latest_season(),
                                pl.col('homeTeam').is_not_null(),
                                pl.col('gameDate_ymd').is_between(date_dt, date_dt + timedelta(days=delta))])

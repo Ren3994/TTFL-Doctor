@@ -111,17 +111,16 @@ def normalize_boxscores(df: pl.DataFrame) -> pl.DataFrame:
 
 def save_boxscores(df) -> None:
     """Merge new rows into the per-season files. This is the ONLY write path for boxscores and
-    replaces check_boxscores_integrity (null-game filter + duplicate removal happen here).
-    Call it wherever the downloader used `df.to_sql('boxscores', ..., if_exists='append')`."""
+    replaces check_boxscores_integrity (null-game filter + duplicate removal happen here).`."""
     BOX_DIR.mkdir(parents=True, exist_ok=True)
     df = normalize_boxscores(df)
-    df = df.filter(pl.col("teamTTFL").fill_null(1) != 0)          # was: DELETE ... WHERE teamTTFL = 0
+    df = df.filter(pl.col("teamTTFL").fill_null(1) != 0)
     for season in df["season"].drop_nulls().unique().to_list():
         new = df.filter(pl.col("season") == season)
         path = box_path(season)
         if path.exists():
             new = pl.concat([pl.read_parquet(path), new]).unique(
-                subset=["gameId", "playerName"], keep="last", maintain_order=True)  # was: remove_duplicates
+                subset=["gameId", "playerName"], keep="last", maintain_order=True)
         atomic_write_parquet(new.sort(["gameDate_ymd", "gameId"]), path, compression="zstd")
 
 
@@ -398,7 +397,7 @@ def get_missing_gameids() -> pl.DataFrame:
         .filter((c('season') == current_season()) & (c("gameStatus") == 3) & (c("postponed") == 0)
                 & is_game_type())
         .join(have, on="gameId", how="anti")
-        .sort("gameDate_ymd")       # the SQL sorted the dd/mm/yyyy *text*, i.e. not chronologically
+        .sort("gameDate_ymd")
         .select("gameId", "gameDate", "homeTeam", "awayTeam")
         .collect()
     )
@@ -412,12 +411,19 @@ def get_games_for_date(game_date) -> pl.DataFrame:
     pair = pl.when(h <= a).then(pl.concat_str([h, a], separator="|")).otherwise(pl.concat_str([a, h], separator="|"))
     return df.with_columns(_pair=pair).unique(subset="_pair", keep="first", maintain_order=True).drop("_pair").to_pandas()
 
+
 def is_game_type(*, regular_season:bool=True, playoffs:bool=True, playins:bool=True,
                  all_star:bool=False, nba_cup_finals:bool=False, preseason:bool=False,
                  game_type=None):
     '''
     Returns a polars filter condition to select a certain type of game.
     By default, returns regular season (002) + playoffs (004) + playins (005)
+        001 : preseason
+        002 : regular season
+        003 : all star game
+        004 : playoffs
+        005 : play-in tournament
+        006 : NBA cup finals
     '''
 
     if game_type == 'Saison régulière':
