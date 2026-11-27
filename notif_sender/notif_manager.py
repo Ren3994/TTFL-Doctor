@@ -131,8 +131,8 @@ def send_update(msg_if_ok=False):
             
         message += f"\n{str_soon}" if soon else ""
     
-    # send_telegram_message(message)
-    print(message)
+    send_telegram_message(message)
+    # print(message)
 
 if __name__ == '__main__':
     send_update(msg_if_ok=False)
